@@ -19,7 +19,12 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
     const { start, end } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
 
     return data
-      .filter((t) => isDateInRange(t.date, start, end))
+      .filter((t) => {
+        const inDate = isDateInRange(t.date, start, end);
+        if (!inDate) return false;
+        if (!state.ui.showRecurringDebt && t.isRecurring) return false;
+        return true;
+      })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 

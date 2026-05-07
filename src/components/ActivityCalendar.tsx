@@ -60,7 +60,11 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
     return data
       .filter(t => {
         const td = new Date(t.date);
-        return td.getFullYear() === y && td.getMonth() === m && td.getDate() === d && t.type === 'expense';
+        const isDateMatch = td.getFullYear() === y && td.getMonth() === m && td.getDate() === d;
+        if (!isDateMatch) return false;
+        if (t.type !== 'expense') return false;
+        if (!state.ui.showRecurringDebt && t.isRecurring) return false;
+        return true;
       })
       .reduce((acc, t) => acc + t.amount, 0);
   };

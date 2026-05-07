@@ -4,7 +4,7 @@ import { ActivityCalendar } from "../components/ActivityCalendar";
 import { formatRupiah } from "../utils/format";
 import { CategoryCard } from "../components/CategoryCard";
 import { DailySpendChart } from "../components/DailySpendChart";
-import { state, nextMonth, prevMonth } from "../store";
+import { state, nextMonth, prevMonth, toggleRecurringDebt } from "../store";
 import { getTransactions } from "../lib/db";
 import { getDateRange, isDateInRange } from "../utils/date";
 
@@ -24,7 +24,12 @@ const Dashboard = () => {
     const data = transactions() || [];
     const { start, end } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
     
-    return data.filter(t => isDateInRange(t.date, start, end));
+    return data.filter(t => {
+      const inDate = isDateInRange(t.date, start, end);
+      if (!inDate) return false;
+      if (!state.ui.showRecurringDebt && t.isRecurring) return false;
+      return true;
+    });
   });
 
   const totalIncome = () => monthlyTransactions().filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
@@ -61,6 +66,17 @@ const Dashboard = () => {
           {/* Watermark */}
           <div class="absolute -right-10 -bottom-10 opacity-[0.03] rotate-12 transition-transform group-hover:scale-110 duration-1000">
              <span class="material-icons text-[240px]">eco</span>
+          </div>
+
+          <div class="absolute top-10 right-10 z-20">
+            <button 
+              onClick={toggleRecurringDebt}
+              class={`text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
+                state.ui.showRecurringDebt ? 'text-forest font-black' : 'text-forest/30 hover:text-forest/60'
+              }`}
+            >
+              Show Recurring Debt
+            </button>
           </div>
           
           <div class="relative z-10 space-y-8">
