@@ -2,9 +2,12 @@ import { createSignal, onMount, For } from "solid-js";
 import { state } from "../store";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
+import { Tooltip } from "../components/ui/Tooltip";
+import { formatRupiah } from "../utils/format";
 
 const Dashboard = () => {
   const [displayTotal, setDisplayTotal] = createSignal(0);
+  const [dailyBudget, setDailyBudget] = createSignal(250000);
 
   // Hero total spent calculation
   const totalSpent = () => state.transactions.reduce((acc, t) => acc + t.amount, 0);
@@ -26,18 +29,31 @@ const Dashboard = () => {
     requestAnimationFrame(animate);
   });
 
-  const barChartOptions: ApexOptions = {
+  const barChartOptions = (): ApexOptions => ({
     chart: { type: 'bar', toolbar: { show: false }, animations: { enabled: true } },
     colors: ['#52C278'],
     plotOptions: { bar: { borderRadius: 6, columnWidth: '60%' } },
     dataLabels: { enabled: false },
+    tooltip: {
+      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        const val = series[seriesIndex][dataPointIndex];
+        const category = w.globals.labels[dataPointIndex];
+        return `
+          <div class="px-3 py-1.5 bg-[#1C2B20] text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center relative overflow-visible mb-2">
+            <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">Day ${category}</span>
+            <span class="font-bold">${formatRupiah(val)}</span>
+            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1C2B20]"></div>
+          </div>
+        `;
+      }
+    },
     xaxis: { categories: ['1', '5', '10', '15', '20', '25', '30'], labels: { style: { colors: '#5C6B5E', fontFamily: 'Outfit' } } },
     yaxis: { labels: { style: { colors: '#5C6B5E', fontFamily: 'Outfit' } } },
     grid: { borderColor: 'rgba(26,77,46,0.05)' },
     annotations: {
-      yaxis: [{ y: 80, borderColor: '#1A4D2E', label: { text: 'Budget', style: { background: '#1A4D2E', color: '#fff' } } }]
+      yaxis: [{ y: dailyBudget(), borderColor: '#1A4D2E', label: { text: 'Budget', style: { background: '#1A4D2E', color: '#fff' } } }]
     }
-  };
+  });
 
   const donutOptions: ApexOptions = {
     chart: { type: 'donut' },
@@ -46,16 +62,39 @@ const Dashboard = () => {
     legend: { show: false },
     dataLabels: { enabled: false },
     stroke: { show: false },
+    tooltip: {
+      custom: function({ series, seriesIndex, w }) {
+        const val = series[seriesIndex];
+        const category = w.globals.labels[seriesIndex];
+        return `
+          <div class="px-3 py-1.5 bg-[#1C2B20] text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center relative overflow-visible mb-2">
+            <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">${category}</span>
+            <span class="font-bold">${formatRupiah(val)}</span>
+            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1C2B20]"></div>
+          </div>
+        `;
+      }
+    },
     plotOptions: {
       pie: {
         donut: {
           size: '75%',
           labels: {
             show: true,
+            name: {
+              color: '#5C6B5E',
+              fontFamily: 'Outfit'
+            },
+            value: {
+              color: '#1A4D2E',
+              fontFamily: 'Outfit',
+              fontWeight: 700,
+              formatter: (val) => formatRupiah(val)
+            },
             total: {
               show: true,
               label: 'Top Category',
-              formatter: () => 'Food',
+              formatter: () => formatRupiah(1500000),
               color: '#5C6B5E',
               fontFamily: 'Outfit'
             }
@@ -79,7 +118,7 @@ const Dashboard = () => {
             <div class="space-y-1">
               <p class="text-xs font-bold text-forest/40 uppercase tracking-widest">Total Spent this Month</p>
               <h3 class="text-7xl hero-numeral text-forest">
-                ${displayTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatRupiah(displayTotal())}
               </h3>
             </div>
             
@@ -88,7 +127,7 @@ const Dashboard = () => {
             <div class="grid grid-cols-3 gap-8">
               <div>
                 <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Remaining</p>
-                <p class="text-xl font-outfit font-semibold text-forest">$1,240.50</p>
+                <p class="text-xl font-outfit font-semibold text-forest">{formatRupiah(7650000)}</p>
               </div>
               <div>
                 <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Days Left</p>
@@ -96,7 +135,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Daily Average</p>
-                <p class="text-xl font-outfit font-semibold text-forest">$42.80</p>
+                <p class="text-xl font-outfit font-semibold text-forest">{formatRupiah(150000)}</p>
               </div>
             </div>
           </div>
@@ -106,10 +145,23 @@ const Dashboard = () => {
         <div class="col-span-4 row-span-2 premium-card p-6 flex flex-col">
           <div class="flex items-center justify-between mb-6">
             <h4 class="font-outfit font-bold text-forest">Daily Spend</h4>
-            <span class="text-[10px] font-bold text-earth uppercase tracking-widest">April 2026</span>
+            <Tooltip content="Click to edit budget">
+              <div 
+                class="text-[10px] font-bold text-earth hover:text-forest uppercase tracking-widest cursor-pointer transition-colors flex items-center gap-1 group/edit"
+                onClick={() => {
+                  const newBudget = prompt("Enter new daily budget:", dailyBudget().toString());
+                  if (newBudget && !isNaN(Number(newBudget))) {
+                    setDailyBudget(Number(newBudget));
+                  }
+                }}
+              >
+                <span>Budget: {formatRupiah(dailyBudget())}</span>
+                <span class="material-icons text-[10px] opacity-0 group-hover/edit:opacity-100 transition-opacity">edit</span>
+              </div>
+            </Tooltip>
           </div>
           <div class="flex-1 min-h-[200px]">
-             <SolidApexCharts options={barChartOptions} series={[{ name: 'Spent', data: [44, 55, 41, 67, 22, 43, 21] }]} type="bar" height="100%" />
+             <SolidApexCharts options={barChartOptions()} series={[{ name: 'Spent', data: [44, 55, 41, 67, 22, 43, 21] }]} type="bar" height="100%" />
           </div>
         </div>
 
@@ -124,10 +176,10 @@ const Dashboard = () => {
                {(cat, i) => (
                  <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                       <div class="w-2 h-2 rounded-full" style={{ 'background-color': donutOptions.colors?.[i()] ?? '#1A4D2E' }} />
+                       <div class="w-2 h-2 rounded-full" />
                        <span class="text-xs font-outfit text-earth">{cat}</span>
                     </div>
-                    <span class="text-xs font-outfit font-bold text-forest">$120 (14%)</span>
+                    <span class="text-xs font-outfit font-bold text-forest">{formatRupiah(1250000)} (14%)</span>
                  </div>
                )}
              </For>
@@ -152,14 +204,23 @@ const Dashboard = () => {
           <div class="flex-1 grid grid-cols-7 grid-rows-5 gap-2">
             <For each={Array(35).fill(0)}>
               {(_, i) => (
-                <div 
-                  class="rounded-md transition-all hover:ring-2 hover:ring-spring cursor-help"
-                  style={{ 
-                    'background-color': i() % 5 === 0 ? '#E8F5EC' : i() % 3 === 0 ? '#52C278' : i() % 7 === 0 ? '#1A4D2E' : '#2D7D46',
-                    'opacity': 0.8
-                  }}
-                  title={`Day ${i() + 1}: $${(Math.random() * 100).toFixed(2)}`}
-                />
+                <Tooltip 
+                  class="relative group w-full h-full"
+                  content={
+                    <>
+                      <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">Day {i() + 1}</span>
+                      <span class="font-bold">{formatRupiah((Math.random() * 100) * 10000)}</span>
+                    </>
+                  }
+                >
+                  <div 
+                    class="w-full h-full rounded-md transition-all group-hover:ring-2 group-hover:ring-spring cursor-pointer"
+                    style={{ 
+                      'background-color': i() % 5 === 0 ? '#E8F5EC' : i() % 3 === 0 ? '#52C278' : i() % 7 === 0 ? '#1A4D2E' : '#2D7D46',
+                      'opacity': 0.8
+                    }}
+                  />
+                </Tooltip>
               )}
             </For>
           </div>
@@ -220,7 +281,7 @@ const Dashboard = () => {
                        <span class="px-2 py-1 bg-sage/30 text-forest text-[10px] rounded-md font-medium">{t.category}</span>
                     </td>
                     <td class="px-6 py-4 text-earth">{new Date(t.date).toLocaleDateString()}</td>
-                    <td class="px-6 py-4 text-right font-bold text-forest">${t.amount.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right font-bold text-forest">{formatRupiah(t.amount)}</td>
                   </tr>
                 )}
               </For>

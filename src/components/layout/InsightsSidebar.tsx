@@ -3,6 +3,7 @@ import TrendingUpIcon from "@suid/icons-material/TrendingUpOutlined";
 import ErrorOutlineIcon from "@suid/icons-material/ErrorOutlineOutlined";
 import EmojiEventsIcon from "@suid/icons-material/EmojiEventsOutlined";
 import InfoOutlinedIcon from "@suid/icons-material/InfoOutlined";
+import { formatRupiah } from "../../utils/format";
 
 const InsightCard = (props: { type: string, headline: string, body: string, colorClass: string }) => (
   <div class={`p-5 bg-white border border-forest/10 rounded-2xl shadow-premium border-l-4 ${props.colorClass} space-y-2`}>
@@ -33,19 +34,19 @@ const InsightsSidebar = () => {
         <InsightCard 
           type="Alert" 
           headline="Weekend Variable" 
-          body="Weekend dining is your biggest variable cost — $340 this month so far."
+          body={`Weekend dining is your biggest variable cost — ${formatRupiah(340000)} this month so far.`}
           colorClass="border-l-amber-500"
         />
         <InsightCard 
           type="Win" 
           headline="On Target" 
-          body="At your current rate, you'll finish April $180 under budget."
+          body={`At your current rate, you'll finish April ${formatRupiah(180000)} under budget.`}
           colorClass="border-l-spring"
         />
         <InsightCard 
           type="Forecast" 
           headline="Savings Potential" 
-          body="Transferring $200 more to your Travel Goal now will finish it 1 month early."
+          body={`Transferring ${formatRupiah(200000)} more to your Travel Goal now will finish it 1 month early.`}
           colorClass="border-l-mid-green"
         />
       </div>

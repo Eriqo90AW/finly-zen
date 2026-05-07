@@ -53,7 +53,7 @@
   }
 
   .premium-card:hover {
-    @apply bg-neutral-50 shadow-spring;
+    @apply bg-neutral-50 shadow-spring cursor-pointer;
   }
 
   .nav-link {
@@ -63,6 +63,14 @@
   .nav-link.active {
     @apply bg-sage text-forest font-semibold;
   }
+}
+
+/* ApexCharts Global Tooltip Overrides */
+.apexcharts-tooltip {
+  @apply !bg-transparent !border-none !shadow-none overflow-visible transition-none;
+}
+.apexcharts-tooltip-title {
+  @apply !hidden;
 }
 
 /* Staggered entry animation */

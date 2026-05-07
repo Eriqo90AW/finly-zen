@@ -2,6 +2,7 @@ import { For, createMemo } from "solid-js";
 import { state, updateGoal } from "../store";
 import AddIcon from "@suid/icons-material/Add";
 import LocalDrinkIcon from "@suid/icons-material/LocalDrinkOutlined";
+import { formatRupiah } from "../utils/format";
 
 const PlantCard = (props: { goal: typeof state.goals[0] }) => {
   const percent = () => Math.min((props.goal.current / props.goal.target) * 100, 100);
@@ -43,7 +44,7 @@ const PlantCard = (props: { goal: typeof state.goals[0] }) => {
             <span class="text-xl">{props.goal.emoji}</span>
             <h4 class="text-xl font-outfit font-bold text-forest">{props.goal.name}</h4>
          </div>
-         <p class="text-xs text-earth">Targeting ${props.goal.target.toLocaleString()}</p>
+         <p class="text-xs text-earth">Targeting {formatRupiah(props.goal.target)}</p>
       </div>
 
       <div class="w-full space-y-4">
@@ -54,17 +55,17 @@ const PlantCard = (props: { goal: typeof state.goals[0] }) => {
           />
         </div>
         <div class="flex items-center justify-between text-[10px] font-bold text-earth uppercase tracking-widest">
-           <span>Saved: ${props.goal.current.toLocaleString()}</span>
+           <span>Saved: {formatRupiah(props.goal.current)}</span>
            <span>Ends: {new Date(props.goal.date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
         </div>
       </div>
 
       <button 
-        onClick={() => updateGoal(props.goal.id, 50)}
+        onClick={() => updateGoal(props.goal.id, 500000)}
         class="mt-8 w-full py-3 bg-sage/30 text-forest font-outfit font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-forest hover:text-white transition-all group/btn"
       >
         <LocalDrinkIcon class="w-4 h-4 text-mid-green group-hover/btn:text-white" />
-        Water it (+$50)
+        Water it (+{formatRupiah(500000)})
       </button>
     </div>
   );

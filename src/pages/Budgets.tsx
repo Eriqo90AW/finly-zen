@@ -3,6 +3,7 @@ import { state } from "../store";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
+import { formatRupiah } from "../utils/format";
 
 const CategoryCard = (props: { category: string, budget: number, spent: number }) => {
   const [isExpanded, setIsExpanded] = createSignal(false);
@@ -32,7 +33,7 @@ const CategoryCard = (props: { category: string, budget: number, spent: number }
       <div class="flex items-start justify-between">
         <div class="space-y-1">
           <p class="text-[10px] font-bold text-earth uppercase tracking-widest">{props.category}</p>
-          <h4 class="text-xl font-outfit font-bold text-forest">${props.spent.toFixed(0)} <span class="text-sm font-normal text-earth">/ ${props.budget}</span></h4>
+          <h4 class="text-xl font-outfit font-bold text-forest">{formatRupiah(props.spent)} <span class="text-sm font-normal text-earth">/ {formatRupiah(props.budget)}</span></h4>
         </div>
         <div class="relative w-12 h-12 flex items-center justify-center">
            <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 50 50">
@@ -54,7 +55,7 @@ const CategoryCard = (props: { category: string, budget: number, spent: number }
             {status().label}
          </span>
          <p class="text-xs font-outfit text-earth">
-            ${(props.budget - props.spent).toFixed(0)} left
+            {formatRupiah(props.budget - props.spent)} left
          </p>
       </div>
 
@@ -81,8 +82,8 @@ const Budgets = () => {
   };
 
   const budgetActualSeries = [
-    { name: 'Budgeted', type: 'column', data: [500, 300, 200, 400, 150, 250] },
-    { name: 'Actual', type: 'line', data: [420, 340, 150, 410, 100, 220] }
+    { name: 'Budgeted', type: 'column', data: [5000000, 3000000, 2000000, 4000000, 1500000, 2500000] },
+    { name: 'Actual', type: 'line', data: [4200000, 3400000, 1500000, 4100000, 1000000, 2200000] }
   ];
 
   return (

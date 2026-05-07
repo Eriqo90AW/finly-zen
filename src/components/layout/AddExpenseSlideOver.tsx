@@ -73,7 +73,7 @@ const AddExpenseSlideOver = () => {
           <div class="space-y-2">
             <label class="text-[10px] font-bold text-earth uppercase tracking-widest">Amount</label>
             <div class="relative">
-              <span class="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-outfit font-semibold text-forest">$</span>
+              <span class="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-outfit font-semibold text-forest">Rp</span>
               <input 
                 type="number" 
                 placeholder="0.00"

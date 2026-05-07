@@ -1,5 +1,6 @@
 import { createStore, reconcile } from "solid-js/store";
 import { createEffect, onMount } from "solid-js";
+import dummyTransactions from "../data/transactions.json";
 
 export type Transaction = {
   id: string;
@@ -41,32 +42,32 @@ export type AppState = {
 };
 
 const DEFAULT_STATE: AppState = {
-  transactions: [],
+  transactions: dummyTransactions,
   budgets: [
-    { category: "Food", limit: 500 },
-    { category: "Transport", limit: 300 },
-    { category: "Entertainment", limit: 200 },
-    { category: "Shopping", limit: 400 },
-    { category: "Health", limit: 150 },
-    { category: "Utilities", limit: 250 },
+    { category: "Food", limit: 3000000 },
+    { category: "Transport", limit: 1000000 },
+    { category: "Entertainment", limit: 1000000 },
+    { category: "Shopping", limit: 2000000 },
+    { category: "Health", limit: 500000 },
+    { category: "Utilities", limit: 1500000 },
   ],
   goals: [
-    { id: "1", name: "Summer Trip", target: 2000, current: 850, emoji: "✈️", date: "2026-08-01" },
-    { id: "2", name: "New Laptop", target: 1500, current: 1200, emoji: "💻", date: "2026-12-15" },
+    { id: "1", name: "Summer Trip", target: 15000000, current: 6000000, emoji: "✈️", date: "2026-08-01" },
+    { id: "2", name: "New Laptop", target: 25000000, current: 18000000, emoji: "💻", date: "2026-12-15" },
   ],
   settings: {
-    monthlyLimit: 2500,
+    monthlyLimit: 15000000,
     userName: "Alex",
   },
   ui: {
     currentMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
-    sidebarOpen: true,
-    insightsOpen: true,
+    sidebarOpen: false,
+    insightsOpen: false,
     showAddExpense: false,
   },
 };
 
-const STORE_KEY = "finly_zen_state";
+const STORE_KEY = "finly_zen_state_v2";
 
 export const [state, setState] = createStore<AppState>(DEFAULT_STATE);
 

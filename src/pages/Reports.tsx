@@ -2,6 +2,7 @@ import { For } from "solid-js";
 import { state } from "../store";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
+import { formatRupiah } from "../utils/format";
 
 const Reports = () => {
   const stackedBarOptions: ApexOptions = {
@@ -36,11 +37,11 @@ const Reports = () => {
   };
 
   const merchants = [
-    { name: "Starbucks", amount: 142.50, percent: 85 },
-    { name: "Amazon", amount: 89.20, percent: 60 },
-    { name: "Whole Foods", amount: 450.00, percent: 100 },
-    { name: "Netflix", amount: 15.99, percent: 10 },
-    { name: "Shell", amount: 65.00, percent: 45 },
+    { name: "Starbucks", amount: 150000, percent: 85 },
+    { name: "Tokopedia", amount: 250000, percent: 60 },
+    { name: "Ranch Market", amount: 1000000, percent: 100 },
+    { name: "Netflix", amount: 185000, percent: 10 },
+    { name: "Shell", amount: 750000, percent: 45 },
   ];
 
   return (
@@ -74,7 +75,7 @@ const Reports = () => {
                 <div class="space-y-2">
                   <div class="flex justify-between text-xs font-outfit">
                     <span class="font-bold text-forest">{m.name}</span>
-                    <span class="text-earth">${m.amount.toFixed(2)}</span>
+                    <span class="text-earth">{formatRupiah(m.amount)}</span>
                   </div>
                   <div class="h-1.5 w-full bg-sage/30 rounded-full overflow-hidden">
                     <div 
