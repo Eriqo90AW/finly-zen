@@ -95,7 +95,7 @@ const Transactions = () => {
           <SearchIcon class="absolute left-4 top-1/2 -translate-y-1/2 text-earth w-5 h-5" />
           <input
             type="text"
-            placeholder="Search merchants, categories, or notes..."
+            placeholder="Search transaction name, categories, or notes..."
             onInput={(e) => setFilter(e.currentTarget.value)}
             class="w-full h-12 bg-white border border-forest/10 rounded-xl pl-12 pr-4 font-outfit text-sm focus:outline-none focus:ring-2 focus:ring-forest/10 transition-all"
           />
@@ -135,7 +135,7 @@ const Transactions = () => {
                         </div>
                         <div>
                           <p class="font-outfit font-semibold text-forest leading-none">
-                            {t.merchant}
+                            {t.name}
                           </p>
                           <p class="text-xs text-earth mt-1">
                             {t.note || t.category}

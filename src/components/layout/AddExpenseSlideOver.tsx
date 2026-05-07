@@ -26,7 +26,7 @@ const AddExpenseSlideOver = () => {
     addTransaction({
       amount: parseFloat(amount()),
       category: selectedCategory(),
-      merchant: merchant(),
+      name: merchant(),
       note: note(),
       date: new Date().toISOString(),
     });

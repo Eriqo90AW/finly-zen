@@ -1,14 +1,19 @@
 import { createStore, reconcile } from "solid-js/store";
 import { createEffect, onMount } from "solid-js";
-import dummyTransactions from "../data/transactions.json";
 
 export type Transaction = {
   id: string;
   amount: number;
   category: string;
-  merchant: string;
+  categoryIcon?: string;
+  categoryColor?: string;
+  name: string;
+  accountName?: string;
+  accountColor?: string;
+  type?: string;
   date: string;
   note: string;
+  isRecurring?: boolean;
 };
 
 export type Budget = {
@@ -42,7 +47,7 @@ export type AppState = {
 };
 
 const DEFAULT_STATE: AppState = {
-  transactions: dummyTransactions,
+  transactions: [],
   budgets: [
     { category: "Food", limit: 3000000 },
     { category: "Transport", limit: 1000000 },
@@ -86,7 +91,8 @@ export function setupPersistence() {
   });
 
   createEffect(() => {
-    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    const { transactions, ...persistable } = state;
+    localStorage.setItem(STORE_KEY, JSON.stringify(persistable));
   });
 }
 

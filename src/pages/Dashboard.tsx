@@ -1,15 +1,20 @@
-import { createSignal, onMount, For } from "solid-js";
+import { createSignal, onMount, For, createResource, Show, createEffect } from "solid-js";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { Tooltip } from "../components/ui/Tooltip";
+import { RecentTransactions } from "../components/RecentTransactions";
 import { formatRupiah, formatRupiahShort, formatMonth } from "../utils/format";
 import { state, nextMonth, prevMonth } from "../store";
+import { getTransactions } from "../lib/db";
 
 
 
 const Dashboard = () => {
   const [displayTotal, setDisplayTotal] = createSignal(0);
   const [dailyBudget, setDailyBudget] = createSignal(250000);
+
+  // Supabase Resources
+  const [transactions] = createResource(getTransactions);
 
   const calendarDays = () => {
     const current = new Date(state.ui.currentMonth);
@@ -47,7 +52,8 @@ const Dashboard = () => {
     const y = date.getFullYear();
     const m = date.getMonth();
     const d = date.getDate();
-    return state.transactions
+    const data = transactions() || [];
+    return data
       .filter(t => {
         const td = new Date(t.date);
         return td.getFullYear() === y && td.getMonth() === m && td.getDate() === d;
@@ -67,10 +73,12 @@ const Dashboard = () => {
 
 
   // Hero total spent calculation
-  const totalSpent = () => state.transactions.reduce((acc, t) => acc + t.amount, 0);
+  const totalSpent = () => (transactions() || []).reduce((acc, t) => acc + t.amount, 0);
 
   // Count up animation
-  onMount(() => {
+  createEffect(() => {
+    if (transactions.loading) return;
+    
     const target = totalSpent();
     const duration = 1500;
     const start = performance.now();
@@ -193,15 +201,25 @@ const Dashboard = () => {
             <div class="grid grid-cols-3 gap-8">
               <div>
                 <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Remaining</p>
-                <p class="text-xl font-outfit font-semibold text-forest">{formatRupiah(7650000)}</p>
+                <p class="text-xl font-outfit font-semibold text-forest">
+                  {formatRupiah(Math.max(0, state.settings.monthlyLimit - totalSpent()))}
+                </p>
               </div>
               <div>
                 <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Days Left</p>
-                <p class="text-xl font-outfit font-semibold text-forest">14 Days</p>
+                <p class="text-xl font-outfit font-semibold text-forest">
+                  {(() => {
+                    const now = new Date();
+                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                    return lastDay - now.getDate();
+                  })()} Days
+                </p>
               </div>
               <div>
                 <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Daily Average</p>
-                <p class="text-xl font-outfit font-semibold text-forest">{formatRupiah(150000)}</p>
+                <p class="text-xl font-outfit font-semibold text-forest">
+                  {formatRupiah(totalSpent() / new Date().getDate())}
+                </p>
               </div>
             </div>
           </div>
@@ -227,7 +245,24 @@ const Dashboard = () => {
             </Tooltip>
           </div>
           <div class="flex-1 min-h-[200px]">
-             <SolidApexCharts options={barChartOptions()} series={[{ name: 'Spent', data: [120000, 240000, 180000, 310000, 95000, 150000, 210000] }]} type="bar" height="100%" />
+             <Show when={!transactions.loading} fallback={<div class="w-full h-full flex items-center justify-center text-earth/30">Loading...</div>}>
+                <SolidApexCharts 
+                  options={barChartOptions()} 
+                  series={[{ 
+                    name: 'Spent', 
+                    data: (() => {
+                      const last7Days = Array.from({length: 7}, (_, i) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() - (6 - i));
+                        return getDayAmount(d);
+                      });
+                      return last7Days;
+                    })()
+                  }]} 
+                  type="bar" 
+                  height="100%" 
+                />
+             </Show>
           </div>
         </div>
 
@@ -235,15 +270,38 @@ const Dashboard = () => {
         <div class="col-span-4 row-span-3 premium-card p-6 flex flex-col">
           <h4 class="font-outfit font-bold text-forest mb-6">Categories</h4>
           <div class="flex-1 min-h-[250px]">
-             <SolidApexCharts options={donutOptions} series={[1250000, 850000, 450000, 300000, 150000]} type="donut" height="100%" />
+             <Show when={!transactions.loading} fallback={<div class="w-full h-full flex items-center justify-center text-earth/30">Loading...</div>}>
+                <SolidApexCharts 
+                  options={donutOptions} 
+                  series={(() => {
+                    const cats: Record<string, number> = {};
+                    (transactions() || []).forEach(t => {
+                      cats[t.category] = (cats[t.category] || 0) + t.amount;
+                    });
+                    const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                    return sorted.map(s => s[1]);
+                  })()} 
+                  type="donut" 
+                  height="100%" 
+                />
+             </Show>
           </div>
           <div class="mt-6 space-y-3">
-             <For each={[
-               {name: 'Food', amount: 1250000, pct: 41},
-               {name: 'Transport', amount: 850000, pct: 28},
-               {name: 'Shopping', amount: 450000, pct: 15},
-               {name: 'Entertainment', amount: 300000, pct: 10}
-             ]}>
+             <For each={(() => {
+               const cats: Record<string, number> = {};
+               const total = totalSpent();
+               (transactions() || []).forEach(t => {
+                 cats[t.category] = (cats[t.category] || 0) + t.amount;
+               });
+               return Object.entries(cats)
+                 .sort((a, b) => b[1] - a[1])
+                 .slice(0, 4)
+                 .map(([name, amount]) => ({
+                   name,
+                   amount,
+                   pct: total > 0 ? Math.round((amount / total) * 100) : 0
+                 }));
+             })()}>
                {(cat) => (
                  <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -371,45 +429,10 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Transactions Table */}
-        <div class="col-span-12 premium-card overflow-hidden">
-          <div class="p-6 border-b border-forest/10 flex items-center justify-between">
-             <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
-             <button class="text-[10px] font-bold text-mid-green uppercase tracking-widest hover:underline">View All</button>
-          </div>
-          <table class="w-full text-left font-outfit">
-            <thead class="bg-sage/10 text-earth text-[10px] uppercase tracking-widest">
-              <tr>
-                <th class="px-6 py-4 font-semibold">Merchant</th>
-                <th class="px-6 py-4 font-semibold">Category</th>
-                <th class="px-6 py-4 font-semibold">Date</th>
-                <th class="px-6 py-4 font-semibold text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody class="text-sm divide-y divide-forest/5">
-              <For each={state.transactions.slice(-5).reverse()}>
-                {(t) => (
-                  <tr class="group hover:bg-page-bg transition-all">
-                    <td class="px-6 py-4 border-l-3 border-transparent group-hover:border-spring">
-                       <p class="font-semibold text-forest">{t.merchant}</p>
-                       <p class="text-[10px] text-earth">{t.note}</p>
-                    </td>
-                    <td class="px-6 py-4">
-                       <span class="px-2 py-1 bg-sage/30 text-forest text-[10px] rounded-md font-medium">{t.category}</span>
-                    </td>
-                    <td class="px-6 py-4 text-earth">{new Date(t.date).toLocaleDateString()}</td>
-                    <td class="px-6 py-4 text-right font-bold text-forest">{formatRupiah(t.amount)}</td>
-                  </tr>
-                )}
-              </For>
-            </tbody>
-          </table>
-          {state.transactions.length === 0 && (
-             <div class="p-12 text-center text-earth/50">
-                <span class="material-icons text-4xl mb-2">eco</span>
-                <p class="text-sm">No transactions yet. Start tending your garden!</p>
-             </div>
-          )}
-        </div>
+        <RecentTransactions 
+          transactions={transactions} 
+          currentMonth={state.ui.currentMonth} 
+        />
       </div>
     </div>
   );
