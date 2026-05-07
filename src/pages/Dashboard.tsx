@@ -5,6 +5,7 @@ import { Tooltip } from "../components/ui/Tooltip";
 import { RecentTransactions } from "../components/RecentTransactions";
 import { ActivityCalendar } from "../components/ActivityCalendar";
 import { formatRupiah, formatRupiahShort, formatMonth } from "../utils/format";
+import { CategoryCard } from "../components/CategoryCard";
 import { state, nextMonth, prevMonth } from "../store";
 import { getTransactions } from "../lib/db";
 
@@ -74,56 +75,6 @@ const Dashboard = () => {
     }
   });
 
-  const donutOptions: ApexOptions = {
-    chart: { type: 'donut' },
-    colors: ['#1A4D2E', '#2D7D46', '#52C278', '#C8E6C9', '#E8F5EC'],
-    labels: ['Food', 'Transport', 'Shopping', 'Entertainment', 'Others'],
-    legend: { show: false },
-    dataLabels: { enabled: false },
-    stroke: { show: false },
-    tooltip: {
-      custom: function({ series, seriesIndex, w }) {
-        const val = series[seriesIndex];
-        const category = w.globals.labels[seriesIndex];
-        return `
-          <div class="flex flex-col items-center" style="width: 0; overflow: visible;">
-            <div class="px-3 py-1.5 bg-[#1C2B20] text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center relative mb-2 whitespace-nowrap">
-              <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">${category}</span>
-              <span class="font-bold">${formatRupiah(val)}</span>
-              <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1C2B20]"></div>
-            </div>
-          </div>
-        `;
-      }
-    },
-    plotOptions: {
-      pie: {
-        donut: {
-          size: '75%',
-          labels: {
-            show: true,
-            name: {
-              color: '#5C6B5E',
-              fontFamily: 'Outfit'
-            },
-            value: {
-              color: '#1A4D2E',
-              fontFamily: 'Outfit',
-              fontWeight: 700,
-              formatter: (val) => formatRupiah(Number(val))
-            },
-            total: {
-              show: true,
-              label: 'Top Category',
-              formatter: () => formatRupiah(1500000),
-              color: '#5C6B5E',
-              fontFamily: 'Outfit'
-            }
-          }
-        }
-      }
-    }
-  };
 
   return (
     <div class="space-y-8 animate-fade-in-up">
@@ -223,54 +174,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Category Ring */}
-        <div class="col-span-4 row-span-3 premium-card p-6 flex flex-col">
-          <h4 class="font-outfit font-bold text-forest mb-6">Categories</h4>
-          <div class="flex-1 min-h-[250px]">
-             <Show when={!transactions.loading} fallback={<div class="w-full h-full flex items-center justify-center text-earth/30">Loading...</div>}>
-                <SolidApexCharts 
-                  options={donutOptions} 
-                  series={(() => {
-                    const cats: Record<string, number> = {};
-                    (transactions() || []).forEach(t => {
-                      cats[t.category] = (cats[t.category] || 0) + t.amount;
-                    });
-                    const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                    return sorted.map(s => s[1]);
-                  })()} 
-                  type="donut" 
-                  height="100%" 
-                />
-             </Show>
-          </div>
-          <div class="mt-6 space-y-3">
-             <For each={(() => {
-               const cats: Record<string, number> = {};
-               const total = totalSpent();
-               (transactions() || []).forEach(t => {
-                 cats[t.category] = (cats[t.category] || 0) + t.amount;
-               });
-               return Object.entries(cats)
-                 .sort((a, b) => b[1] - a[1])
-                 .slice(0, 4)
-                 .map(([name, amount]) => ({
-                   name,
-                   amount,
-                   pct: total > 0 ? Math.round((amount / total) * 100) : 0
-                 }));
-             })()}>
-               {(cat) => (
-                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                       <div class="w-2 h-2 rounded-full" style={{ 'background-color': cat.name === 'Food' ? '#1A4D2E' : cat.name === 'Transport' ? '#2D7D46' : cat.name === 'Shopping' ? '#52C278' : '#C8E6C9' }} />
-                       <span class="text-xs font-outfit text-earth">{cat.name}</span>
-                    </div>
-                    <span class="text-xs font-outfit font-bold text-forest">{formatRupiah(cat.amount)} ({cat.pct}%)</span>
-                 </div>
-               )}
-             </For>
-          </div>
-        </div>
+        <CategoryCard transactions={transactions} />
 
         <ActivityCalendar 
           transactions={transactions}
