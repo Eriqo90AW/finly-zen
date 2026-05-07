@@ -3,6 +3,8 @@ import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { Tooltip } from "./ui/Tooltip";
 import { formatRupiah, formatRupiahShort } from "../utils/format";
+import { state } from "../store";
+import { getDateRange } from "../utils/date";
 
 interface DailySpendChartProps {
   transactions: Resource<any[]>;
@@ -14,8 +16,14 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
 
   const chartData = createMemo(() => {
     const data = props.transactions() || [];
+    const { end: periodEnd } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
+    
+    // Use the period end as the reference, but don't go past today if period includes today
+    const now = new Date();
+    const referenceDate = periodEnd > now ? now : periodEnd;
+
     const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
+      const d = new Date(referenceDate);
       d.setDate(d.getDate() - (6 - i));
       
       const y = d.getFullYear();
@@ -25,13 +33,11 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
       const amount = data
         .filter(t => {
           const td = new Date(t.date);
-          // Compare year, month, date
           return td.getFullYear() === y && td.getMonth() === m && td.getDate() === date && t.type === 'expense';
         })
         .reduce((acc, t) => acc + t.amount, 0);
         
       return {
-        // Date format like "7 Mei"
         date: d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
         amount
       };

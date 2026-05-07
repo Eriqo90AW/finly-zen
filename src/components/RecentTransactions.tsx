@@ -5,6 +5,8 @@ import {
   formatRupiah,
   formatDateDetail,
 } from "../utils/format";
+import { state } from "../store";
+import { getDateRange, isDateInRange } from "../utils/date";
 
 interface RecentTransactionsProps {
   transactions: Resource<Transaction[]>;
@@ -14,15 +16,10 @@ interface RecentTransactionsProps {
 export const RecentTransactions = (props: RecentTransactionsProps) => {
   const filteredTransactions = () => {
     const data = props.transactions() || [];
-    const targetDate = new Date(props.currentMonth);
-    const targetMonth = targetDate.getMonth();
-    const targetYear = targetDate.getFullYear();
+    const { start, end } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
 
     return data
-      .filter((t) => {
-        const d = new Date(t.date);
-        return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
-      })
+      .filter((t) => isDateInRange(t.date, start, end))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 

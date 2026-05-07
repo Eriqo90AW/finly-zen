@@ -30,6 +30,8 @@ export type Goal = {
   date: string;
 };
 
+export type DatePeriod = "1-30" | "21-20" | "25-25";
+
 export type AppState = {
   transactions: Transaction[];
   budgets: Budget[];
@@ -40,6 +42,7 @@ export type AppState = {
   };
   ui: {
     currentMonth: string; // ISO string for the first day of the month
+    datePeriod: DatePeriod;
     sidebarOpen: boolean;
     insightsOpen: boolean;
     showAddExpense: boolean;
@@ -66,6 +69,7 @@ const DEFAULT_STATE: AppState = {
   },
   ui: {
     currentMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+    datePeriod: "1-30",
     sidebarOpen: false,
     insightsOpen: false,
     showAddExpense: false,

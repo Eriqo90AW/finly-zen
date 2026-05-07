@@ -1,7 +1,8 @@
 import { For, createMemo, Accessor, Resource } from "solid-js";
 import { Tooltip } from "./ui/Tooltip";
 import { formatRupiah, formatMonth } from "../utils/format";
-import { Transaction } from "../store";
+import { Transaction, state } from "../store";
+import { getDateRange, isDateInRange } from "../utils/date";
 
 interface ActivityCalendarProps {
   transactions: Resource<Transaction[]>;
@@ -12,6 +13,8 @@ interface ActivityCalendarProps {
 }
 
 export const ActivityCalendar = (props: ActivityCalendarProps) => {
+  const dateRange = createMemo(() => getDateRange(props.currentMonth, state.ui.datePeriod));
+
   const calendarDays = createMemo(() => {
     const current = new Date(props.currentMonth);
     const startOfMonth = new Date(current.getFullYear(), current.getMonth(), 1);
@@ -45,6 +48,11 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
   });
 
   const getDayAmount = (date: Date) => {
+    const { start, end } = dateRange();
+    
+    // If date is outside the selected period, return 0
+    if (!isDateInRange(date, start, end)) return 0;
+
     const y = date.getFullYear();
     const m = date.getMonth();
     const d = date.getDate();

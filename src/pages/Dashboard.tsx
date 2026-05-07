@@ -1,14 +1,12 @@
-import { createSignal, onMount, For, createResource, Show, createEffect, createMemo } from "solid-js";
-import { SolidApexCharts } from 'solid-apexcharts';
-import { ApexOptions } from "apexcharts";
-import { Tooltip } from "../components/ui/Tooltip";
+import { createSignal, For, createResource, createEffect, createMemo } from "solid-js";
 import { RecentTransactions } from "../components/RecentTransactions";
 import { ActivityCalendar } from "../components/ActivityCalendar";
-import { formatRupiah, formatRupiahShort, formatMonth } from "../utils/format";
+import { formatRupiah } from "../utils/format";
 import { CategoryCard } from "../components/CategoryCard";
 import { DailySpendChart } from "../components/DailySpendChart";
 import { state, nextMonth, prevMonth } from "../store";
 import { getTransactions } from "../lib/db";
+import { getDateRange, isDateInRange } from "../utils/date";
 
 
 
@@ -21,17 +19,12 @@ const Dashboard = () => {
 
 
 
-  // Filtered transactions for the current month
+  // Filtered transactions for the selected period
   const monthlyTransactions = createMemo(() => {
     const data = transactions() || [];
-    const currentMonthDate = new Date(state.ui.currentMonth);
-    const targetMonth = currentMonthDate.getMonth();
-    const targetYear = currentMonthDate.getFullYear();
+    const { start, end } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
     
-    return data.filter(t => {
-      const d = new Date(t.date);
-      return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
-    });
+    return data.filter(t => isDateInRange(t.date, start, end));
   });
 
   const totalIncome = () => monthlyTransactions().filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
@@ -96,14 +89,23 @@ const Dashboard = () => {
               <div>
                 <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Daily Average</p>
                 <p class="text-xl font-outfit font-semibold text-forest">
-                  {(() => {
-                    const current = new Date(state.ui.currentMonth);
-                    const now = new Date();
-                    const isCurrentMonth = current.getMonth() === now.getMonth() && current.getFullYear() === now.getFullYear();
-                    
-                    const divisor = isCurrentMonth ? now.getDate() : new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
-                    return formatRupiah(totalExpenses() / (divisor || 1));
-                  })()}
+                    {(() => {
+                      const { start, end } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
+                      const now = new Date();
+                      
+                      let divisor;
+                      if (now >= start && now <= end) {
+                        // Current period: use days passed since start
+                        const diffTime = Math.abs(now.getTime() - start.getTime());
+                        divisor = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      } else {
+                        // Past or future period: use total days in period
+                        const diffTime = Math.abs(end.getTime() - start.getTime());
+                        divisor = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      }
+                      
+                      return formatRupiah(totalExpenses() / (divisor || 1));
+                    })()}
                 </p>
               </div>
             </div>
