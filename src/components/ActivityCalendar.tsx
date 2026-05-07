@@ -52,7 +52,7 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
     return data
       .filter(t => {
         const td = new Date(t.date);
-        return td.getFullYear() === y && td.getMonth() === m && td.getDate() === d;
+        return td.getFullYear() === y && td.getMonth() === m && td.getDate() === d && t.type === 'expense';
       })
       .reduce((acc, t) => acc + t.amount, 0);
   };

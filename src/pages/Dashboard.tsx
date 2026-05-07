@@ -1,4 +1,4 @@
-import { createSignal, onMount, For, createResource, Show, createEffect } from "solid-js";
+import { createSignal, onMount, For, createResource, Show, createEffect, createMemo } from "solid-js";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { Tooltip } from "../components/ui/Tooltip";
@@ -20,14 +20,28 @@ const Dashboard = () => {
 
 
 
-  // Hero total spent calculation
-  const totalSpent = () => (transactions() || []).reduce((acc, t) => acc + t.amount, 0);
+  // Filtered transactions for the current month
+  const monthlyTransactions = createMemo(() => {
+    const data = transactions() || [];
+    const currentMonthDate = new Date(state.ui.currentMonth);
+    const targetMonth = currentMonthDate.getMonth();
+    const targetYear = currentMonthDate.getFullYear();
+    
+    return data.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+    });
+  });
+
+  const totalIncome = () => monthlyTransactions().filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+  const totalExpenses = () => monthlyTransactions().filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+  const netTotal = () => totalIncome() - totalExpenses();
 
   // Count up animation
   createEffect(() => {
     if (transactions.loading) return;
     
-    const target = totalSpent();
+    const target = netTotal();
     const duration = 1500;
     const start = performance.now();
 
@@ -88,7 +102,7 @@ const Dashboard = () => {
           
           <div class="relative z-10 space-y-8">
             <div class="space-y-1">
-              <p class="text-xs font-bold text-forest/40 uppercase tracking-widest">Total Spent this Month</p>
+              <p class="text-xs font-bold text-forest/40 uppercase tracking-widest">Net Balance this Month</p>
               <h3 class="text-7xl hero-numeral text-forest">
                 {formatRupiah(displayTotal())}
               </h3>
@@ -98,25 +112,28 @@ const Dashboard = () => {
             
             <div class="grid grid-cols-3 gap-8">
               <div>
-                <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Remaining</p>
+                <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Income</p>
                 <p class="text-xl font-outfit font-semibold text-forest">
-                  {formatRupiah(Math.max(0, state.settings.monthlyLimit - totalSpent()))}
+                  {formatRupiah(totalIncome())}
                 </p>
               </div>
               <div>
-                <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Days Left</p>
+                <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Expenses</p>
                 <p class="text-xl font-outfit font-semibold text-forest">
-                  {(() => {
-                    const now = new Date();
-                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                    return lastDay - now.getDate();
-                  })()} Days
+                  {formatRupiah(totalExpenses())}
                 </p>
               </div>
               <div>
                 <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Daily Average</p>
                 <p class="text-xl font-outfit font-semibold text-forest">
-                  {formatRupiah(totalSpent() / new Date().getDate())}
+                  {(() => {
+                    const current = new Date(state.ui.currentMonth);
+                    const now = new Date();
+                    const isCurrentMonth = current.getMonth() === now.getMonth() && current.getFullYear() === now.getFullYear();
+                    
+                    const divisor = isCurrentMonth ? now.getDate() : new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
+                    return formatRupiah(totalExpenses() / (divisor || 1));
+                  })()}
                 </p>
               </div>
             </div>
@@ -160,7 +177,7 @@ const Dashboard = () => {
                         return data
                           .filter(t => {
                             const td = new Date(t.date);
-                            return td.getFullYear() === y && td.getMonth() === m && td.getDate() === date;
+                            return td.getFullYear() === y && td.getMonth() === m && td.getDate() === date && t.type === 'expense';
                           })
                           .reduce((acc, t) => acc + t.amount, 0);
                       });
@@ -174,7 +191,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <CategoryCard transactions={transactions} />
+        <CategoryCard transactions={monthlyTransactions()} loading={transactions.loading} />
 
         <ActivityCalendar 
           transactions={transactions}

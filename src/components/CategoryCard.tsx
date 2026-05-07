@@ -2,19 +2,22 @@ import { Show, For, Resource, createMemo } from "solid-js";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { formatRupiah } from "../utils/format";
-import { Transaction } from "../store";
+import { Transaction, state } from "../store";
 
 interface CategoryCardProps {
-  transactions: Resource<Transaction[]>;
+  transactions: Transaction[];
+  loading?: boolean;
 }
 
 export const CategoryCard = (props: CategoryCardProps) => {
   const categoryData = createMemo(() => {
-    const data = props.transactions() || [];
+    const data = props.transactions || [];
+    const expenseData = data.filter(t => t.type === 'expense');
+    
     const cats: Record<string, { amount: number; color?: string }> = {};
     let total = 0;
 
-    data.forEach(t => {
+    expenseData.forEach(t => {
       if (!cats[t.category]) {
         cats[t.category] = { amount: 0, color: t.categoryColor };
       }
@@ -117,7 +120,7 @@ export const CategoryCard = (props: CategoryCardProps) => {
       <h4 class="font-outfit font-bold text-forest mb-6">Categories</h4>
       
       <div class="relative h-[250px] mb-4">
-        <Show when={!props.transactions.loading} fallback={<div class="w-full h-full flex items-center justify-center text-earth/30">Loading...</div>}>
+        <Show when={!props.loading} fallback={<div class="w-full h-full flex items-center justify-center text-earth/30">Loading...</div>}>
           <SolidApexCharts 
             options={chartOptions()} 
             series={categoryData().sorted.map(c => c.amount)} 
