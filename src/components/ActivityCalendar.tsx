@@ -1,4 +1,4 @@
-import { For, createMemo, Accessor, Resource } from "solid-js";
+import { For, createMemo, Accessor, Resource, createSignal, createEffect } from "solid-js";
 import { Tooltip } from "./ui/Tooltip";
 import { formatRupiah, formatMonth } from "../utils/format";
 import { Transaction, state } from "../store";
@@ -6,17 +6,33 @@ import { getDateRange, isDateInRange } from "../utils/date";
 
 interface ActivityCalendarProps {
   transactions: Resource<Transaction[]>;
-  currentMonth: string;
   dailyBudget: Accessor<number>;
-  onNextMonth: () => void;
-  onPrevMonth: () => void;
 }
 
 export const ActivityCalendar = (props: ActivityCalendarProps) => {
-  const dateRange = createMemo(() => getDateRange(props.currentMonth, state.ui.datePeriod));
+  const [viewMonth, setViewMonth] = createSignal(state.ui.currentMonth);
+
+  // Sync with global month if it changes
+  createEffect(() => {
+    setViewMonth(state.ui.currentMonth);
+  });
+
+  const handleNextMonth = () => {
+    const d = new Date(viewMonth());
+    d.setMonth(d.getMonth() + 1);
+    setViewMonth(d.toISOString());
+  };
+
+  const handlePrevMonth = () => {
+    const d = new Date(viewMonth());
+    d.setMonth(d.getMonth() - 1);
+    setViewMonth(d.toISOString());
+  };
+
+  const dateRange = createMemo(() => getDateRange(state.ui.currentMonth, state.ui.datePeriod));
 
   const calendarDays = createMemo(() => {
-    const current = new Date(props.currentMonth);
+    const current = new Date(viewMonth());
     const startOfMonth = new Date(current.getFullYear(), current.getMonth(), 1);
     const endOfMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0);
     
@@ -84,17 +100,17 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
       <div class="flex items-center justify-between mb-6">
         <div class="flex flex-col">
           <h4 class="font-outfit font-bold text-forest leading-tight">Activity Calendar</h4>
-          <p class="text-[10px] font-bold text-earth uppercase tracking-widest">{formatMonth(new Date(props.currentMonth))}</p>
+          <p class="text-[10px] font-bold text-earth uppercase tracking-widest">{formatMonth(new Date(viewMonth()))}</p>
         </div>
         <div class="flex items-center gap-2">
           <button 
-            onClick={props.onPrevMonth}
+            onClick={handlePrevMonth}
             class="w-8 h-8 rounded-full hover:bg-sage/20 flex items-center justify-center transition-colors text-forest"
           >
             <span class="material-icons text-sm">chevron_left</span>
           </button>
           <button 
-            onClick={props.onNextMonth}
+            onClick={handleNextMonth}
             class="w-8 h-8 rounded-full hover:bg-sage/20 flex items-center justify-center transition-colors text-forest"
           >
             <span class="material-icons text-sm">chevron_right</span>

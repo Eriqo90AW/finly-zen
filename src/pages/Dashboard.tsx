@@ -138,10 +138,7 @@ const Dashboard = () => {
 
         <ActivityCalendar 
           transactions={transactions}
-          currentMonth={state.ui.currentMonth}
           dailyBudget={dailyBudget}
-          onNextMonth={nextMonth}
-          onPrevMonth={prevMonth}
         />
 
 
