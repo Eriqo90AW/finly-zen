@@ -1,0 +1,82 @@
+[
+  {
+    "id": "t101",
+    "amount": 45.50,
+    "category": "Food",
+    "merchant": "Whole Foods",
+    "date": "2026-05-02T10:30:00Z",
+    "note": "Weekly groceries"
+  },
+  {
+    "id": "t102",
+    "amount": 12.00,
+    "category": "Transport",
+    "merchant": "Uber",
+    "date": "2026-05-05T08:15:00Z",
+    "note": "Ride to office"
+  },
+  {
+    "id": "t103",
+    "amount": 120.00,
+    "category": "Utilities",
+    "merchant": "Electric Co",
+    "date": "2026-05-07T09:00:00Z",
+    "note": "May electricity bill"
+  },
+  {
+    "id": "t104",
+    "amount": 65.00,
+    "category": "Entertainment",
+    "merchant": "Netflix & Spotify",
+    "date": "2026-05-10T12:00:00Z",
+    "note": "Monthly subscriptions"
+  },
+  {
+    "id": "t105",
+    "amount": 34.25,
+    "category": "Food",
+    "merchant": "Sweetgreen",
+    "date": "2026-05-12T12:45:00Z",
+    "note": "Lunch with team"
+  },
+  {
+    "id": "t106",
+    "amount": 89.99,
+    "category": "Shopping",
+    "merchant": "Amazon",
+    "date": "2026-05-15T16:20:00Z",
+    "note": "New headphones"
+  },
+  {
+    "id": "t107",
+    "amount": 25.00,
+    "category": "Health",
+    "merchant": "CVS Pharmacy",
+    "date": "2026-05-18T14:10:00Z",
+    "note": "Vitamins"
+  },
+  {
+    "id": "t108",
+    "amount": 210.00,
+    "category": "Shopping",
+    "merchant": "Nike",
+    "date": "2026-05-22T11:00:00Z",
+    "note": "Running shoes"
+  },
+  {
+    "id": "t109",
+    "amount": 15.50,
+    "category": "Transport",
+    "merchant": "City Transit",
+    "date": "2026-05-25T08:30:00Z",
+    "note": "Weekly pass"
+  },
+  {
+    "id": "t110",
+    "amount": 55.00,
+    "category": "Food",
+    "merchant": "Italian Bistro",
+    "date": "2026-05-28T19:30:00Z",
+    "note": "Dinner date"
+  }
+]

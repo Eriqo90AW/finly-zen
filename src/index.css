@@ -1,1 +1,82 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-page-bg: #F0F7F2;
+  --color-card-bg: #FFFFFF;
+  --color-forest: #1A4D2E;
+  --color-mid-green: #2D7D46;
+  --color-spring: #52C278;
+  --color-sage: #E8F5EC;
+  --color-cream: #FDFAF5;
+  --color-earth: #5C6B5E;
+  --color-near-black: #1C2B20;
+  
+  --font-cormorant: 'Cormorant Garamond', serif;
+  --font-outfit: 'Outfit', sans-serif;
+  
+  --shadow-premium: 0 2px 20px rgba(26,77,46,0.08);
+  --radius-premium: 18px;
+}
+
+@layer base {
+  body {
+    @apply bg-page-bg text-near-black font-outfit antialiased;
+    margin: 0;
+  }
+
+  h1, h2, h3, .hero-numeral {
+    @apply font-cormorant font-bold;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-forest/20 rounded-full hover:bg-forest/40 transition-colors;
+  }
+}
+
+@layer components {
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: minmax(100px, auto);
+    gap: 1.5rem;
+  }
+
+  .premium-card {
+    @apply bg-card-bg rounded-premium border border-forest/10 shadow-premium transition-all duration-200;
+  }
+
+  .premium-card:hover {
+    @apply bg-neutral-50 shadow-spring;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-earth hover:bg-sage/50 hover:text-forest transition-all;
+  }
+
+  .nav-link.active {
+    @apply bg-sage text-forest font-semibold;
+  }
+}
+
+/* Staggered entry animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
