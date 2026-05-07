@@ -3,7 +3,7 @@ import { state } from "../store";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { Tooltip } from "../components/ui/Tooltip";
-import { formatRupiah } from "../utils/format";
+import { formatRupiah, formatRupiahShort } from "../utils/format";
 
 const Dashboard = () => {
   const [displayTotal, setDisplayTotal] = createSignal(0);
@@ -39,16 +39,23 @@ const Dashboard = () => {
         const val = series[seriesIndex][dataPointIndex];
         const category = w.globals.labels[dataPointIndex];
         return `
-          <div class="px-3 py-1.5 bg-[#1C2B20] text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center relative overflow-visible mb-2">
-            <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">Day ${category}</span>
-            <span class="font-bold">${formatRupiah(val)}</span>
-            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1C2B20]"></div>
+          <div class="flex flex-col items-center" style="width: 0; overflow: visible;">
+            <div class="px-3 py-1.5 bg-[#1C2B20] text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center relative mb-2 whitespace-nowrap">
+              <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">Day ${category}</span>
+              <span class="font-bold">${formatRupiahShort(val)}</span>
+              <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1C2B20]"></div>
+            </div>
           </div>
         `;
       }
     },
     xaxis: { categories: ['1', '5', '10', '15', '20', '25', '30'], labels: { style: { colors: '#5C6B5E', fontFamily: 'Outfit' } } },
-    yaxis: { labels: { style: { colors: '#5C6B5E', fontFamily: 'Outfit' } } },
+    yaxis: { 
+      labels: { 
+        style: { colors: '#5C6B5E', fontFamily: 'Outfit' },
+        formatter: (value) => formatRupiahShort(value)
+      } 
+    },
     grid: { borderColor: 'rgba(26,77,46,0.05)' },
     annotations: {
       yaxis: [{ y: dailyBudget(), borderColor: '#1A4D2E', label: { text: 'Budget', style: { background: '#1A4D2E', color: '#fff' } } }]
@@ -67,10 +74,12 @@ const Dashboard = () => {
         const val = series[seriesIndex];
         const category = w.globals.labels[seriesIndex];
         return `
-          <div class="px-3 py-1.5 bg-[#1C2B20] text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center relative overflow-visible mb-2">
-            <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">${category}</span>
-            <span class="font-bold">${formatRupiah(val)}</span>
-            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1C2B20]"></div>
+          <div class="flex flex-col items-center" style="width: 0; overflow: visible;">
+            <div class="px-3 py-1.5 bg-[#1C2B20] text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center relative mb-2 whitespace-nowrap">
+              <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">${category}</span>
+              <span class="font-bold">${formatRupiah(val)}</span>
+              <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1C2B20]"></div>
+            </div>
           </div>
         `;
       }
@@ -89,7 +98,7 @@ const Dashboard = () => {
               color: '#1A4D2E',
               fontFamily: 'Outfit',
               fontWeight: 700,
-              formatter: (val) => formatRupiah(val)
+              formatter: (val) => formatRupiah(Number(val))
             },
             total: {
               show: true,
@@ -142,8 +151,8 @@ const Dashboard = () => {
         </div>
 
         {/* Daily Spend Bar Chart */}
-        <div class="col-span-4 row-span-2 premium-card p-6 flex flex-col">
-          <div class="flex items-center justify-between mb-6">
+        <div class="col-span-4 row-span-2 premium-card px-3 py-6 flex flex-col">
+          <div class="flex items-center justify-between mb-6 mx-3">
             <h4 class="font-outfit font-bold text-forest">Daily Spend</h4>
             <Tooltip content="Click to edit budget">
               <div 
@@ -155,13 +164,13 @@ const Dashboard = () => {
                   }
                 }}
               >
-                <span>Budget: {formatRupiah(dailyBudget())}</span>
                 <span class="material-icons text-[10px] opacity-0 group-hover/edit:opacity-100 transition-opacity">edit</span>
+                <span>Budget: {formatRupiah(dailyBudget())}</span>
               </div>
             </Tooltip>
           </div>
           <div class="flex-1 min-h-[200px]">
-             <SolidApexCharts options={barChartOptions()} series={[{ name: 'Spent', data: [44, 55, 41, 67, 22, 43, 21] }]} type="bar" height="100%" />
+             <SolidApexCharts options={barChartOptions()} series={[{ name: 'Spent', data: [120000, 240000, 180000, 310000, 95000, 150000, 210000] }]} type="bar" height="100%" />
           </div>
         </div>
 
@@ -169,17 +178,22 @@ const Dashboard = () => {
         <div class="col-span-4 row-span-3 premium-card p-6 flex flex-col">
           <h4 class="font-outfit font-bold text-forest mb-6">Categories</h4>
           <div class="flex-1 min-h-[250px]">
-             <SolidApexCharts options={donutOptions} series={[400, 300, 200, 150, 100]} type="donut" height="100%" />
+             <SolidApexCharts options={donutOptions} series={[1250000, 850000, 450000, 300000, 150000]} type="donut" height="100%" />
           </div>
           <div class="mt-6 space-y-3">
-             <For each={['Food', 'Transport', 'Shopping', 'Entertainment']}>
-               {(cat, i) => (
+             <For each={[
+               {name: 'Food', amount: 1250000, pct: 41},
+               {name: 'Transport', amount: 850000, pct: 28},
+               {name: 'Shopping', amount: 450000, pct: 15},
+               {name: 'Entertainment', amount: 300000, pct: 10}
+             ]}>
+               {(cat) => (
                  <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                       <div class="w-2 h-2 rounded-full" />
-                       <span class="text-xs font-outfit text-earth">{cat}</span>
+                       <div class="w-2 h-2 rounded-full" style={{ 'background-color': cat.name === 'Food' ? '#1A4D2E' : cat.name === 'Transport' ? '#2D7D46' : cat.name === 'Shopping' ? '#52C278' : '#C8E6C9' }} />
+                       <span class="text-xs font-outfit text-earth">{cat.name}</span>
                     </div>
-                    <span class="text-xs font-outfit font-bold text-forest">{formatRupiah(1250000)} (14%)</span>
+                    <span class="text-xs font-outfit font-bold text-forest">{formatRupiah(cat.amount)} ({cat.pct}%)</span>
                  </div>
                )}
              </For>

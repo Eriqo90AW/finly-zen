@@ -67,7 +67,7 @@
 
 /* ApexCharts Global Tooltip Overrides */
 .apexcharts-tooltip {
-  @apply !bg-transparent !border-none !shadow-none overflow-visible transition-none;
+  @apply !bg-transparent !border-none !shadow-none !overflow-visible !pointer-events-none transition-none;
 }
 .apexcharts-tooltip-title {
   @apply !hidden;
