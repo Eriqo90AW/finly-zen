@@ -3,6 +3,7 @@ import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { Tooltip } from "../components/ui/Tooltip";
 import { RecentTransactions } from "../components/RecentTransactions";
+import { ActivityCalendar } from "../components/ActivityCalendar";
 import { formatRupiah, formatRupiahShort, formatMonth } from "../utils/format";
 import { state, nextMonth, prevMonth } from "../store";
 import { getTransactions } from "../lib/db";
@@ -16,60 +17,6 @@ const Dashboard = () => {
   // Supabase Resources
   const [transactions] = createResource(getTransactions);
 
-  const calendarDays = () => {
-    const current = new Date(state.ui.currentMonth);
-    const startOfMonth = new Date(current.getFullYear(), current.getMonth(), 1);
-    const endOfMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0);
-    
-    const days = [];
-    
-    // Padding start (Monday start)
-    const startDay = (startOfMonth.getDay() + 6) % 7;
-    for (let i = startDay; i > 0; i--) {
-      const d = new Date(startOfMonth);
-      d.setDate(d.getDate() - i);
-      days.push({ date: d, isCurrentMonth: false });
-    }
-    
-    // Current month
-    for (let i = 1; i <= endOfMonth.getDate(); i++) {
-      const d = new Date(current.getFullYear(), current.getMonth(), i);
-      days.push({ date: d, isCurrentMonth: true });
-    }
-    
-    // Padding end to 42 cells (6 weeks) for consistent layout
-    const remaining = 42 - days.length;
-    for (let i = 1; i <= remaining; i++) {
-      const d = new Date(endOfMonth);
-      d.setDate(d.getDate() + i);
-      days.push({ date: d, isCurrentMonth: false });
-    }
-    
-    return days;
-  };
-
-  const getDayAmount = (date: Date) => {
-    const y = date.getFullYear();
-    const m = date.getMonth();
-    const d = date.getDate();
-    const data = transactions() || [];
-    return data
-      .filter(t => {
-        const td = new Date(t.date);
-        return td.getFullYear() === y && td.getMonth() === m && td.getDate() === d;
-      })
-      .reduce((acc, t) => acc + t.amount, 0);
-  };
-
-
-  const getIntensityColor = (amount: number) => {
-    if (amount === 0) return 'rgba(26, 77, 46, 0.05)';
-    if (amount < dailyBudget() * 0.5) return '#E8F5EC';
-    if (amount < dailyBudget()) return '#C8E6C9';
-    if (amount < dailyBudget() * 1.5) return '#52C278';
-    if (amount < dailyBudget() * 2.5) return '#2D7D46';
-    return '#1A4D2E';
-  };
 
 
   // Hero total spent calculation
@@ -254,7 +201,17 @@ const Dashboard = () => {
                       const last7Days = Array.from({length: 7}, (_, i) => {
                         const d = new Date();
                         d.setDate(d.getDate() - (6 - i));
-                        return getDayAmount(d);
+                        
+                        const y = d.getFullYear();
+                        const m = d.getMonth();
+                        const date = d.getDate();
+                        const data = transactions() || [];
+                        return data
+                          .filter(t => {
+                            const td = new Date(t.date);
+                            return td.getFullYear() === y && td.getMonth() === m && td.getDate() === date;
+                          })
+                          .reduce((acc, t) => acc + t.amount, 0);
                       });
                       return last7Days;
                     })()
@@ -315,89 +272,13 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Activity Calendar */}
-        <div class="col-span-5 row-span-3 premium-card p-6 flex flex-col">
-          <div class="flex items-center justify-between mb-6">
-            <div class="flex flex-col">
-              <h4 class="font-outfit font-bold text-forest leading-tight">Activity Calendar</h4>
-              <p class="text-[10px] font-bold text-earth uppercase tracking-widest">{formatMonth(new Date(state.ui.currentMonth))}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button 
-                onClick={prevMonth}
-                class="w-8 h-8 rounded-full hover:bg-sage/20 flex items-center justify-center transition-colors text-forest"
-              >
-                <span class="material-icons text-sm">chevron_left</span>
-              </button>
-              <button 
-                onClick={nextMonth}
-                class="w-8 h-8 rounded-full hover:bg-sage/20 flex items-center justify-center transition-colors text-forest"
-              >
-                <span class="material-icons text-sm">chevron_right</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-7 gap-1 mb-2">
-            <For each={['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']}>
-              {(day) => (
-                <div class="text-[7px] font-bold text-earth uppercase tracking-widest text-center py-1 truncate">
-                  {day}
-                </div>
-              )}
-            </For>
-          </div>
-
-
-          <div class="flex-1 grid grid-cols-7 grid-rows-6 gap-1.5">
-            <For each={calendarDays()}>
-              {(day) => {
-                const amount = getDayAmount(day.date);
-                return (
-                  <Tooltip 
-                    class="relative group w-full h-full"
-                    content={
-                      <div class="flex flex-col items-center">
-                        <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">
-                          {day.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </span>
-                        <span class="font-bold">{formatRupiah(amount)}</span>
-                      </div>
-                    }
-                  >
-                    <div 
-                      class="w-full h-full rounded-md transition-all group-hover:ring-2 group-hover:ring-spring cursor-pointer flex items-center justify-center relative overflow-hidden"
-                      style={{ 
-                        'background-color': getIntensityColor(amount),
-                        'opacity': day.isCurrentMonth ? 1 : 0.25
-                      }}
-                    >
-                      <span class={`text-[9px] font-outfit font-bold ${amount > dailyBudget() ? 'text-white' : 'text-forest/40'} relative z-10`}>
-                        {day.date.getDate()}
-                      </span>
-                    </div>
-                  </Tooltip>
-                );
-              }}
-            </For>
-          </div>
-          
-          <div class="mt-4 flex items-center justify-between">
-            <div class="flex items-center gap-1">
-              <span class="text-[8px] text-earth uppercase">Less</span>
-              <div class="flex gap-1">
-                <div class="w-2 h-2 rounded-sm bg-sage/10" />
-                <div class="w-2 h-2 rounded-sm bg-[#E8F5EC]" />
-                <div class="w-2 h-2 rounded-sm bg-[#C8E6C9]" />
-                <div class="w-2 h-2 rounded-sm bg-[#52C278]" />
-                <div class="w-2 h-2 rounded-sm bg-[#2D7D46]" />
-                <div class="w-2 h-2 rounded-sm bg-[#1A4D2E]" />
-              </div>
-              <span class="text-[8px] text-earth uppercase ml-1">More</span>
-            </div>
-            <p class="text-[8px] font-bold text-earth uppercase tracking-widest">Heatmap intensity</p>
-          </div>
-        </div>
+        <ActivityCalendar 
+          transactions={transactions}
+          currentMonth={state.ui.currentMonth}
+          dailyBudget={dailyBudget}
+          onNextMonth={nextMonth}
+          onPrevMonth={prevMonth}
+        />
 
 
         {/* Streak & Wins */}
