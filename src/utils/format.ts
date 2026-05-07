@@ -8,11 +8,13 @@ export const formatRupiah = (amount: number): string => {
 export const formatRupiahShort = (amount: number): string => {
   if (amount >= 1000000) {
     const value = amount / 1000000;
-    return "Rp" + value.toString().replace(".", ",") + "jt";
+    const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2);
+    return "Rp" + formatted.replace(".", ",") + "jt";
   }
   if (amount >= 1000) {
     const value = amount / 1000;
-    return "Rp" + value.toString().replace(".", ",") + "rb";
+    const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2);
+    return "Rp" + formatted.replace(".", ",") + "rb";
   }
   return "Rp" + amount.toString();
 };
