@@ -16,3 +16,11 @@ export const formatRupiahShort = (amount: number): string => {
   }
   return "Rp" + amount.toString();
 };
+
+export const formatMonth = (date: Date): string => {
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+};
+
