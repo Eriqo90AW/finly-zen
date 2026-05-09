@@ -1,11 +1,13 @@
-export const formatRupiah = (amount: number): string => {
+export const formatRupiah = (amount: number | null | undefined): string => {
+  if (amount == null) return "Rp0";
   return "Rp" + new Intl.NumberFormat("id-ID", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
 };
 
-export const formatRupiahShort = (amount: number): string => {
+export const formatRupiahShort = (amount: number | null | undefined): string => {
+  if (amount == null) return "Rp0";
   if (amount >= 1000000) {
     const value = amount / 1000000;
     const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2);

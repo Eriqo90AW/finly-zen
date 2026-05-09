@@ -96,7 +96,7 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
   };
 
   return (
-    <div class="col-span-5 row-span-3 premium-card p-6 flex flex-col">
+    <div class="premium-card p-6 flex flex-col h-full">
       <div class="flex items-center justify-between mb-6">
         <div class="flex flex-col">
           <h4 class="font-outfit font-bold text-forest leading-tight">Activity Calendar</h4>

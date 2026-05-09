@@ -1,4 +1,4 @@
-import { For, createMemo, createSignal } from "solid-js";
+import { For, createMemo, createSignal, Show } from "solid-js";
 import { state } from "../store";
 import SearchIcon from "@suid/icons-material/SearchOutlined";
 import FilterListIcon from "@suid/icons-material/FilterListOutlined";
@@ -13,7 +13,7 @@ const Transactions = () => {
 
   const transactionsByDate = createMemo(() => {
     const groups: Record<string, typeof state.transactions> = {};
-    state.transactions.forEach((t) => {
+    (state.transactions || []).forEach((t) => {
       const date = new Date(t.date).toLocaleDateString("en-US", {
         weekday: "long",
         month: "short",
@@ -80,12 +80,14 @@ const Transactions = () => {
           </p>
         </div>
         <div class="h-[100px]">
-          <SolidApexCharts
-            options={areaChartOptions}
-            series={[{ name: "Spent", data: [31, 40, 28, 51, 42, 109, 100] }]}
-            type="area"
-            height="100%"
-          />
+          <Show when={isChartVisible()}>
+            <SolidApexCharts
+              options={areaChartOptions}
+              series={[{ name: "Spent", data: [31, 40, 28, 51, 42, 109, 100] }]}
+              type="area"
+              height="100%"
+            />
+          </Show>
         </div>
       </div>
 
@@ -158,7 +160,7 @@ const Transactions = () => {
           )}
         </For>
 
-        {state.transactions.length === 0 && (
+        {(!state.transactions || state.transactions.length === 0) && (
           <div class="p-20 text-center space-y-4">
             <div class="w-20 h-20 bg-sage/20 rounded-full flex items-center justify-center mx-auto">
               <span class="material-icons text-4xl text-forest/20">

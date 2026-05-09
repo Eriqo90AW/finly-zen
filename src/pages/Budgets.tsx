@@ -1,4 +1,4 @@
-import { For, createSignal, createMemo } from "solid-js";
+import { For, createSignal, createMemo, Show } from "solid-js";
 import { state } from "../store";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
@@ -61,7 +61,9 @@ const CategoryCard = (props: { category: string, budget: number, spent: number }
 
       <div class={`transition-all duration-500 overflow-hidden ${isExpanded() ? 'h-24 mt-6 pt-6 border-t border-forest/5 opacity-100' : 'h-0 opacity-0'}`}>
          <div class="h-full">
-            <SolidApexCharts options={miniChartOptions} series={[{ data: [12, 18, 14, 22, 19, 25, 20] }]} type="bar" height="100%" />
+            <Show when={isExpanded()}>
+              <SolidApexCharts options={miniChartOptions} series={[{ data: [12, 18, 14, 22, 19, 25, 20] }]} type="bar" height="100%" />
+            </Show>
          </div>
       </div>
     </div>

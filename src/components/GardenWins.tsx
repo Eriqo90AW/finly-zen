@@ -2,7 +2,7 @@ import { For } from "solid-js";
 
 export const GardenWins = () => {
   return (
-    <div class="col-span-3 row-span-3 premium-card p-6 flex flex-col justify-between">
+    <div class="premium-card p-6 flex flex-col justify-between h-full">
       <div>
         <h4 class="font-outfit font-bold text-forest mb-4">Garden Wins</h4>
         <div class="space-y-4">

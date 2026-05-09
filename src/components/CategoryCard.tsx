@@ -99,7 +99,7 @@ export const CategoryCard = (props: CategoryCardProps) => {
   };
 
   return (
-    <div class="col-span-4 row-span-3 premium-card p-6 flex flex-col h-full overflow-hidden">
+    <div class="premium-card p-6 flex flex-col h-full overflow-hidden">
       <h4 class="font-outfit font-bold text-forest mb-6">Categories</h4>
       
       <div class="relative h-[250px] mb-4">

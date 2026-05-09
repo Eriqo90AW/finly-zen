@@ -67,7 +67,7 @@ const DEFAULT_STATE: AppState = {
   ],
   settings: {
     monthlyLimit: 15000000,
-    userName: "Alex",
+    userName: "Eriqo",
   },
   ui: {
     currentMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
