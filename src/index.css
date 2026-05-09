@@ -49,11 +49,11 @@
   }
 
   .premium-card {
-    @apply bg-card-bg rounded-premium border border-forest/10 shadow-premium transition-all duration-200;
+    @apply bg-card-bg rounded-premium border border-forest/10 shadow-premium transition-all duration-100;
   }
 
   .premium-card:hover {
-    @apply bg-neutral-50 shadow-spring cursor-pointer;
+    @apply shadow-sm cursor-pointer;
   }
 
   .nav-link {
