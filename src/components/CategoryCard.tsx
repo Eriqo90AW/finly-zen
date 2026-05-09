@@ -88,33 +88,9 @@ export const CategoryCard = (props: CategoryCardProps) => {
         pie: {
           expandOnClick: true,
           donut: {
-            size: '75%',
+            size: '78%',
             labels: {
-              show: true,
-              name: {
-                show: true,
-                color: '#5C6B5E',
-                fontFamily: 'Outfit',
-                offsetY: -10
-              },
-              value: {
-                show: true,
-                color: '#1A4D2E',
-                fontFamily: 'Outfit',
-                fontWeight: 700,
-                fontSize: '20px',
-                offsetY: 10,
-                formatter: (val) => formatRupiah(Number(val))
-              },
-              total: {
-                show: true,
-                label: 'Total Expense',
-                color: '#5C6B5E',
-                fontFamily: 'Outfit',
-                fontSize: '12px',
-                fontWeight: 600,
-                formatter: () => formatRupiah(total)
-              }
+              show: false
             }
           }
         }
@@ -134,6 +110,40 @@ export const CategoryCard = (props: CategoryCardProps) => {
             type="donut" 
             height="100%" 
           />
+          {/* Custom donut center overlay */}
+          <div
+            class="absolute inset-0 flex items-center justify-center pointer-events-none"
+            style={{ "padding-bottom": "20px" }}
+          >
+            <div class="flex flex-col items-center gap-0.5 font-outfit">
+              {/* Total Expense */}
+              <span class="text-[9px] uppercase tracking-widest text-earth/50 font-semibold">Expense</span>
+              <span class="text-[13px] font-bold text-red-500 leading-tight">{formatRupiah(categoryData().total)}</span>
+
+              {/* Non-recurring income line */}
+              <Show when={categoryData().nonRecurringIncome > 0}>
+                <span class="text-[11px] text-green-500/70 leading-tight flex items-center gap-0.5 mt-0.5">
+                  <span class="material-icons !text-[9px]">remove</span>
+                  {formatRupiah(categoryData().nonRecurringIncome)}
+                </span>
+              </Show>
+
+              {/* Divider */}
+              <div class="w-20 h-px bg-forest/15 my-1" />
+
+              {/* Clean Total */}
+              <span class="text-[9px] uppercase tracking-widest text-earth/40 font-semibold">Net Expense</span>
+              <span
+                class="text-[18px] font-bold leading-tight"
+                classList={{
+                  "text-forest": categoryData().cleanTotal > 0,
+                  "text-green-600": categoryData().cleanTotal <= 0,
+                }}
+              >
+                {formatRupiah(Math.abs(categoryData().cleanTotal))}
+              </span>
+            </div>
+          </div>
         </Show>
       </div>
 
@@ -159,39 +169,7 @@ export const CategoryCard = (props: CategoryCardProps) => {
         </div>
       </div>
 
-      {/* Totals Footer */}
-      <div class="mt-4 pt-4 border-t border-forest/10 space-y-2.5">
-        {/* Total Expenses */}
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-outfit text-earth/60 uppercase tracking-wider">Total Expense</span>
-          <span class="text-sm font-outfit font-bold text-red-500">{formatRupiah(categoryData().total)}</span>
-        </div>
 
-        {/* Non-Recurring Income */}
-        <Show when={categoryData().nonRecurringIncome > 0}>
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-outfit text-earth/60 uppercase tracking-wider flex items-center gap-1">
-              <span class="material-icons !text-[12px] text-green-500">trending_up</span>
-              Non-Recurring Income
-            </span>
-            <span class="text-sm font-outfit font-bold text-green-500">-{formatRupiah(categoryData().nonRecurringIncome)}</span>
-          </div>
-        </Show>
-
-        {/* Clean Total */}
-        <div class="flex items-center justify-between pt-2 border-t border-forest/10">
-          <span class="text-xs font-outfit font-bold text-forest uppercase tracking-wider">Clean Total</span>
-          <span
-            class="text-base font-outfit font-bold"
-            classList={{
-              "text-red-600": categoryData().cleanTotal > 0,
-              "text-green-600": categoryData().cleanTotal <= 0,
-            }}
-          >
-            {formatRupiah(Math.abs(categoryData().cleanTotal))}
-          </span>
-        </div>
-      </div>
 
       {/* Adding custom scrollbar style inline for simplicity, or we could add to global CSS */}
       <style>{`
