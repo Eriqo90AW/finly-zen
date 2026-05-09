@@ -63,6 +63,24 @@
   .nav-link.active {
     @apply bg-sage text-forest font-semibold;
   }
+
+  /* Hero Swiper Styles */
+  .hero-swiper {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .hero-swiper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero-slide {
+    scroll-snap-align: start;
+    flex: 0 0 100%;
+    width: 100%;
+  }
 }
 
 /* ApexCharts Global Tooltip Overrides */

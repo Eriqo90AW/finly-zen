@@ -46,6 +46,7 @@ export type AppState = {
     sidebarOpen: boolean;
     insightsOpen: boolean;
     showAddExpense: boolean;
+    showAllTime: boolean;
     showRecurringDebt: boolean;
   };
 };
@@ -74,6 +75,7 @@ const DEFAULT_STATE: AppState = {
     sidebarOpen: false,
     insightsOpen: false,
     showAddExpense: false,
+    showAllTime: false,
     showRecurringDebt: false,
   },
 };
@@ -125,6 +127,10 @@ export const prevMonth = () => {
     d.setMonth(d.getMonth() - 1);
     return d.toISOString();
   });
+};
+
+export const toggleShowAllTime = () => {
+  setState("ui", "showAllTime", (s) => !s);
 };
 
 export const toggleRecurringDebt = () => {

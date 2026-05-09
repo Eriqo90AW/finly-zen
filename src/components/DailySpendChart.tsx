@@ -124,6 +124,10 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
           .apexcharts-tooltip.apexcharts-active {
             margin: 0 !important;
           }
+          .apexcharts-yaxis-annotations {
+            position: relative;
+            z-index: 10 !important;
+          }
         `}
       </style>
       <div class="flex items-center justify-between mb-6 mx-3">

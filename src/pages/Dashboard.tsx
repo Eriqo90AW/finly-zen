@@ -4,20 +4,18 @@ import { ActivityCalendar } from "../components/ActivityCalendar";
 import { formatRupiah } from "../utils/format";
 import { CategoryCard } from "../components/CategoryCard";
 import { DailySpendChart } from "../components/DailySpendChart";
-import { state, nextMonth, prevMonth, toggleRecurringDebt } from "../store";
+import { HeroCard } from "../components/HeroCard";
+import { state, nextMonth, prevMonth } from "../store";
 import { getTransactions } from "../lib/db";
 import { getDateRange, isDateInRange } from "../utils/date";
 
 
 
 const Dashboard = () => {
-  const [displayTotal, setDisplayTotal] = createSignal(0);
   const [dailyBudget, setDailyBudget] = createSignal(250000);
 
   // Supabase Resources
   const [transactions] = createResource(getTransactions);
-
-
 
   // Filtered transactions for the selected period
   const monthlyTransactions = createMemo(() => {
@@ -32,101 +30,14 @@ const Dashboard = () => {
     });
   });
 
-  const totalIncome = () => monthlyTransactions().filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-  const totalExpenses = () => monthlyTransactions().filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-  const netTotal = () => totalIncome() - totalExpenses();
-
-  // Count up animation
-  createEffect(() => {
-    if (transactions.loading) return;
-    
-    const target = netTotal();
-    const duration = 1500;
-    const start = performance.now();
-
-    const animate = (time: number) => {
-      const elapsed = time - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      setDisplayTotal(target * easeOut);
-
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  });
-
-
-
-
   return (
     <div class="space-y-8 animate-fade-in-up">
       <div class="bento-grid">
-        {/* Hero Card */}
-        <div class="col-span-8 row-span-2 premium-card p-10 bg-cream relative overflow-hidden group">
-          {/* Watermark */}
-          <div class="absolute -right-10 -bottom-10 opacity-[0.03] rotate-12 transition-transform group-hover:scale-110 duration-1000">
-             <span class="material-icons text-[240px]">eco</span>
-          </div>
-
-          <div class="absolute top-10 right-10 z-20">
-            <button 
-              onClick={toggleRecurringDebt}
-              class={`text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
-                state.ui.showRecurringDebt ? 'text-forest font-black' : 'text-forest/30 hover:text-forest/60'
-              }`}
-            >
-              Show Recurring Debt
-            </button>
-          </div>
-          
-          <div class="relative z-10 space-y-8">
-            <div class="space-y-1">
-              <p class="text-xs font-bold text-forest/40 uppercase tracking-widest">Net Balance this Month</p>
-              <h3 class="text-7xl hero-numeral text-forest">
-                {formatRupiah(displayTotal())}
-              </h3>
-            </div>
-            
-            <div class="h-px bg-forest/10 w-full" />
-            
-            <div class="grid grid-cols-3 gap-8">
-              <div>
-                <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Income</p>
-                <p class="text-xl font-outfit font-semibold text-forest">
-                  {formatRupiah(totalIncome())}
-                </p>
-              </div>
-              <div>
-                <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Expenses</p>
-                <p class="text-xl font-outfit font-semibold text-forest">
-                  {formatRupiah(totalExpenses())}
-                </p>
-              </div>
-              <div>
-                <p class="text-[10px] font-bold text-earth uppercase tracking-widest">Daily Average</p>
-                <p class="text-xl font-outfit font-semibold text-forest">
-                    {(() => {
-                      const { start, end } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
-                      const now = new Date();
-                      
-                      let divisor;
-                      if (now >= start && now <= end) {
-                        // Current period: use days passed since start
-                        const diffTime = Math.abs(now.getTime() - start.getTime());
-                        divisor = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      } else {
-                        // Past or future period: use total days in period
-                        const diffTime = Math.abs(end.getTime() - start.getTime());
-                        divisor = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      }
-                      
-                      return formatRupiah(totalExpenses() / (divisor || 1));
-                    })()}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <HeroCard 
+          allTransactions={transactions() || []}
+          monthlyTransactions={monthlyTransactions()}
+          loading={transactions.loading}
+        />
 
         <DailySpendChart 
           transactions={monthlyTransactions()} 
