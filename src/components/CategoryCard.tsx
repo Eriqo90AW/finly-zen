@@ -34,7 +34,14 @@ export const CategoryCard = (props: CategoryCardProps) => {
         pct: total > 0 ? Math.round((info.amount / total) * 100) : 0
       }));
 
-    return { sorted, total };
+    // Non-recurring income: income transactions that are NOT recurring
+    const nonRecurringIncome = data
+      .filter(t => t.type === 'income' && !t.isRecurring)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const cleanTotal = total - nonRecurringIncome;
+
+    return { sorted, total, nonRecurringIncome, cleanTotal };
   });
 
   const chartOptions = (): ApexOptions => {
@@ -101,7 +108,7 @@ export const CategoryCard = (props: CategoryCardProps) => {
               },
               total: {
                 show: true,
-                label: 'Total',
+                label: 'Total Expense',
                 color: '#5C6B5E',
                 fontFamily: 'Outfit',
                 fontSize: '12px',
@@ -152,6 +159,40 @@ export const CategoryCard = (props: CategoryCardProps) => {
         </div>
       </div>
 
+      {/* Totals Footer */}
+      <div class="mt-4 pt-4 border-t border-forest/10 space-y-2.5">
+        {/* Total Expenses */}
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-outfit text-earth/60 uppercase tracking-wider">Total Expense</span>
+          <span class="text-sm font-outfit font-bold text-red-500">{formatRupiah(categoryData().total)}</span>
+        </div>
+
+        {/* Non-Recurring Income */}
+        <Show when={categoryData().nonRecurringIncome > 0}>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-outfit text-earth/60 uppercase tracking-wider flex items-center gap-1">
+              <span class="material-icons !text-[12px] text-green-500">trending_up</span>
+              Non-Recurring Income
+            </span>
+            <span class="text-sm font-outfit font-bold text-green-500">-{formatRupiah(categoryData().nonRecurringIncome)}</span>
+          </div>
+        </Show>
+
+        {/* Clean Total */}
+        <div class="flex items-center justify-between pt-2 border-t border-forest/10">
+          <span class="text-xs font-outfit font-bold text-forest uppercase tracking-wider">Clean Total</span>
+          <span
+            class="text-base font-outfit font-bold"
+            classList={{
+              "text-red-600": categoryData().cleanTotal > 0,
+              "text-green-600": categoryData().cleanTotal <= 0,
+            }}
+          >
+            {formatRupiah(Math.abs(categoryData().cleanTotal))}
+          </span>
+        </div>
+      </div>
+
       {/* Adding custom scrollbar style inline for simplicity, or we could add to global CSS */}
       <style>{`
         .custom-scrollbar-thin::-webkit-scrollbar {
@@ -172,3 +213,4 @@ export const CategoryCard = (props: CategoryCardProps) => {
     </div>
   );
 };
+

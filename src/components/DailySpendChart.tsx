@@ -53,7 +53,17 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
     chart: { 
       type: 'bar', 
       toolbar: { show: false }, 
-      animations: { enabled: true } 
+      animations: { enabled: true },
+      events: {
+        updated: (chartContext: any) => {
+          const el = chartContext.el;
+          const annotations = el?.querySelector('.apexcharts-yaxis-annotations');
+          const parent = annotations?.parentNode;
+          if (annotations && parent) {
+            parent.appendChild(annotations);
+          }
+        }
+      }
     },
     plotOptions: { 
       bar: { 
@@ -98,11 +108,12 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
       yaxis: [{ 
         y: props.dailyBudget(), 
         borderColor: '#1A4D2E', 
+        position: 'front',
         label: { 
           text: 'Budget', 
           style: { background: '#1A4D2E', color: '#fff' } 
         } 
-      }]
+      } as any]
     },
     legend: { show: false }
   });
@@ -123,10 +134,6 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
           }
           .apexcharts-tooltip.apexcharts-active {
             margin: 0 !important;
-          }
-          .apexcharts-yaxis-annotations {
-            position: relative;
-            z-index: 10 !important;
           }
         `}
       </style>

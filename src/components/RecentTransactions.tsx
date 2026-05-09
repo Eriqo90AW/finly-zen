@@ -1,4 +1,4 @@
-import { For, Show } from "solid-js";
+import { For, Show, createSignal, createMemo } from "solid-js";
 import { Transaction } from "../store";
 import {
   formatIconName,
@@ -11,27 +11,234 @@ interface RecentTransactionsProps {
   loading: boolean;
 }
 
+type SortKey = "name" | "category" | "account" | "date" | "amount";
+type SortDirection = "asc" | "desc";
+
 export const RecentTransactions = (props: RecentTransactionsProps) => {
-  const sortedTransactions = () =>
-    [...props.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(new Set());
+  const [filtersOpen, setFiltersOpen] = createSignal(false);
+  const [sortKey, setSortKey] = createSignal<SortKey>("date");
+  const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc");
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey() === key) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDirection(key === "amount" || key === "date" ? "desc" : "asc");
+    }
+  };
+
+  const sortArrow = (key: SortKey) => {
+    if (sortKey() !== key) return "unfold_more";
+    return sortDirection() === "asc" ? "arrow_upward" : "arrow_downward";
+  };
+
+  const uniqueCategories = createMemo(() => {
+    const map = new Map<string, { name: string; icon?: string; color?: string }>();
+    for (const t of props.transactions) {
+      if (t.category && !map.has(t.category)) {
+        map.set(t.category, { name: t.category, icon: t.categoryIcon, color: t.categoryColor });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  const toggleCategory = (cat: string) => {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
+  const sortedTransactions = () => {
+    let list = [...props.transactions];
+    const sel = selectedCategories();
+    if (sel.size > 0) {
+      list = list.filter((t) => sel.has(t.category));
+    }
+
+    const key = sortKey();
+    const dir = sortDirection() === "asc" ? 1 : -1;
+
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (key) {
+        case "name":
+          cmp = (a.name || "").localeCompare(b.name || "");
+          break;
+        case "category":
+          cmp = (a.category || "").localeCompare(b.category || "");
+          break;
+        case "account":
+          cmp = (a.accountName || "").localeCompare(b.accountName || "");
+          break;
+        case "date":
+          cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case "amount": {
+          const amountA = a.type?.toLowerCase() === "income" ? a.amount : -a.amount;
+          const amountB = b.type?.toLowerCase() === "income" ? b.amount : -b.amount;
+          cmp = amountA - amountB;
+          break;
+        }
+      }
+      return cmp * dir;
+    });
+
+    return list;
+  };
+
+  const headerClass = (key: SortKey) =>
+    `px-6 py-4 font-semibold cursor-pointer select-none transition-colors hover:text-forest group${key === "amount" ? " text-right" : ""}`;
 
   return (
     <div class="col-span-12 premium-card overflow-hidden">
       <div class="p-6 border-b border-forest/10 flex items-center justify-between">
         <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
-        <button class="text-[10px] font-bold text-mid-green uppercase tracking-widest hover:underline">
-          View All
+        <button
+          class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors"
+          classList={{
+            "text-spring": filtersOpen() || selectedCategories().size > 0,
+            "text-mid-green hover:text-spring": !filtersOpen() && selectedCategories().size === 0,
+          }}
+          onClick={() => setFiltersOpen((v) => !v)}
+        >
+          <span class="material-icons !text-[14px]">filter_list</span>
+          Filters
+          <Show when={selectedCategories().size > 0}>
+            <span
+              class="ml-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
+              style={{ "background-color": "var(--color-spring)", color: "var(--color-forest)" }}
+            >
+              {selectedCategories().size}
+            </span>
+          </Show>
         </button>
       </div>
+
+      {/* Category Filter Pills */}
+      <Show when={filtersOpen()}>
+        <div class="px-6 py-3 border-b border-forest/10 flex flex-wrap gap-2 animate-slide-down">
+          <button
+            class="px-2.5 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest transition-all border"
+            classList={{
+              "bg-forest text-sage border-forest": selectedCategories().size === 0,
+              "bg-transparent text-earth border-forest/15 hover:border-forest/30": selectedCategories().size > 0,
+            }}
+            onClick={() => setSelectedCategories(new Set())}
+          >
+            All
+          </button>
+          <For each={uniqueCategories()}>
+            {(cat) => {
+              const isActive = () => selectedCategories().has(cat.name);
+              return (
+                <button
+                  class="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest transition-all border"
+                  classList={{
+                    "border-transparent shadow-sm": isActive(),
+                    "bg-transparent border-forest/15 hover:border-forest/30": !isActive(),
+                  }}
+                  style={{
+                    ...(isActive()
+                      ? {
+                          "background-color": cat.color ? `${cat.color}25` : "rgba(232, 245, 236, 0.5)",
+                          color: cat.color || "var(--color-forest)",
+                          "border-color": cat.color ? `${cat.color}50` : "var(--color-spring)",
+                        }
+                      : {
+                          color: cat.color || "var(--color-earth)",
+                        }),
+                  }}
+                  onClick={() => toggleCategory(cat.name)}
+                >
+                  <Show when={formatIconName(cat.icon)}>
+                    <span class="material-icons !text-[12px]">{formatIconName(cat.icon)}</span>
+                  </Show>
+                  {cat.name}
+                </button>
+              );
+            }}
+          </For>
+        </div>
+      </Show>
       <div class="overflow-auto max-h-[500px]">
         <table class="w-full text-left font-outfit relative">
           <thead class="bg-sage/70 text-earth text-[10px] uppercase tracking-widest sticky top-0 z-10 backdrop-blur-sm shadow-sm">
             <tr>
-              <th class="px-6 py-4 font-semibold">Name</th>
-              <th class="px-6 py-4 font-semibold">Category</th>
-              <th class="px-6 py-4 font-semibold">Account</th>
-              <th class="px-6 py-4 font-semibold">Date</th>
-              <th class="px-6 py-4 font-semibold text-right">Amount</th>
+              <th class={headerClass("name")} onClick={() => handleSort("name")}>
+                <span class="inline-flex items-center gap-1">
+                  Name
+                  <span
+                    class="material-icons !text-[12px] transition-all"
+                    classList={{
+                      "opacity-100 text-spring": sortKey() === "name",
+                      "opacity-0 group-hover:opacity-50": sortKey() !== "name",
+                    }}
+                  >
+                    {sortArrow("name")}
+                  </span>
+                </span>
+              </th>
+              <th class={headerClass("category")} onClick={() => handleSort("category")}>
+                <span class="inline-flex items-center gap-1">
+                  Category
+                  <span
+                    class="material-icons !text-[12px] transition-all"
+                    classList={{
+                      "opacity-100 text-spring": sortKey() === "category",
+                      "opacity-0 group-hover:opacity-50": sortKey() !== "category",
+                    }}
+                  >
+                    {sortArrow("category")}
+                  </span>
+                </span>
+              </th>
+              <th class={headerClass("account")} onClick={() => handleSort("account")}>
+                <span class="inline-flex items-center gap-1">
+                  Account
+                  <span
+                    class="material-icons !text-[12px] transition-all"
+                    classList={{
+                      "opacity-100 text-spring": sortKey() === "account",
+                      "opacity-0 group-hover:opacity-50": sortKey() !== "account",
+                    }}
+                  >
+                    {sortArrow("account")}
+                  </span>
+                </span>
+              </th>
+              <th class={headerClass("date")} onClick={() => handleSort("date")}>
+                <span class="inline-flex items-center gap-1">
+                  Date
+                  <span
+                    class="material-icons !text-[12px] transition-all"
+                    classList={{
+                      "opacity-100 text-spring": sortKey() === "date",
+                      "opacity-0 group-hover:opacity-50": sortKey() !== "date",
+                    }}
+                  >
+                    {sortArrow("date")}
+                  </span>
+                </span>
+              </th>
+              <th class={headerClass("amount")} onClick={() => handleSort("amount")}>
+                <span class="inline-flex items-center gap-1 justify-end">
+                  Amount
+                  <span
+                    class="material-icons !text-[12px] transition-all"
+                    classList={{
+                      "opacity-100 text-spring": sortKey() === "amount",
+                      "opacity-0 group-hover:opacity-50": sortKey() !== "amount",
+                    }}
+                  >
+                    {sortArrow("amount")}
+                  </span>
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody class="text-sm divide-y divide-forest/5">
