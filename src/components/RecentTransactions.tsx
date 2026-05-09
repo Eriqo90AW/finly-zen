@@ -1,32 +1,19 @@
-import { For, Show, Resource } from "solid-js";
+import { For, Show } from "solid-js";
 import { Transaction } from "../store";
 import {
   formatIconName,
   formatRupiah,
   formatDateDetail,
 } from "../utils/format";
-import { state } from "../store";
-import { getDateRange, isDateInRange } from "../utils/date";
 
 interface RecentTransactionsProps {
-  transactions: Resource<Transaction[]>;
-  currentMonth: string;
+  transactions: Transaction[];
+  loading: boolean;
 }
 
 export const RecentTransactions = (props: RecentTransactionsProps) => {
-  const filteredTransactions = () => {
-    const data = props.transactions() || [];
-    const { start, end } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
-
-    return data
-      .filter((t) => {
-        const inDate = isDateInRange(t.date, start, end);
-        if (!inDate) return false;
-        if (!state.ui.showRecurringDebt && t.isRecurring) return false;
-        return true;
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  };
+  const sortedTransactions = () =>
+    [...props.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div class="col-span-12 premium-card overflow-hidden">
@@ -48,7 +35,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
             </tr>
           </thead>
           <tbody class="text-sm divide-y divide-forest/5">
-            <For each={filteredTransactions()}>
+            <For each={sortedTransactions()}>
               {(t) => (
                 <tr class="group hover:bg-page-bg transition-all">
                   <td class="px-6 py-4 border-l-3 border-transparent group-hover:border-spring">
@@ -125,7 +112,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
         </table>
       </div>
 
-      <Show when={props.transactions.loading}>
+      <Show when={props.loading}>
         <div class="p-12 text-center text-earth/50 animate-pulse">
           <span class="material-icons text-4xl mb-2">sync</span>
           <p class="text-sm">Fetching your garden data...</p>
@@ -134,7 +121,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
 
       <Show
         when={
-          !props.transactions.loading && filteredTransactions().length === 0
+          !props.loading && sortedTransactions().length === 0
         }
       >
         <div class="p-12 text-center text-earth/50">

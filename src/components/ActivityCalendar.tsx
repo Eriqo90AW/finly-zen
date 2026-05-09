@@ -1,11 +1,12 @@
-import { For, createMemo, Accessor, Resource, createSignal, createEffect } from "solid-js";
+import { For, createMemo, Accessor, createSignal, createEffect, Show } from "solid-js";
 import { Tooltip } from "./ui/Tooltip";
 import { formatRupiah, formatMonth } from "../utils/format";
 import { Transaction, state } from "../store";
 import { getDateRange, isDateInRange } from "../utils/date";
 
 interface ActivityCalendarProps {
-  transactions: Resource<Transaction[]>;
+  transactions: Transaction[];
+  loading: boolean;
   dailyBudget: Accessor<number>;
 }
 
@@ -72,14 +73,13 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
     const y = date.getFullYear();
     const m = date.getMonth();
     const d = date.getDate();
-    const data = props.transactions() || [];
+    const data = props.transactions || [];
     return data
       .filter(t => {
         const td = new Date(t.date);
         const isDateMatch = td.getFullYear() === y && td.getMonth() === m && td.getDate() === d;
         if (!isDateMatch) return false;
         if (t.type !== 'expense') return false;
-        if (!state.ui.showRecurringDebt && t.isRecurring) return false;
         return true;
       })
       .reduce((acc, t) => acc + t.amount, 0);
@@ -129,8 +129,9 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
       </div>
 
       <div class="flex-1 grid grid-cols-7 grid-rows-6 gap-1.5">
-        <For each={calendarDays()}>
-          {(day) => {
+        <Show when={!props.loading} fallback={<div class="w-full h-full flex items-center justify-center text-earth/30">Loading...</div>}>
+          <For each={calendarDays()}>
+            {(day) => {
             const amount = createMemo(() => getDayAmount(day.date));
             const isToday = createMemo(() => {
               const today = new Date();
@@ -169,7 +170,8 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
             );
           }}
         </For>
-      </div>
+      </Show>
+    </div>
       
       <div class="mt-4 flex items-center justify-between">
         <div class="flex items-center gap-1">

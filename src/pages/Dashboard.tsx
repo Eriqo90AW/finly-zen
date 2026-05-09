@@ -27,7 +27,7 @@ const Dashboard = () => {
     return data.filter(t => {
       const inDate = isDateInRange(t.date, start, end);
       if (!inDate) return false;
-      if (!state.ui.showRecurringDebt && t.isRecurring) return false;
+      if (!state.ui.showRecurringDebt && t.isRecurring && t.category?.toLowerCase() === 'debt') return false;
       return true;
     });
   });
@@ -129,7 +129,8 @@ const Dashboard = () => {
         </div>
 
         <DailySpendChart 
-          transactions={transactions} 
+          transactions={monthlyTransactions()} 
+          loading={transactions.loading}
           dailyBudget={dailyBudget} 
           setDailyBudget={setDailyBudget} 
         />
@@ -137,7 +138,8 @@ const Dashboard = () => {
         <CategoryCard transactions={monthlyTransactions()} loading={transactions.loading} />
 
         <ActivityCalendar 
-          transactions={transactions}
+          transactions={monthlyTransactions()}
+          loading={transactions.loading}
           dailyBudget={dailyBudget}
         />
 
@@ -172,8 +174,8 @@ const Dashboard = () => {
 
         {/* Recent Transactions Table */}
         <RecentTransactions 
-          transactions={transactions} 
-          currentMonth={state.ui.currentMonth} 
+          transactions={monthlyTransactions()} 
+          loading={transactions.loading}
         />
       </div>
     </div>

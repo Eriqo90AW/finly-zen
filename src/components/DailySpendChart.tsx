@@ -1,13 +1,14 @@
-import { createSignal, createMemo, Show, Resource } from "solid-js";
+import { createSignal, createMemo, Show } from "solid-js";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { Tooltip } from "./ui/Tooltip";
 import { formatRupiah, formatRupiahShort } from "../utils/format";
-import { state } from "../store";
+import { state, Transaction } from "../store";
 import { getDateRange } from "../utils/date";
 
 interface DailySpendChartProps {
-  transactions: Resource<any[]>;
+  transactions: Transaction[];
+  loading: boolean;
   dailyBudget: () => number;
   setDailyBudget: (val: number) => void;
 }
@@ -15,7 +16,7 @@ interface DailySpendChartProps {
 export const DailySpendChart = (props: DailySpendChartProps) => {
 
   const chartData = createMemo(() => {
-    const data = props.transactions() || [];
+    const data = props.transactions || [];
     const { end: periodEnd } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
     
     // Use the period end as the reference, but don't go past today if period includes today
@@ -36,7 +37,6 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
           const isDateMatch = td.getFullYear() === y && td.getMonth() === m && td.getDate() === date;
           if (!isDateMatch) return false;
           if (t.type !== 'expense') return false;
-          if (!state.ui.showRecurringDebt && t.isRecurring) return false;
           return true;
         })
         .reduce((acc, t) => acc + t.amount, 0);
@@ -144,7 +144,7 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
         </Tooltip>
       </div>
       <div class="flex-1 min-h-[200px]">
-         <Show when={!props.transactions.loading} fallback={<div class="w-full h-full flex items-center justify-center text-earth/30">Loading...</div>}>
+         <Show when={!props.loading} fallback={<div class="w-full h-full flex items-center justify-center text-earth/30">Loading...</div>}>
             <SolidApexCharts 
               options={barChartOptions()} 
               series={[{ 
