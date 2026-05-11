@@ -16,6 +16,13 @@
   
   --shadow-premium: 0 2px 20px rgba(26,77,46,0.08);
   --radius-premium: 18px;
+
+  /* Financial semantic colors */
+  --color-fin-green: #10B981;
+  --color-fin-red: #F43F5E;
+  --color-fin-blue: #6366F1;
+  --color-fin-purple: #A78BFA;
+  --color-fin-amber: #F59E0B;
 }
 
 @layer base {
@@ -80,6 +87,15 @@
     scroll-snap-align: start;
     flex: 0 0 100%;
     width: 100%;
+  }
+
+  .fin-metric-card {
+    @apply bg-white/70 backdrop-blur-sm rounded-2xl border border-forest/8 
+           shadow-[0_1px_12px_rgba(26,77,46,0.05)] 
+           transition-all duration-200;
+  }
+  .fin-metric-card:hover {
+    @apply shadow-[0_4px_20px_rgba(26,77,46,0.1)] border-forest/15 scale-[1.02];
   }
 }
 

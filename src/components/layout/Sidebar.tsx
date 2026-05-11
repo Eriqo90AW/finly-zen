@@ -4,6 +4,7 @@ import ReceiptIcon from "@suid/icons-material/ReceiptLongOutlined";
 import AccountBalanceWalletIcon from "@suid/icons-material/AccountBalanceWalletOutlined";
 import FlagIcon from "@suid/icons-material/FlagOutlined";
 import AssessmentIcon from "@suid/icons-material/AssessmentOutlined";
+import ShowChartIcon from "@suid/icons-material/ShowChartOutlined";
 import { state } from "../../store";
 
 const Sidebar = () => {
@@ -45,6 +46,10 @@ const Sidebar = () => {
         <A href="/reports" class={`nav-link ${isActive("/reports") ? "active" : ""}`}>
           <AssessmentIcon />
           <span class="font-outfit">Reports</span>
+        </A>
+        <A href="/stock/NOW" class={`nav-link ${isActive("/stock/NOW") ? "active" : ""}`}>
+          <ShowChartIcon />
+          <span class="font-outfit">Markets</span>
         </A>
       </nav>
 

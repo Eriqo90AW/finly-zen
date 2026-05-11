@@ -2,9 +2,29 @@ import SearchIcon from "@suid/icons-material/SearchOutlined";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
 import MenuOpenIcon from "@suid/icons-material/MenuOpen";
+import { useLocation, A, useNavigate, useParams } from "@solidjs/router";
 import { state, setState, nextMonth, prevMonth } from "../../store";
+import { formatUSD, formatUSDCompact } from "../../utils/format";
+import { Show, createSignal } from "solid-js";
+import { currentStockData } from "../../store/stockContext";
 
 const TopBar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = useParams();
+  const [searchQuery, setSearchQuery] = createSignal("");
+  
+  const isStockPage = () => location.pathname.startsWith("/stock");
+  
+  const handleSearch = (e: KeyboardEvent) => {
+    if (e.key === "Enter" && searchQuery().trim()) {
+      if (isStockPage()) {
+        navigate(`/stock/${searchQuery().trim().toUpperCase()}`);
+        setSearchQuery("");
+      }
+    }
+  };
+
   const formattedDate = () => {
     const d = new Date(state.ui.currentMonth);
     return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -12,42 +32,85 @@ const TopBar = () => {
 
   return (
     <header class="h-20 bg-white border-b border-forest/10 flex items-center justify-between px-8 shrink-0">
-      {/* Month Navigator */}
+      {/* Left Section: Adaptive Header */}
       <div class="flex items-center gap-6">
-        {/* Month Navigator */}
-        <div class="flex items-center gap-3">
-          <button 
-            onClick={prevMonth}
-            class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5"
-          >
-            <ChevronLeftIcon />
-          </button>
-          <h2 class="text-lg font-outfit font-bold text-forest min-w-[140px] text-center">
-            {formattedDate()}
-          </h2>
-          <button 
-            onClick={nextMonth}
-            class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5"
-          >
-            <ChevronRightIcon />
-          </button>
-        </div>
+        <Show when={!isStockPage()} fallback={
+          <div class="flex items-center gap-4">
+            <A href="/" class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5">
+              <ChevronLeftIcon />
+            </A>
+            <div class="h-8 w-px bg-forest/10 mx-1" />
+            
+            <Show when={currentStockData()} fallback={
+              <div class="flex items-center gap-2">
+                <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider uppercase">
+                  {params.ticker}
+                </span>
+                <span class="text-xs text-earth font-medium animate-pulse">Loading data...</span>
+              </div>
+            }>
+              <div class="flex flex-col">
+                <div class="flex items-center gap-2">
+                  <h2 class="text-xl font-cormorant font-bold text-forest leading-none">
+                    {currentStockData()?.company_name}
+                  </h2>
+                  <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider">
+                    {currentStockData()?.ticker}
+                  </span>
+                  <span class="bg-sage text-forest text-[10px] px-1.5 py-0.5 rounded font-medium">
+                    {currentStockData()?.exchange}
+                  </span>
+                </div>
+                <div class="flex items-center gap-3 mt-1">
+                  <span class="text-sm font-outfit font-bold text-forest">
+                    {formatUSD(currentStockData()?.valuation.current_price || 0)}
+                  </span>
+                  <span class="text-[10px] text-earth font-medium">
+                    Mkt Cap: {formatUSDCompact(currentStockData()?.valuation.market_cap || 0)}
+                  </span>
+                  <span class="text-[9px] text-earth/60 uppercase tracking-widest">
+                    As of: {new Date(currentStockData()?.as_of || "").toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </Show>
+          </div>
+        }>
+          {/* Month Navigator (Expense Routes) */}
+          <div class="flex items-center gap-3">
+            <button 
+              onClick={prevMonth}
+              class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5"
+            >
+              <ChevronLeftIcon />
+            </button>
+            <h2 class="text-lg font-outfit font-bold text-forest min-w-[140px] text-center">
+              {formattedDate()}
+            </h2>
+            <button 
+              onClick={nextMonth}
+              class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5"
+            >
+              <ChevronRightIcon />
+            </button>
+          </div>
 
-        {/* Date Period Selector */}
-        <div class="relative group">
-          <select 
-            value={state.ui.datePeriod}
-            onInput={(e) => setState("ui", "datePeriod", e.currentTarget.value as any)}
-            class="appearance-none bg-sage/20 border border-forest/10 rounded-xl px-4 py-2 pr-10 font-outfit text-xs font-bold text-forest focus:outline-none focus:ring-2 focus:ring-forest/20 transition-all cursor-pointer hover:bg-sage/30"
-          >
-            <option value="1-30">1 - 30</option>
-            <option value="21-20">21 - 20</option>
-            <option value="25-25">25 - 25</option>
-          </select>
-          <span class="material-icons absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 pointer-events-none text-lg">
-            expand_more
-          </span>
-        </div>
+          {/* Date Period Selector */}
+          <div class="relative group">
+            <select 
+              value={state.ui.datePeriod}
+              onInput={(e) => setState("ui", "datePeriod", e.currentTarget.value as any)}
+              class="appearance-none bg-sage/20 border border-forest/10 rounded-xl px-4 py-2 pr-10 font-outfit text-xs font-bold text-forest focus:outline-none focus:ring-2 focus:ring-forest/20 transition-all cursor-pointer hover:bg-sage/30"
+            >
+              <option value="1-30">1 - 30</option>
+              <option value="21-20">21 - 20</option>
+              <option value="25-25">25 - 25</option>
+            </select>
+            <span class="material-icons absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 pointer-events-none text-lg">
+              expand_more
+            </span>
+          </div>
+        </Show>
       </div>
 
       {/* Search & User */}
@@ -56,7 +119,10 @@ const TopBar = () => {
           <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-earth w-5 h-5" />
           <input 
             type="text" 
-            placeholder="Search transactions..." 
+            value={searchQuery()}
+            onInput={(e) => setSearchQuery(e.currentTarget.value)}
+            onKeyDown={handleSearch}
+            placeholder={isStockPage() ? "Search ticker..." : "Search transactions..."} 
             class="w-full h-11 bg-page-bg rounded-xl pl-11 pr-4 font-outfit text-sm focus:outline-none focus:ring-2 focus:ring-forest/10 transition-all"
           />
         </div>

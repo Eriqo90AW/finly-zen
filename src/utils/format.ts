@@ -54,3 +54,38 @@ export const formatIconName = (name: string | undefined): string => {
     .replace(/Rounded|Outlined|Sharp/g, "")
     .toLowerCase();
 };
+
+export const formatUSD = (amount: number | null | undefined, decimals = 2): string => {
+  if (amount == null) return "$0";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(amount);
+};
+
+export const formatUSDCompact = (amount: number | null | undefined): string => {
+  if (amount == null) return "$0";
+  if (Math.abs(amount) >= 1000000000) {
+    return "$" + (amount / 1000000000).toFixed(2) + "B";
+  }
+  if (Math.abs(amount) >= 1000000) {
+    return "$" + (amount / 1000000).toFixed(2) + "M";
+  }
+  if (Math.abs(amount) >= 1000) {
+    return "$" + (amount / 1000).toFixed(2) + "K";
+  }
+  return formatUSD(amount);
+};
+
+export const formatPercent = (amount: number | null | undefined, decimals = 2): string => {
+  if (amount == null) return "0%";
+  const value = amount * 100;
+  return (value > 0 ? "+" : "") + value.toFixed(decimals) + "%";
+};
+
+export const formatMultiple = (amount: number | null | undefined): string => {
+  if (amount == null) return "0.00x";
+  return amount.toFixed(2) + "x";
+};
