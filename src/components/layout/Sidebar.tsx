@@ -47,7 +47,7 @@ const Sidebar = () => {
           <AssessmentIcon />
           <span class="font-outfit">Reports</span>
         </A>
-        <A href="/stock/NOW" class={`nav-link ${isActive("/stock/NOW") ? "active" : ""}`}>
+        <A href="/stock/AAPL" class={`nav-link ${isActive("/stock/AAPL") ? "active" : ""}`}>
           <ShowChartIcon />
           <span class="font-outfit">Markets</span>
         </A>

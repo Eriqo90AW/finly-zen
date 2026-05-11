@@ -31,15 +31,18 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
       const m = d.getMonth();
       const date = d.getDate();
       
-      const amount = data
-        .filter(t => {
+      const dayTransactions = data.filter(t => {
           const td = new Date(t.date);
-          const isDateMatch = td.getFullYear() === y && td.getMonth() === m && td.getDate() === date;
-          if (!isDateMatch) return false;
-          if (t.type !== 'expense') return false;
-          return true;
-        })
-        .reduce((acc, t) => acc + t.amount, 0);
+          return td.getFullYear() === y && td.getMonth() === m && td.getDate() === date;
+        });
+
+      const amount = dayTransactions
+        .reduce((acc, t) => {
+          if (t.isRecurring) return acc;
+          if (t.type === 'expense') return acc + t.amount;
+          if (t.type === 'income') return acc - t.amount;
+          return acc;
+        }, 0);
         
       return {
         date: d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
@@ -96,11 +99,12 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
       tooltip: { enabled: false }
     },
     yaxis: { 
+      min: 0,
       max: 1000000,
       tickAmount: 5, // 1,000,000 / 5 = 200,000
       labels: { 
         style: { colors: '#5C6B5E', fontFamily: 'Outfit' },
-        formatter: (value) => formatRupiahShort(value)
+        formatter: (value) => value < 0 ? "" : formatRupiahShort(value)
       } 
     },
     grid: { borderColor: 'rgba(26,77,46,0.05)' },

@@ -74,15 +74,17 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
     const m = date.getMonth();
     const d = date.getDate();
     const data = props.transactions || [];
-    return data
-      .filter(t => {
-        const td = new Date(t.date);
-        const isDateMatch = td.getFullYear() === y && td.getMonth() === m && td.getDate() === d;
-        if (!isDateMatch) return false;
-        if (t.type !== 'expense') return false;
-        return true;
-      })
-      .reduce((acc, t) => acc + t.amount, 0);
+    const dayTransactions = data.filter(t => {
+      const td = new Date(t.date);
+      return td.getFullYear() === y && td.getMonth() === m && td.getDate() === d;
+    });
+
+    return dayTransactions.reduce((acc, t) => {
+      if (t.isRecurring) return acc;
+      if (t.type === 'expense') return acc + t.amount;
+      if (t.type === 'income') return acc - t.amount;
+      return acc;
+    }, 0);
   };
 
   const getIntensityColor = (amount: number) => {

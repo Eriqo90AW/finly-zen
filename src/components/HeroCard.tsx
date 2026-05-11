@@ -181,20 +181,6 @@ export const HeroCard = (props: HeroCardProps) => {
             : undefined
       }}
     >
-      {/* EMV Chip */}
-      <Show when={activeStats().name !== "All Accounts"}>
-        <div class="absolute right-10 top-1/2 -translate-y-1/2 w-11 h-8 rounded-[4px] bg-gradient-to-br from-[#a6821a] via-[#d4af37] to-[#f2e3b3]  shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_1px_2px_rgba(0,0,0,0.15)] z-20 opacity-90 overflow-hidden flex items-center justify-center">
-          <div class="absolute w-full flex flex-col justify-between h-[75%]">
-            <div class="w-full h-[0.5px] bg-[#8a630b]/50 mix-blend-multiply" />
-            <div class="w-full h-[0.5px] bg-[#8a630b]/50 mix-blend-multiply" />
-          </div>
-          <div class="absolute h-full flex justify-between w-[50%]">
-            <div class="h-full w-[0.5px] bg-[#8a630b]/50 mix-blend-multiply" />
-            <div class="h-full w-[0.5px] bg-[#8a630b]/50 mix-blend-multiply" />
-          </div>
-          <div class="w-[14px] h-[18px] border-[0.5px] border-[#8a630b]/50 rounded-[2px] z-10 mix-blend-multiply" />
-        </div>
-      </Show>
 
       {/* Physical Card Base Effects */}
       <Show when={activeStats().name !== "All Accounts"}>

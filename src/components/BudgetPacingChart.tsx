@@ -40,18 +40,22 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
       const date = d.getDate();
 
       if (!isFuture) {
-        const dailySpend = data
-          .filter((t) => {
+        const dayTransactions = data.filter((t) => {
             const td = new Date(t.date);
             return (
               td.getFullYear() === y &&
               td.getMonth() === m &&
-              td.getDate() === date &&
-              t.type === "expense"
+              td.getDate() === date
             );
-          })
-          .reduce((acc, t) => acc + t.amount, 0);
-        cumulativeActual += dailySpend;
+          });
+
+        const dailyNetExpense = dayTransactions.reduce((acc, t) => {
+          if (t.type === "expense") return acc + t.amount;
+          if (t.type === "income" && !t.isRecurring) return acc - t.amount;
+          return acc;
+        }, 0);
+        
+        cumulativeActual += dailyNetExpense;
       }
 
       return {

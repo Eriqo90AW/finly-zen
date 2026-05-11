@@ -2,7 +2,7 @@ import { createResource, Show, onCleanup, createEffect } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { fetchStockData } from "../data/stockData";
 import { PriceActionChart } from "../components/stock/PriceActionChart";
-import { MetricsGrid } from "../components/stock/MetricsGrid";
+import { MetricsCard } from "../components/stock/MetricsCard";
 import { FinancialPerformanceChart } from "../components/stock/FinancialPerformanceChart";
 import { EarningsActualsChart } from "../components/stock/EarningsActualsChart";
 import { EstimatesTable } from "../components/stock/EstimatesTable";
@@ -88,11 +88,15 @@ const StockDashboard = () => {
               </div>
             </div>
 
-            {/* Primary Chart: Price Action */}
-            <PriceActionChart data={d} />
-
-            {/* Key Metrics Grid */}
-            <MetricsGrid data={d} />
+            {/* Primary Chart + Key Metrics Row */}
+            <div class="flex flex-col lg:flex-row gap-6 h-auto lg:h-[500px]">
+              <div class="lg:w-3/4 w-full h-[400px] lg:h-full">
+                <PriceActionChart data={d} />
+              </div>
+              <div class="lg:w-1/4 w-full h-full">
+                <MetricsCard data={d} />
+              </div>
+            </div>
 
             {/* Secondary Charts: Revenue/Earnings & EPS Actuals */}
             <div class="bento-grid !grid-rows-none">

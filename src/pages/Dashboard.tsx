@@ -7,7 +7,6 @@ import {
 } from "solid-js";
 import { RecentTransactions } from "../components/RecentTransactions";
 import { ActivityCalendar } from "../components/ActivityCalendar";
-import { formatRupiah } from "../utils/format";
 import { CategoryCard } from "../components/CategoryCard";
 import { DailySpendChart } from "../components/DailySpendChart";
 import { HeroCard } from "../components/HeroCard";
@@ -75,7 +74,11 @@ const Dashboard = () => {
             />
           </div>
           <div class="w-[20%] h-full">
-            <GardenWins />
+            <GardenWins 
+              transactions={transactions() || []}
+              loading={transactions.loading}
+              dailyBudget={dailyBudget}
+            />
           </div>
         </div>
 
@@ -94,7 +97,11 @@ const Dashboard = () => {
             />
           </div>
           <div class="w-[20%] h-full">
-            <GardenWins />
+            <GardenWins 
+              transactions={transactions() || []}
+              loading={transactions.loading}
+              dailyBudget={dailyBudget}
+            />
           </div>
         </div>
 
