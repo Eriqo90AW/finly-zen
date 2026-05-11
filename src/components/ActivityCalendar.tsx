@@ -156,8 +156,8 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
               >
                 <div 
                   class={`w-full h-full rounded-md transition-all cursor-pointer flex items-center justify-center relative overflow-hidden
-                    ${isToday() ? 'ring-2 ring-spring shadow-[0_0_12px_rgba(82,194,120,0.3)] z-20' : 'hover:ring-2 hover:ring-spring'}
-                    group-hover:ring-2 group-hover:ring-spring`}
+                    ${isToday() ? 'ring-2 ring-forest shadow-[0_0_12px_rgba(82,194,120,0.3)] z-20' : 'hover:ring-2 hover:ring-forest'}
+                    group-hover:ring-2 group-hover:ring-forest`}
                   style={{ 
                     'background-color': getIntensityColor(amount()),
                     'opacity': day.isCurrentMonth ? 1 : 0.25
