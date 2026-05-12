@@ -52,13 +52,23 @@ const StockDashboard = () => {
                   <h1 class="text-4xl font-cormorant font-bold text-forest leading-none">
                     {d.company_name}
                   </h1>
-                  <div class="flex gap-2">
+                  <div class="flex flex-wrap gap-2">
                     <span class="bg-forest text-white text-xs px-2 py-0.5 rounded-lg font-bold tracking-wider">
                       {d.ticker}
                     </span>
                     <span class="bg-sage text-forest text-xs px-2 py-0.5 rounded-lg font-medium border border-forest/10">
                       {d.exchange}
                     </span>
+                    <Show when={d.sector}>
+                      <span class="bg-fin-blue/10 text-fin-blue text-[10px] px-2 py-0.5 rounded-lg font-bold border border-fin-blue/10 uppercase tracking-tight">
+                        {d.sector}
+                      </span>
+                    </Show>
+                    <Show when={d.industry}>
+                      <span class="bg-fin-purple/10 text-fin-purple text-[10px] px-2 py-0.5 rounded-lg font-bold border border-fin-purple/10 uppercase tracking-tight">
+                        {d.industry}
+                      </span>
+                    </Show>
                   </div>
                 </div>
                 <p class="text-sm text-earth/60 font-medium mt-1">

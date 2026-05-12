@@ -42,6 +42,14 @@ export const MetricsCard = (props: MetricsCardProps) => {
       metrics: [
         { label: "Float Shares", value: formatUSDCompact(props.data.advanced_ratios.float_shares).replace("$", ""), color: "var(--color-earth)" },
       ]
+    },
+    {
+      title: "Profile",
+      icon: "business",
+      metrics: [
+        { label: "Sector", value: props.data.sector || "N/A", color: "var(--color-fin-blue)" },
+        { label: "Industry", value: props.data.industry || "N/A", color: "var(--color-fin-purple)" },
+      ]
     }
   ]);
 
