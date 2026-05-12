@@ -89,3 +89,10 @@ export const formatMultiple = (amount: number | null | undefined): string => {
   if (amount == null) return "0.00x";
   return amount.toFixed(2) + "x";
 };
+
+export const formatNumericInput = (val: string): string => {
+  if (!val) return "";
+  const num = parseInt(val.replace(/\D/g, ""));
+  if (isNaN(num)) return "";
+  return new Intl.NumberFormat("id-ID").format(num);
+};

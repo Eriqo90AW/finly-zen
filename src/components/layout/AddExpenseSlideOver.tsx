@@ -8,7 +8,9 @@ import AccountBalanceWalletIcon from "@suid/icons-material/AccountBalanceWalletO
 import CalendarTodayIcon from "@suid/icons-material/CalendarTodayOutlined";
 import NotesIcon from "@suid/icons-material/NotesOutlined";
 import SyncIcon from "@suid/icons-material/Sync";
-import { formatIconName } from "../../utils/format";
+import RepeatIcon from "@suid/icons-material/Repeat";
+import HistoryIcon from "@suid/icons-material/History";
+import { formatIconName, formatNumericInput } from "../../utils/format";
 
 const AddExpenseSlideOver = () => {
   // Form State
@@ -119,23 +121,28 @@ const AddExpenseSlideOver = () => {
 
   return (
     <div
-      class={`fixed inset-0 z-50 flex justify-end transition-all duration-500 ${
-        state.ui.showAddExpense ? "pointer-events-auto" : "pointer-events-none"
-      }`}
+      class="fixed inset-0 z-50 flex justify-end"
+      classList={{
+        "pointer-events-auto": state.ui.showAddExpense,
+        "pointer-events-none": !state.ui.showAddExpense,
+      }}
     >
       {/* Backdrop */}
       <div
-        class={`absolute inset-0 bg-forest/20 backdrop-blur-sm transition-opacity duration-500 ${
-          state.ui.showAddExpense ? "opacity-100" : "opacity-0"
-        }`}
+        class="absolute inset-0 bg-forest/40 transition-opacity duration-300 will-change-opacity"
+        classList={{
+          "opacity-100": state.ui.showAddExpense,
+          "opacity-0": !state.ui.showAddExpense,
+        }}
         onClick={() => setState("ui", "showAddExpense", false)}
       />
 
       {/* Panel */}
       <div
-        class={`relative w-full max-w-[420px] h-screen bg-white shadow-[-20px_0_40px_rgba(26,77,46,0.15)] flex flex-col transition-transform duration-500 ease-out ${
-          state.ui.showAddExpense ? "translate-x-0" : "translate-x-full"
-        }`}
+        class="relative w-full max-w-[420px] h-screen bg-white flex flex-col transition-transform duration-300 ease-out will-change-transform contain-content"
+        style={{
+          transform: state.ui.showAddExpense ? "translate3d(0, 0, 0)" : "translate3d(100%, 0, 0)"
+        }}
       >
         {/* Header */}
         <div class="px-8 py-6 flex items-center justify-between border-b border-forest/5">
@@ -157,7 +164,7 @@ const AddExpenseSlideOver = () => {
 
         <form
           onSubmit={handleAdd}
-          class="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8 pb-32"
+          class="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8 pb-32 will-change-scroll contain-paint overscroll-contain"
         >
           {/* Type Toggle */}
           <div class="flex p-1 bg-page-bg rounded-2xl border border-forest/5">
@@ -195,11 +202,15 @@ const AddExpenseSlideOver = () => {
                 Rp
               </span>
               <input
-                type="number"
+                type="text"
+                inputmode="numeric"
                 placeholder="0"
                 required
-                value={amount()}
-                onInput={(e) => setAmount(e.currentTarget.value)}
+                value={formatNumericInput(amount())}
+                onInput={(e) => {
+                  const rawValue = e.currentTarget.value.replace(/\D/g, "");
+                  setAmount(rawValue);
+                }}
                 class="w-full pl-8 pb-2 bg-transparent border-b-2 border-sage/30 focus:border-forest outline-none text-5xl font-outfit font-semibold text-forest transition-all placeholder:text-forest/10"
               />
             </div>
@@ -224,7 +235,7 @@ const AddExpenseSlideOver = () => {
                   <button
                     type="button"
                     onClick={() => setMerchant(s)}
-                    class="px-3 py-1 bg-sage/20 text-forest text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-sage/40 transition-colors cursor-pointer"
+                    class="px-3 py-1 bg-sage/40 border-forest/10 border text-forest text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-sage/40 transition-colors cursor-pointer"
                   >
                     {s}
                   </button>
@@ -254,11 +265,11 @@ const AddExpenseSlideOver = () => {
                     <button
                       type="button"
                       onClick={() => setCategoryId(cat.id)}
-                      class={`p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all group cursor-pointer ${
-                        categoryId() === cat.id
-                          ? "border-transparent text-white shadow-xl scale-[1.05]"
-                          : "bg-white border-forest/10 text-forest hover:border-forest/30"
-                      }`}
+                      class="p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-[transform,colors,shadow] duration-200 group cursor-pointer"
+                      classList={{
+                        "border-transparent text-white shadow-xl scale-[1.05]": categoryId() === cat.id,
+                        "bg-white border-forest/10 text-forest hover:border-forest/30": categoryId() !== cat.id,
+                      }}
                       style={{
                         "background-color": categoryId() === cat.id 
                           ? (cat.color?.startsWith('0x') ? '#' + cat.color.substring(4) : cat.color) || "var(--color-forest)"
@@ -309,11 +320,11 @@ const AddExpenseSlideOver = () => {
                     <button
                       type="button"
                       onClick={() => setAccountId(acc.id)}
-                      class={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all cursor-pointer ${
-                        accountId() === acc.id
-                          ? "shadow-sm"
-                          : "bg-page-bg border-forest/5 hover:border-forest/20"
-                      }`}
+                      class="w-full p-4 rounded-2xl border flex items-center justify-between transition-[colors,shadow,border-color] duration-200 cursor-pointer"
+                      classList={{
+                        "shadow-sm": accountId() === acc.id,
+                        "bg-page-bg border-forest/5 hover:border-forest/20": accountId() !== acc.id,
+                      }}
                       style={{
                         "background-color": accountId() === acc.id 
                           ? (acc.color?.startsWith('0x') ? '#' + acc.color.substring(4) + '15' : acc.color + '15') || "rgba(26,77,46,0.05)"
@@ -368,23 +379,26 @@ const AddExpenseSlideOver = () => {
                 type="date"
                 value={date()}
                 onInput={(e) => setDate(e.currentTarget.value)}
-                class="w-full p-4 bg-page-bg rounded-2xl border border-forest/5 font-outfit text-sm focus:outline-none"
+                class="w-full p-4 bg-page-bg rounded-2xl border border-forest/5 font-outfit text-sm focus:outline-none cursor-pointer"
               />
             </div>
             <div class="space-y-3 flex flex-col">
               <label class="text-[10px] font-bold text-earth uppercase tracking-widest flex items-center gap-1.5">
-                <SyncIcon sx={{ fontSize: 14 }} /> Recurring?
+                <SyncIcon sx={{ fontSize: 14 }} /> Is Recurring?
               </label>
               <button
                 type="button"
                 onClick={() => setIsRecurring(!isRecurring())}
-                class={`flex-1 p-4 rounded-2xl border flex items-center justify-center gap-2 transition-all font-outfit text-sm font-bold cursor-pointer ${
+                class={`flex p-4 rounded-2xl border gap-2 transition-all font-outfit text-sm font-bold cursor-pointer ${
                   isRecurring()
                     ? "bg-spring/10 border-spring text-spring"
                     : "bg-page-bg border-forest/5 text-earth"
                 }`}
               >
-                {isRecurring() ? "Yes, every month" : "No, one-time"}
+                <Show when={isRecurring()} fallback={<HistoryIcon sx={{ fontSize: 18 }} />}>
+                  <RepeatIcon sx={{ fontSize: 18 }} />
+                </Show>
+                {isRecurring() ? "Every Month" : "One-time"}
               </button>
             </div>
           </div>
@@ -404,7 +418,7 @@ const AddExpenseSlideOver = () => {
         </form>
 
         {/* Footer Actions */}
-        <div class="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-white via-white to-transparent pt-12">
+        <div class="absolute bottom-0 left-0 right-0 p-8 bg-white">
           <button
             type="submit"
             onClick={handleAdd}
