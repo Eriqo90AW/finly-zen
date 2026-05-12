@@ -273,7 +273,7 @@ export const GardenWins = (props: GardenWinsProps) => {
               ? `Your net expenses are ${Math.abs(Math.round(stats()!.netSpendDiffPct))}% lower than last month.`
               : `Your net expenses are ${Math.round(stats()!.netSpendDiffPct)}% higher than last month.`}
           </p>
-          <p class="text-[11px] opacity-80">
+          <p class="text-[10px] opacity-80">
             {stats()!.underBudgetPctDiff > 0
               ? `Budget discipline improved by ${Math.abs(Math.round(stats()!.underBudgetPctDiff))}%!`
               : stats()!.underBudgetPctDiff < 0 

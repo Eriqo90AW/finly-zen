@@ -43,7 +43,43 @@ export async function getTransactions() {
 // Budgets and Goals are now handled locally via the store/localStorage
 
 
-export async function addTransaction(transaction: Omit<Transaction, "id">) {
+
+export async function getCategories() {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
+  return data;
+}
+
+export async function getAccounts() {
+  const { data, error } = await supabase
+    .from("accounts")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching accounts:", error);
+    return [];
+  }
+  return data;
+}
+
+export async function addTransaction(transaction: {
+  amount: number;
+  name: string;
+  category_id: string;
+  account_id: string;
+  type: string;
+  note?: string;
+  is_recurring?: boolean;
+  created_at?: string;
+}) {
   const { data, error } = await supabase
     .from("transactions")
     .insert([transaction])
@@ -53,7 +89,7 @@ export async function addTransaction(transaction: Omit<Transaction, "id">) {
     console.error("Error adding transaction:", error);
     throw error;
   }
-  return data[0] as Transaction;
+  return data[0];
 }
 
 
