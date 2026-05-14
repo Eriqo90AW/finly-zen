@@ -174,7 +174,7 @@ export const EarningsActualsChart = (props: EarningsActualsChartProps) => {
 
   return (
     <div class="col-span-5 premium-card p-6 min-h-[400px] flex flex-col">
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center justify-between mb-6 hover:cursor-default">
         <div>
           <h4 class="font-outfit font-bold text-forest text-lg">EPS Performance</h4>
           <p class="text-xs text-earth/60">{periodType() === "annual" ? "Historical" : "Actuals vs Estimates"}</p>
@@ -191,7 +191,7 @@ export const EarningsActualsChart = (props: EarningsActualsChartProps) => {
           <div class="flex items-center bg-sage/10 p-1 rounded-xl border border-forest/5">
             <button 
               onClick={() => setPeriodType("annual")}
-              class={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
+              class={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all hover:cursor-pointer ${
                 periodType() === "annual" ? "bg-white text-forest shadow-sm" : "text-earth/60 hover:text-earth"
               }`}
             >
@@ -199,7 +199,7 @@ export const EarningsActualsChart = (props: EarningsActualsChartProps) => {
             </button>
             <button 
               onClick={() => setPeriodType("quarterly")}
-              class={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
+              class={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all hover:cursor-pointer ${
                 periodType() === "quarterly" ? "bg-white text-forest shadow-sm" : "text-earth/60 hover:text-earth"
               }`}
             >

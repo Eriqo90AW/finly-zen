@@ -10,7 +10,7 @@ export const StockHero = (props: StockHeroProps) => {
   const isPositive = () => diff() >= 0;
 
   return (
-    <div class="premium-card relative overflow-hidden p-6 bg-gradient-to-br from-white via-sage/5 to-sage/10 border-forest/10 group transition-all duration-500 hover:shadow-lg">
+    <div class="premium-card relative overflow-hidden p-6 bg-gradient-to-br from-white via-sage/5 to-sage/10 border-forest/10 group transition-all duration-500 hover:shadow-lg hover:cursor-default">
       {/* Decorative background element */}
       <div class="absolute -top-24 -right-24 w-64 h-64 bg-forest/5 rounded-full blur-3xl group-hover:bg-forest/10 transition-colors duration-700"></div>
       

@@ -34,7 +34,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
   );
 
   return (
-    <div class="premium-card overflow-hidden">
+    <div class="premium-card overflow-hidden hover:cursor-default">
       <div class="p-6 border-b border-forest/5 flex items-center justify-between bg-sage/5">
         <div>
           <h4 class="font-outfit font-bold text-forest text-lg">Earnings Estimates</h4>

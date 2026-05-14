@@ -159,3 +159,10 @@
 .animate-pulse-soft {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* ApexCharts Interactive Elements Cursor */
+.apexcharts-candlestick-series path,
+.apexcharts-bar-series path,
+.apexcharts-bar-series rect {
+  cursor: pointer;
+}
