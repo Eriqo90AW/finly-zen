@@ -12,6 +12,14 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
   const chartOptions = (): ApexOptions => {
     const splitAction = props.data.corporate_actions.find(a => a.type === "split");
     
+    // Find the closest index for the split action annotation
+    let splitIndex = -1;
+    if (splitAction) {
+      splitIndex = props.data.price_action.findIndex(p => 
+        new Date(p.date).getTime() >= new Date(splitAction.date).getTime()
+      );
+    }
+    
     return {
       chart: {
         type: "candlestick",
@@ -19,7 +27,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
         zoom: { enabled: false },
         fontFamily: "Outfit",
         background: "transparent",
-        animations: { enabled: true }
+        animations: { enabled: false } // Disable animations for better performance and to avoid visual jumps
       },
       plotOptions: {
         candlestick: {
@@ -34,15 +42,24 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
       grid: {
         borderColor: "rgba(26,77,46,0.15)",
         strokeDashArray: 4,
-        xaxis: { lines: { show: false } }
+        xaxis: { lines: { show: false } },
+        padding: { left: 10, right: 10 }
       },
       xaxis: {
-        type: "datetime",
+        type: "category",
         labels: {
-          style: { colors: "#5C6B5E", fontSize: "10px" }
+          style: { colors: "#5C6B5E", fontSize: "10px" },
+          formatter: (val) => {
+            if (!val) return "";
+            const d = new Date(val);
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          },
+          rotate: 0,
+          hideOverlappingLabels: true
         },
         axisBorder: { show: false },
-        axisTicks: { show: false }
+        axisTicks: { show: false },
+        tooltip: { enabled: false }
       },
       yaxis: {
         opposite: true,
@@ -52,13 +69,13 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
         }
       },
       annotations: {
-        xaxis: splitAction ? [
+        xaxis: splitIndex !== -1 ? [
           {
-            x: new Date(splitAction.date).getTime(),
+            x: props.data.price_action[splitIndex].date,
             borderColor: "var(--color-forest)",
             strokeDashArray: 4,
             label: {
-              text: `${splitAction.stock_split} Split`,
+              text: `${splitAction!.stock_split} Split`,
               style: {
                 color: "#fff",
                 background: "var(--color-forest)",
@@ -74,6 +91,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
         x: { show: false },
         custom: function({ series, seriesIndex, dataPointIndex, w }) {
           const point = props.data.price_action[dataPointIndex];
+          if (!point) return "";
           return `
             <div class="px-4 py-4 bg-[#1C2B20]/90 text-white text-xs font-outfit rounded-xl shadow-2xl flex flex-col gap-2 w-[220px] border border-white/10">
               <div class="text-white/40 text-[10px] uppercase tracking-wider font-bold">
@@ -116,7 +134,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
           series={[{
             name: "Price",
             data: props.data.price_action.map(p => ({
-              x: new Date(p.date).getTime(),
+              x: p.date,
               y: [p.open, p.high, p.low, p.close]
             }))
           }]}
@@ -125,4 +143,5 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
       </div>
     </div>
   );
+
 };

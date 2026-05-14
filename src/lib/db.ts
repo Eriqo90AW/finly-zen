@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
 import type { Transaction, Budget, Goal } from "../store";
+import { formatHexColor } from "../utils/format";
+
 
 export async function getTransactions() {
   const { data, error } = await supabase
@@ -14,30 +16,22 @@ export async function getTransactions() {
 
   // Map view fields to internal Transaction type
   return (data || []).map((t) => {
-    // Helper to convert 0xFF8B5CF6 to #8B5CF6
-    const formatColor = (c: string | null) => {
-      if (!c) return undefined;
-      if (c.startsWith("0x")) {
-        return "#" + c.substring(4); // Skip 0x and Alpha FF
-      }
-      return c;
-    };
-
     return {
       id: t.transaction_id,
       amount: t.amount,
       category: t.category_name,
       categoryIcon: t.category_icon,
-      categoryColor: formatColor(t.category_color),
+      categoryColor: formatHexColor(t.category_color),
       name: t.transaction_name,
       accountName: t.account_name,
-      accountColor: formatColor(t.account_color),
+      accountColor: formatHexColor(t.account_color),
       type: t.transaction_type,
       date: t.created_at,
       note: t.note,
       isRecurring: t.is_recurring,
     };
   }) as Transaction[];
+
 }
 
 // Budgets and Goals are now handled locally via the store/localStorage
@@ -52,8 +46,12 @@ export async function getCategories() {
     console.error("Error fetching categories:", error);
     return [];
   }
-  return data;
+  return (data || []).map((cat) => ({
+    ...cat,
+    color: formatHexColor(cat.color),
+  }));
 }
+
 
 export async function getAccounts() {
   const { data, error } = await supabase
@@ -65,8 +63,12 @@ export async function getAccounts() {
     console.error("Error fetching accounts:", error);
     return [];
   }
-  return data;
+  return (data || []).map((acc) => ({
+    ...acc,
+    color: formatHexColor(acc.color),
+  }));
 }
+
 
 export async function addTransaction(transaction: {
   amount: number;

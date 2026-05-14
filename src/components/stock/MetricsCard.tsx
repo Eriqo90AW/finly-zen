@@ -40,17 +40,9 @@ export const MetricsCard = (props: MetricsCardProps) => {
       title: "Market Data",
       icon: "public",
       metrics: [
-        { label: "Float Shares", value: formatUSDCompact(props.data.advanced_ratios.float_shares).replace("$", ""), color: "var(--color-earth)" },
+        { label: "Shares Float", value: formatUSDCompact(props.data.advanced_ratios.float_shares).replace("$", ""), color: "var(--color-earth)" },
       ]
     },
-    {
-      title: "Profile",
-      icon: "business",
-      metrics: [
-        { label: "Sector", value: props.data.sector || "N/A", color: "var(--color-fin-blue)" },
-        { label: "Industry", value: props.data.industry || "N/A", color: "var(--color-fin-purple)" },
-      ]
-    }
   ]);
 
   return (
@@ -83,7 +75,7 @@ export const MetricsCard = (props: MetricsCardProps) => {
                           {metric.label}
                         </span>
                       </div>
-                      <span class="text-base font-cormorant font-bold text-forest group-hover:scale-105 transition-transform origin-right">
+                      <span class="text-base font-outfit font-bold text-forest group-hover:scale-105 transition-transform origin-right">
                         {metric.value}
                       </span>
                     </div>

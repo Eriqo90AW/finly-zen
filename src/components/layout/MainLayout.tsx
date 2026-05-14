@@ -15,7 +15,7 @@ const MainLayout = (props: ParentProps) => {
       <div class="flex flex-col flex-1 min-w-0 overflow-hidden relative">
         <TopBar />
         
-        <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <main class="flex-1 overflow-y-auto p-6 custom-scrollbar">
           <div class="max-w-[1400px] mx-auto">
             {props.children}
           </div>

@@ -96,3 +96,10 @@ export const formatNumericInput = (val: string): string => {
   if (isNaN(num)) return "";
   return new Intl.NumberFormat("id-ID").format(num);
 };
+export const formatHexColor = (c: string | null | undefined): string | undefined => {
+  if (!c) return undefined;
+  if (c.startsWith("0x")) {
+    return "#" + c.substring(4); // Skip 0x and Alpha FF
+  }
+  return c;
+};

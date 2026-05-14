@@ -67,8 +67,8 @@ const StockDashboard = () => {
             <StockHero data={d} marketStatus={marketStatus()} />
 
             {/* Primary Chart + Key Metrics Row */}
-            <div class="flex flex-col lg:flex-row gap-6 h-auto lg:h-[500px]">
-              <div class="lg:w-3/4 w-full h-[400px] lg:h-full">
+            <div class="flex flex-col lg:flex-row gap-6 h-auto lg:h-[470px]">
+              <div class="lg:w-3/4 w-full h-[370px] lg:h-full">
                 <PriceActionChart data={d} />
               </div>
               <div class="lg:w-1/4 w-full h-full">

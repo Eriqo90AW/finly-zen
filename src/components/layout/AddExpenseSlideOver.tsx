@@ -1,4 +1,11 @@
-import { createSignal, For, createResource, Show, createMemo, createEffect } from "solid-js";
+import {
+  createSignal,
+  For,
+  createResource,
+  Show,
+  createMemo,
+  createEffect,
+} from "solid-js";
 import { state, setState } from "../../store";
 import { getCategories, getAccounts, addTransaction } from "../../lib/db";
 import CloseIcon from "@suid/icons-material/Close";
@@ -57,12 +64,16 @@ const AddExpenseSlideOver = () => {
       const incomeCat = cats.find((c) => c.name.toLowerCase() === "income");
       if (incomeCat) setCategoryId(incomeCat.id);
     } else {
-      const currentCatName = cats.find((c) => c.id === categoryId())?.name.toLowerCase();
+      const currentCatName = cats
+        .find((c) => c.id === categoryId())
+        ?.name.toLowerCase();
       if (!categoryId() || currentCatName === "income") {
         const foodCat = cats.find((c) => c.name.toLowerCase() === "food");
         if (foodCat) setCategoryId(foodCat.id);
         else {
-          const firstExpense = cats.find((c) => c.name.toLowerCase() !== "income");
+          const firstExpense = cats.find(
+            (c) => c.name.toLowerCase() !== "income",
+          );
           if (firstExpense) setCategoryId(firstExpense.id);
         }
       }
@@ -141,7 +152,9 @@ const AddExpenseSlideOver = () => {
       <div
         class="relative w-full max-w-[420px] h-screen bg-white flex flex-col transition-transform duration-300 ease-out will-change-transform contain-content"
         style={{
-          transform: state.ui.showAddExpense ? "translate3d(0, 0, 0)" : "translate3d(100%, 0, 0)"
+          transform: state.ui.showAddExpense
+            ? "translate3d(0, 0, 0)"
+            : "translate3d(100%, 0, 0)",
         }}
       >
         {/* Header */}
@@ -267,31 +280,38 @@ const AddExpenseSlideOver = () => {
                       onClick={() => setCategoryId(cat.id)}
                       class="p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-[transform,colors,shadow] duration-200 group cursor-pointer"
                       classList={{
-                        "border-transparent text-white shadow-xl scale-[1.05]": categoryId() === cat.id,
-                        "bg-white border-forest/10 text-forest hover:border-forest/30": categoryId() !== cat.id,
+                        "border-transparent text-white shadow-xl scale-[1.05]":
+                          categoryId() === cat.id,
+                        "bg-white border-forest/10 text-forest hover:border-forest/30":
+                          categoryId() !== cat.id,
                       }}
                       style={{
-                        "background-color": categoryId() === cat.id 
-                          ? (cat.color?.startsWith('0x') ? '#' + cat.color.substring(4) : cat.color) || "var(--color-forest)"
-                          : (cat.color?.startsWith('0x') ? '#' + cat.color.substring(4) + '15' : cat.color + '15') || "rgba(232, 245, 236, 0.5)"
+                        "background-color":
+                          categoryId() === cat.id
+                            ? cat.color || "var(--color-forest)"
+                            : cat.color
+                              ? cat.color + "15"
+                              : "rgba(232, 245, 236, 0.5)",
                       }}
                     >
                       <span
                         class={`material-icons text-xl h-6 w-6 ${categoryId() === cat.id ? "text-white" : ""}`}
                         style={{
-                          color: categoryId() === cat.id 
-                            ? "white" 
-                            : (cat.color?.startsWith('0x') ? '#' + cat.color.substring(4) : cat.color) || "var(--color-forest)"
+                          color:
+                            categoryId() === cat.id
+                              ? "white"
+                              : cat.color || "var(--color-forest)",
                         }}
                       >
                         {formatIconName(cat.icon)}
                       </span>
-                      <span 
+                      <span
                         class="text-[10px] font-bold font-outfit uppercase tracking-tighter truncate w-full text-center"
                         style={{
-                          color: categoryId() === cat.id 
-                            ? "white" 
-                            : "var(--color-forest)"
+                          color:
+                            categoryId() === cat.id
+                              ? "white"
+                              : "var(--color-forest)",
                         }}
                       >
                         {cat.name}
@@ -323,40 +343,48 @@ const AddExpenseSlideOver = () => {
                       class="w-full p-4 rounded-2xl border flex items-center justify-between transition-[colors,shadow,border-color] duration-200 cursor-pointer"
                       classList={{
                         "shadow-sm": accountId() === acc.id,
-                        "bg-page-bg border-forest/5 hover:border-forest/20": accountId() !== acc.id,
+                        "bg-page-bg border-forest/5 hover:border-forest/20":
+                          accountId() !== acc.id,
                       }}
                       style={{
-                        "background-color": accountId() === acc.id 
-                          ? (acc.color?.startsWith('0x') ? '#' + acc.color.substring(4) + '15' : acc.color + '15') || "rgba(26,77,46,0.05)"
-                          : "var(--color-page-bg)",
-                        "border-color": accountId() === acc.id
-                          ? (acc.color?.startsWith('0x') ? '#' + acc.color.substring(4) : acc.color) || "var(--color-forest)"
-                          : "rgba(26,77,46,0.05)"
+                        "background-color":
+                          accountId() === acc.id
+                            ? acc.color
+                              ? acc.color + "15"
+                              : "rgba(26,77,46,0.05)"
+                            : "var(--color-page-bg)",
+                        "border-color":
+                          accountId() === acc.id
+                            ? acc.color || "var(--color-forest)"
+                            : "rgba(26,77,46,0.05)",
                       }}
                     >
                       <div class="flex items-center gap-3">
                         <div
                           class="w-2 h-2 rounded-full"
                           style={{
-                            "background-color": (acc.color?.startsWith('0x') ? '#' + acc.color.substring(4) : acc.color) || "var(--color-forest)",
+                            "background-color":
+                              acc.color || "var(--color-forest)",
                           }}
                         />
                         <span
                           class={`font-outfit text-sm font-semibold`}
                           style={{
-                            color: accountId() === acc.id 
-                              ? (acc.color?.startsWith('0x') ? '#' + acc.color.substring(4) : acc.color) || "var(--color-forest)"
-                              : "var(--color-earth)"
+                            color:
+                              accountId() === acc.id
+                                ? acc.color || "var(--color-forest)"
+                                : "var(--color-earth)",
                           }}
                         >
                           {acc.name}
                         </span>
                       </div>
                       <Show when={accountId() === acc.id}>
-                        <div 
+                        <div
                           class="w-5 h-5 rounded-full text-white flex items-center justify-center"
                           style={{
-                            "background-color": (acc.color?.startsWith('0x') ? '#' + acc.color.substring(4) : acc.color) || "var(--color-forest)"
+                            "background-color":
+                              acc.color || "var(--color-forest)",
                           }}
                         >
                           <CheckIcon sx={{ fontSize: 12 }} />
@@ -395,7 +423,10 @@ const AddExpenseSlideOver = () => {
                     : "bg-page-bg border-forest/5 text-earth"
                 }`}
               >
-                <Show when={isRecurring()} fallback={<HistoryIcon sx={{ fontSize: 18 }} />}>
+                <Show
+                  when={isRecurring()}
+                  fallback={<HistoryIcon sx={{ fontSize: 18 }} />}
+                >
                   <RepeatIcon sx={{ fontSize: 18 }} />
                 </Show>
                 {isRecurring() ? "Every Month" : "One-time"}
