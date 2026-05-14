@@ -14,7 +14,6 @@ interface GardenWinsProps {
   dailyBudget: () => number;
 }
 
-
 export const GardenWins = (props: GardenWinsProps) => {
   const stats = createMemo(() => {
     if (props.loading) return null;
