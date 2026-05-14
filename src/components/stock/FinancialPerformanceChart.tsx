@@ -20,7 +20,7 @@ export const FinancialPerformanceChart = (props: FinancialPerformanceChartProps)
       : props.data.segment_data.quarterly_financials;
   });
 
-  const chartOptions = (): ApexOptions => ({
+  const chartOptions = createMemo((): ApexOptions => ({
     chart: {
       type: "bar",
       toolbar: { show: false },
@@ -115,7 +115,7 @@ export const FinancialPerformanceChart = (props: FinancialPerformanceChartProps)
         `;
       }
     }
-  });
+  }));
 
   const series = createMemo(() => [
     {

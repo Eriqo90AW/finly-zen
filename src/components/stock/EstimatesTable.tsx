@@ -1,17 +1,17 @@
-import { For, Show } from "solid-js";
+import { For, Show, createMemo } from "solid-js";
 import { formatUSD, formatUSDCompact, formatPercent } from "../../utils/format";
 import { EstimatesTableProps, Estimate } from "../../types";
 
 
 export const EstimatesTable = (props: EstimatesTableProps) => {
-  const estimates = props.data.earnings_estimates.by_period;
+  const estimates = createMemo(() => props.data.earnings_estimates.by_period);
   
-  const columns = [
-    { label: "Current Quarter", data: estimates.current_quarter, period: "Jun 2026", isCurrent: true, type: "quarter" },
-    { label: "Next Quarter", data: estimates.next_quarter, period: "Sep 2026", isCurrent: false, type: "quarter" },
-    { label: "Current Year", data: estimates.current_year, period: "Dec 2026", isCurrent: true, type: "year" },
-    { label: "Next Year", data: estimates.next_year, period: "Dec 2027", isCurrent: false, type: "year" },
-  ];
+  const columns = createMemo(() => [
+    { label: "Current Quarter", data: estimates().current_quarter, period: "Jun 2026", isCurrent: true, type: "quarter" },
+    { label: "Next Quarter", data: estimates().next_quarter, period: "Sep 2026", isCurrent: false, type: "quarter" },
+    { label: "Current Year", data: estimates().current_year, period: "Dec 2026", isCurrent: true, type: "year" },
+    { label: "Next Year", data: estimates().next_year, period: "Dec 2027", isCurrent: false, type: "year" },
+  ]);
 
   const Row = (props: { label: string, render: (est: Estimate) => any, subLabel?: string }) => (
     <tr class="border-b border-forest/5 hover:bg-sage/10 transition-colors">
@@ -23,7 +23,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
           </Show>
         </div>
       </td>
-      <For each={columns}>
+      <For each={columns()}>
         {(col) => (
           <td class={`py-4 px-4 text-sm font-outfit text-forest font-medium ${col.isCurrent ? "bg-earth/6" : "bg-earth/3"}`}>
             {props.render(col.data)}
@@ -57,7 +57,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
           <thead>
             <tr class="bg-forest/5">
               <th class="py-3 pl-4 pr-2 text-[10px] font-bold text-earth uppercase tracking-widest w-[180px]">Metric</th>
-              <For each={columns}>
+              <For each={columns()}>
                 {(col) => (
                   <th class={`py-3 px-4 ${col.isCurrent ? "bg-earth/6" : "bg-earth/3"}`}>
                     <div class="flex flex-col">
@@ -135,7 +135,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
             />
             <tr class="bg-forest/5">
               <td class="py-3 pl-4 pr-2 text-[10px] font-bold text-earth uppercase tracking-widest">Analysts</td>
-              <For each={columns}>
+              <For each={columns()}>
                 {(col) => (
                   <td class={`py-3 px-4 text-xs font-bold text-forest ${col.isCurrent ? "bg-earth/6" : "bg-earth/3"}`}>
                     {col.data.eps_num_analysts} Analysts

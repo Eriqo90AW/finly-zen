@@ -41,7 +41,7 @@ export const EarningsActualsChart = (props: EarningsActualsChartProps) => {
     }
   });
 
-  const chartOptions = (): ApexOptions => {
+  const chartOptions = createMemo((): ApexOptions => {
     return {
       chart: {
         type: "bar",
@@ -148,7 +148,7 @@ export const EarningsActualsChart = (props: EarningsActualsChartProps) => {
         }
       }
     };
-  };
+  });
 
   const series = createMemo(() => {
     if (periodType() === "quarterly") {

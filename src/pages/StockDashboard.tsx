@@ -20,7 +20,6 @@ const StockDashboard = () => {
   const [nextUpdateIn, setNextUpdateIn] = createSignal(120);
 
   let marketTimer: any;
-  let refreshTimer: any;
   let countdownTimer: any;
 
   onMount(() => {
@@ -29,21 +28,21 @@ const StockDashboard = () => {
       setMarketStatus(getMarketStatus());
     }, 1000);
 
-    // Refresh stock data every 2 minutes
-    refreshTimer = setInterval(() => {
-      if (!stockData.loading) {
-        refetch();
-        setNextUpdateIn(120);
-      }
-    }, 120000);
-
-    // Countdown for next update
+    // Synchronized Countdown & Refresh
     countdownTimer = setInterval(() => {
-      setNextUpdateIn(prev => (prev > 0 ? prev - 1 : 120));
+      setNextUpdateIn((prev) => {
+        if (prev <= 1) {
+          if (!stockData.loading) {
+            refetch();
+          }
+          return 120;
+        }
+        return prev - 1;
+      });
     }, 1000);
   });
 
-  // Reset countdown when ticker changes
+  // Reset countdown when ticker changes to keep it fresh
   createEffect(() => {
     if (params.ticker) {
       setNextUpdateIn(120);
@@ -52,7 +51,6 @@ const StockDashboard = () => {
 
   onCleanup(() => {
     clearInterval(marketTimer);
-    clearInterval(refreshTimer);
     clearInterval(countdownTimer);
   });
 
@@ -98,41 +96,40 @@ const StockDashboard = () => {
   );
 
   return (
-    <Show when={!stockData.loading || timedOut()} fallback={
+    <Show when={stockData() || !stockData.loading || timedOut()} fallback={
       <div class="flex flex-col items-center justify-center min-h-[600px] gap-4">
         <div class="w-12 h-12 border-4 border-forest/10 border-t-forest rounded-full animate-spin"></div>
         <p class="text-earth font-outfit font-medium">Fetching market data for {params.ticker?.toUpperCase()}...</p>
       </div>
     }>
       <Show when={!timedOut() && stockData()} fallback={<ErrorState />}>
-        {(data) => {
-          const d = data();
-          return (
-          <div class="space-y-6 animate-fade-in-up pb-10">
-            {/* Hero Section */}
-            <StockHero data={d} marketStatus={marketStatus()} nextUpdateIn={nextUpdateIn()} />
+        <div class="space-y-6 animate-fade-in-up pb-10">
+          {/* Hero Section */}
+          <StockHero
+            data={stockData()!}
+            marketStatus={marketStatus()}
+            nextUpdateIn={nextUpdateIn()}
+          />
 
-            {/* Primary Chart + Key Metrics Row */}
-            <div class="flex flex-col lg:flex-row gap-6 h-auto lg:h-[470px]">
-              <div class="lg:w-3/4 w-full h-[370px] lg:h-full">
-                <PriceActionChart data={d} />
-              </div>
-              <div class="lg:w-1/4 w-full h-full">
-                <MetricsCard data={d} />
-              </div>
+          {/* Primary Chart + Key Metrics Row */}
+          <div class="flex flex-col lg:flex-row gap-6 h-auto lg:h-[470px]">
+            <div class="lg:w-3/4 w-full h-[370px] lg:h-full">
+              <PriceActionChart data={stockData()!} />
             </div>
-
-            {/* Secondary Charts: Revenue/Earnings & EPS Actuals */}
-            <div class="bento-grid !grid-rows-none">
-              <FinancialPerformanceChart data={d} />
-              <EarningsActualsChart data={d} />
+            <div class="lg:w-1/4 w-full h-full">
+              <MetricsCard data={stockData()!} />
             </div>
-
-            {/* Detailed Data: Forward Estimates */}
-            <EstimatesTable data={d} />
           </div>
-          );
-        }}
+
+          {/* Secondary Charts: Revenue/Earnings & EPS Actuals */}
+          <div class="bento-grid !grid-rows-none">
+            <FinancialPerformanceChart data={stockData()!} />
+            <EarningsActualsChart data={stockData()!} />
+          </div>
+
+          {/* Detailed Data: Forward Estimates */}
+          <EstimatesTable data={stockData()!} />
+        </div>
       </Show>
     </Show>
   );
