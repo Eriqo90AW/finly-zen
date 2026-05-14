@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Transaction, Budget, Goal } from "../store";
+import type { Transaction } from "../store";
 import { formatHexColor } from "../utils/format";
 
 
@@ -67,27 +67,4 @@ export async function getAccounts() {
     ...acc,
     color: formatHexColor(acc.color),
   }));
-}
-
-
-export async function addTransaction(transaction: {
-  amount: number;
-  name: string;
-  category_id: string;
-  account_id: string;
-  type: string;
-  note?: string;
-  is_recurring?: boolean;
-  created_at?: string;
-}) {
-  const { data, error } = await supabase
-    .from("transactions")
-    .insert([transaction])
-    .select();
-
-  if (error) {
-    console.error("Error adding transaction:", error);
-    throw error;
-  }
-  return data[0];
 }

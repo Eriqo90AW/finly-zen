@@ -7,7 +7,8 @@ import {
   createEffect,
 } from "solid-js";
 import { state, setState } from "../../store";
-import { getCategories, getAccounts, addTransaction } from "../../lib/db";
+import { getCategories, getAccounts } from "../../lib/db";
+import { addTransaction, type TransactionType } from "../../lib/transactions";
 import CloseIcon from "@suid/icons-material/Close";
 import CheckIcon from "@suid/icons-material/Check";
 import LocalOfferIcon from "@suid/icons-material/LocalOfferOutlined";
@@ -37,12 +38,13 @@ const AddExpenseSlideOver = () => {
 
   // Suggestions (could be dynamic later)
   const suggestions = [
-    "Starbucks",
-    "Amazon",
-    "Grab",
-    "GoJek",
-    "Netflix",
-    "Spotify",
+    "Grabfood",
+    "Parkir",
+    "Bensin",
+    "Sarapan",
+    "Makan Siang",
+    "Grabbike",
+    "Indomaret",
   ];
 
   const filteredCategories = createMemo(() => {
@@ -89,15 +91,20 @@ const AddExpenseSlideOver = () => {
 
     setIsSubmitting(true);
     try {
+      const [year, month, day] = date().split("-").map(Number);
+      const transactionDate = new Date();
+      transactionDate.setFullYear(year, month - 1, day);
+
       await addTransaction({
         amount: parseFloat(amount()),
         name: merchant(),
-        category_id: categoryId(),
-        account_id: accountId(),
-        type: type(),
+        categoryId: categoryId(),
+        accountId: accountId(),
+        userId: selectedAccount()?.user_id,
+        type: type() as TransactionType,
         note: note(),
-        is_recurring: isRecurring(),
-        created_at: new Date(date()).toISOString(),
+        isRecurring: isRecurring(),
+        createdAt: transactionDate,
       });
 
       // Reset and close
