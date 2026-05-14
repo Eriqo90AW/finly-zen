@@ -14,19 +14,30 @@ import { MarketStatus } from "../types";
 
 const StockDashboard = () => {
   const params = useParams();
-  const [stockData] = createResource(() => params.ticker, fetchStockData);
+  const [stockData, { refetch }] = createResource(() => params.ticker, fetchStockData);
   
   const [marketStatus, setMarketStatus] = createSignal<MarketStatus>(getMarketStatus());
 
-  let timer: any;
+  let marketTimer: any;
+  let refreshTimer: any;
+
   onMount(() => {
-    timer = setInterval(() => {
+    // Update market status every second
+    marketTimer = setInterval(() => {
       setMarketStatus(getMarketStatus());
     }, 1000);
+
+    // Refresh stock data every 2 minutes
+    refreshTimer = setInterval(() => {
+      if (!stockData.loading) {
+        refetch();
+      }
+    }, 120000);
   });
 
   onCleanup(() => {
-    clearInterval(timer);
+    clearInterval(marketTimer);
+    clearInterval(refreshTimer);
   });
 
 
