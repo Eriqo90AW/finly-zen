@@ -32,7 +32,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
       },
       dataLabels: { enabled: false },
       grid: {
-        borderColor: "rgba(26,77,46,0.1)",
+        borderColor: "rgba(26,77,46,0.15)",
         strokeDashArray: 4,
         xaxis: { lines: { show: false } }
       },
@@ -88,7 +88,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
                 <div class="flex flex-col"><span class="text-white/40 text-[9px] uppercase font-bold">Open</span> <span class="font-medium">${formatUSD(point.open)}</span></div>
                 <div class="flex flex-col"><span class="text-white/40 text-[9px] uppercase font-bold">High</span> <span class="font-medium">${formatUSD(point.high)}</span></div>
                 <div class="flex flex-col"><span class="text-white/40 text-[9px] uppercase font-bold">Low</span> <span class="font-medium">${formatUSD(point.low)}</span></div>
-                <div class="flex flex-col"><span class="text-white/40 text-[9px] uppercase font-bold">Volume</span> <span class="font-medium">${(point.volume / 1000000).toFixed(1)}M</span></div>
+                <div class="flex flex-col"><span class="text-white/40 text-[9px] uppercase font-bold">Volume</span> <span class="font-medium">${point.volume ? (point.volume / 1000000).toFixed(1) + 'M' : 'N/A'}</span></div>
               </div>
             </div>
           `;

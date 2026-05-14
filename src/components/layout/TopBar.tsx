@@ -1,4 +1,5 @@
 import SearchIcon from "@suid/icons-material/SearchOutlined";
+import SearchBar from "./SearchBar";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
 import MenuOpenIcon from "@suid/icons-material/MenuOpen";
@@ -12,18 +13,7 @@ const TopBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
-  const [searchQuery, setSearchQuery] = createSignal("");
-  
   const isStockPage = () => location.pathname.startsWith("/stock");
-  
-  const handleSearch = (e: KeyboardEvent) => {
-    if (e.key === "Enter" && searchQuery().trim()) {
-      if (isStockPage()) {
-        navigate(`/stock/${searchQuery().trim().toUpperCase()}`);
-        setSearchQuery("");
-      }
-    }
-  };
 
   const formattedDate = () => {
     const d = new Date(state.ui.currentMonth);
@@ -115,17 +105,7 @@ const TopBar = () => {
 
       {/* Search & User */}
       <div class="flex items-center gap-6">
-        <div class="relative w-80">
-          <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-earth w-5 h-5" />
-          <input 
-            type="text" 
-            value={searchQuery()}
-            onInput={(e) => setSearchQuery(e.currentTarget.value)}
-            onKeyDown={handleSearch}
-            placeholder={isStockPage() ? "Search ticker..." : "Search transactions..."} 
-            class="w-full h-11 bg-page-bg rounded-xl pl-11 pr-4 font-outfit text-sm focus:outline-none focus:ring-2 focus:ring-forest/10 transition-all"
-          />
-        </div>
+        <SearchBar />
 
         <button 
           onClick={() => setState("ui", "insightsOpen", !state.ui.insightsOpen)}

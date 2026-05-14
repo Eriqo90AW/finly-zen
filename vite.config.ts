@@ -12,9 +12,6 @@ export default defineConfig({
     port: 3077,
     host: "0.0.0.0",
     allowedHosts: ["finlyzen.ercloud.site"],
-    hmr: {
-      clientPort: 443,
-    },
   },
   build: {
     target: "esnext",

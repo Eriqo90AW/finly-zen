@@ -15,7 +15,7 @@ export const MetricsCard = (props: MetricsCardProps) => {
       metrics: [
         { label: "P/E (TTM)", value: formatMultiple(props.data.valuation.pe_ttm), color: "var(--color-fin-blue)" },
         { label: "P/E (Forward)", value: formatMultiple(props.data.valuation.pe_forward), color: "var(--color-fin-blue)" },
-        { label: "PEG Ratio", value: props.data.advanced_ratios.peg_ratio.toFixed(2), color: "var(--color-fin-purple)" },
+        { label: "PEG Ratio", value: props.data.advanced_ratios.peg_ratio?.toFixed(2) || "N/A", color: "var(--color-fin-purple)" },
         { label: "EV / Revenue", value: formatMultiple(props.data.advanced_ratios.ev_to_revenue), color: "var(--color-fin-purple)" },
       ]
     },
@@ -31,9 +31,9 @@ export const MetricsCard = (props: MetricsCardProps) => {
       title: "Health & Risk",
       icon: "health_and_safety",
       metrics: [
-        { label: "Current Ratio", value: props.data.advanced_ratios.current_ratio.toFixed(2), color: "var(--color-fin-amber)" },
-        { label: "Debt / Equity", value: props.data.advanced_ratios.debt_to_equity.toFixed(2), color: props.data.advanced_ratios.debt_to_equity > 2 ? "var(--color-fin-red)" : "var(--color-fin-amber)" },
-        { label: "Beta", value: props.data.advanced_ratios.beta.toFixed(2), color: "var(--color-earth)" },
+        { label: "Current Ratio", value: props.data.advanced_ratios.current_ratio?.toFixed(2) || "N/A", color: "var(--color-fin-amber)" },
+        { label: "Debt / Equity", value: props.data.advanced_ratios.debt_to_equity?.toFixed(2) || "N/A", color: (props.data.advanced_ratios.debt_to_equity ?? 0) > 2 ? "var(--color-fin-red)" : "var(--color-fin-amber)" },
+        { label: "Beta", value: props.data.advanced_ratios.beta?.toFixed(2) || "N/A", color: "var(--color-earth)" },
       ]
     },
     {
