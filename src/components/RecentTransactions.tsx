@@ -1,18 +1,11 @@
 import { For, Show, createSignal, createMemo } from "solid-js";
-import { Transaction } from "../store";
+import { Transaction, RecentTransactionsProps, SortKey, SortDirection } from "../types";
 import {
   formatIconName,
   formatRupiah,
   formatDateDetail,
 } from "../utils/format";
 
-interface RecentTransactionsProps {
-  transactions: Transaction[];
-  loading: boolean;
-}
-
-type SortKey = "name" | "category" | "account" | "date" | "amount";
-type SortDirection = "asc" | "desc";
 
 export const RecentTransactions = (props: RecentTransactionsProps) => {
   const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(new Set());

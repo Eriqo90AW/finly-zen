@@ -1,15 +1,14 @@
-import SearchIcon from "@suid/icons-material/SearchOutlined";
 import SearchBar from "./SearchBar";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
-import MenuOpenIcon from "@suid/icons-material/MenuOpen";
 import { useLocation, A, useNavigate, useParams } from "@solidjs/router";
 import { state, setState, nextMonth, prevMonth } from "../../store";
 import { formatUSD, formatUSDCompact } from "../../utils/format";
 import { Show, createSignal } from "solid-js";
 import { currentStockData } from "../../store/stockContext";
-import { getMarketStatus, MarketStatus } from "../../utils/marketTime";
+import { getMarketStatus } from "../../utils/marketTime";
 import { onCleanup, onMount } from "solid-js";
+import type { MarketStatus } from "../../types";
 
 
 const TopBar = () => {

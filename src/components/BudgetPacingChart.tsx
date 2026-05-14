@@ -2,14 +2,11 @@ import { createMemo, Show } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { formatRupiah, formatRupiahShort } from "../utils/format";
-import { state, Transaction } from "../store";
+import { state } from "../store";
+import { BudgetPacingChartProps } from "../types";
 import { getDateRange } from "../utils/date";
 
-interface BudgetPacingChartProps {
-  transactions: Transaction[];
-  loading: boolean;
-  dailyBudget: () => number;
-}
+
 
 export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
   const chartData = createMemo(() => {

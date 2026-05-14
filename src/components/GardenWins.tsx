@@ -1,5 +1,6 @@
 import { For, createMemo, Show } from "solid-js";
-import { state, Transaction } from "../store";
+import { state } from "../store";
+import { GardenWinsProps } from "../types";
 import { getDateRange } from "../utils/date";
 import { formatRupiah } from "../utils/format";
 import TrendingDownIcon from "@suid/icons-material/TrendingDown";
@@ -8,11 +9,7 @@ import WhatshotIcon from "@suid/icons-material/Whatshot";
 import EmojiEventsIcon from "@suid/icons-material/EmojiEventsOutlined";
 import LightbulbIcon from "@suid/icons-material/LightbulbOutlined";
 
-interface GardenWinsProps {
-  transactions: Transaction[];
-  loading: boolean;
-  dailyBudget: () => number;
-}
+
 
 export const GardenWins = (props: GardenWinsProps) => {
   const stats = createMemo(() => {

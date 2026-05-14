@@ -1,12 +1,9 @@
 import { createMemo, createSignal, createEffect } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { StockData } from "../../data/stockData";
+import { FinancialPerformanceChartProps } from "../../types";
 import { formatUSDCompact } from "../../utils/format";
 
-interface FinancialPerformanceChartProps {
-  data: StockData;
-}
 
 export const FinancialPerformanceChart = (props: FinancialPerformanceChartProps) => {
   const [periodType, setPeriodType] = createSignal<"annual" | "quarterly">(

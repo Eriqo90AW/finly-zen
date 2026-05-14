@@ -3,15 +3,10 @@ import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { Tooltip } from "./ui/Tooltip";
 import { formatRupiah, formatRupiahShort } from "../utils/format";
-import { state, Transaction } from "../store";
+import { state } from "../store";
+import { DailySpendChartProps } from "../types";
 import { getDateRange } from "../utils/date";
 
-interface DailySpendChartProps {
-  transactions: Transaction[];
-  loading: boolean;
-  dailyBudget: () => number;
-  setDailyBudget: (val: number) => void;
-}
 
 export const DailySpendChart = (props: DailySpendChartProps) => {
 

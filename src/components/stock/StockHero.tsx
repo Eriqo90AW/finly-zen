@@ -1,11 +1,7 @@
 import { Show } from "solid-js";
 import { formatUSD, formatUSDCompact } from "../../utils/format";
-import { MarketStatus } from "../../utils/marketTime";
+import { StockHeroProps } from "../../types";
 
-interface StockHeroProps {
-  data: any;
-  marketStatus: MarketStatus;
-}
 
 export const StockHero = (props: StockHeroProps) => {
   const d = () => props.data;

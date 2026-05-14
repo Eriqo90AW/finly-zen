@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
-import type { Transaction } from "../store";
+import { Transaction, Category, Account } from "../types";
 import { formatHexColor } from "../utils/format";
+
 
 
 export async function getTransactions() {
@@ -44,12 +45,12 @@ export async function getCategories() {
 
   if (error) {
     console.error("Error fetching categories:", error);
-    return [];
+    return [] as Category[];
   }
   return (data || []).map((cat) => ({
     ...cat,
     color: formatHexColor(cat.color),
-  }));
+  })) as Category[];
 }
 
 
@@ -61,10 +62,10 @@ export async function getAccounts() {
 
   if (error) {
     console.error("Error fetching accounts:", error);
-    return [];
+    return [] as Account[];
   }
   return (data || []).map((acc) => ({
     ...acc,
     color: formatHexColor(acc.color),
-  }));
+  })) as Account[];
 }

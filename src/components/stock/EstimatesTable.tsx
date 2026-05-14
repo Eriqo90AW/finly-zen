@@ -1,10 +1,7 @@
 import { For, Show } from "solid-js";
-import { StockData, Estimate } from "../../data/stockData";
 import { formatUSD, formatUSDCompact, formatPercent } from "../../utils/format";
+import { EstimatesTableProps, Estimate } from "../../types";
 
-interface EstimatesTableProps {
-  data: StockData;
-}
 
 export const EstimatesTable = (props: EstimatesTableProps) => {
   const estimates = props.data.earnings_estimates.by_period;

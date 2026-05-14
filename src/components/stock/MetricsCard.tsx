@@ -1,11 +1,7 @@
 import { For, createMemo } from "solid-js";
-import { StockData } from "../../data/stockData";
+import { MetricsCardProps } from "../../types";
 import { formatUSDCompact, formatPercent, formatMultiple } from "../../utils/format";
 
-
-interface MetricsCardProps {
-  data: StockData;
-}
 
 export const MetricsCard = (props: MetricsCardProps) => {
   const categories = createMemo(() => [

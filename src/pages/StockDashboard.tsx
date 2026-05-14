@@ -9,7 +9,9 @@ import { EarningsActualsChart } from "../components/stock/EarningsActualsChart";
 import { EstimatesTable } from "../components/stock/EstimatesTable";
 import { formatUSD, formatUSDCompact } from "../utils/format";
 import { setCurrentStockData } from "../store/stockContext";
-import { getMarketStatus, MarketStatus } from "../utils/marketTime";
+import { getMarketStatus } from "../utils/marketTime";
+import { MarketStatus } from "../types";
+
 import { createSignal, onMount } from "solid-js";
 
 

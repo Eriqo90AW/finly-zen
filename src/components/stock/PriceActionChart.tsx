@@ -1,12 +1,9 @@
 import { createMemo } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { StockData } from "../../data/stockData";
+import { PriceActionChartProps } from "../../types";
 import { formatUSD } from "../../utils/format";
 
-interface PriceActionChartProps {
-  data: StockData;
-}
 
 export const PriceActionChart = (props: PriceActionChartProps) => {
   const chartOptions = (): ApexOptions => {

@@ -1,10 +1,6 @@
-import { JSX, mergeProps } from "solid-js";
+import { mergeProps } from "solid-js";
+import { TooltipProps } from "../../types";
 
-type TooltipProps = {
-  content: JSX.Element;
-  children: JSX.Element;
-  class?: string;
-};
 
 export const Tooltip = (_props: TooltipProps) => {
   const props = mergeProps({ class: "relative group inline-block" }, _props);

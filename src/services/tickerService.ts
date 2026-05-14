@@ -1,9 +1,5 @@
-export interface TickerSearchResult {
-  symbol: string;
-  name: string;
-  exchange: string;
-  type: string;
-}
+import { TickerSearchResult } from "../types";
+
 
 export async function searchTickers(query: string): Promise<TickerSearchResult[]> {
   if (!query.trim()) return [];

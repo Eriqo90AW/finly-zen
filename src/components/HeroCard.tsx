@@ -1,13 +1,10 @@
 import { createSignal, createMemo, createEffect, For, Show, onMount, onCleanup, untrack } from "solid-js";
-import { Transaction, state, toggleShowAllTime, toggleRecurringDebt } from "../store";
+import { state, toggleShowAllTime, toggleRecurringDebt } from "../store";
+import { HeroCardProps } from "../types";
 import { formatRupiah } from "../utils/format";
 import { getDateRange } from "../utils/date";
 
-interface HeroCardProps {
-  allTransactions: Transaction[];
-  monthlyTransactions: Transaction[];
-  loading: boolean;
-}
+
 
 export const HeroCard = (props: HeroCardProps) => {
   const [activeIndex, setActiveIndex] = createSignal(0);

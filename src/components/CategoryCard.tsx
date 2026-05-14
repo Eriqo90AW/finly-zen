@@ -1,13 +1,9 @@
-import { Show, For, Resource, createMemo } from "solid-js";
+import { Show, For, createMemo } from "solid-js";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { formatRupiah } from "../utils/format";
-import { Transaction, state } from "../store";
+import { CategoryCardProps } from "../types";
 
-interface CategoryCardProps {
-  transactions: Transaction[];
-  loading?: boolean;
-}
 
 export const CategoryCard = (props: CategoryCardProps) => {
   const categoryData = createMemo(() => {

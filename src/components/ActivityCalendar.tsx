@@ -1,14 +1,11 @@
-import { For, createMemo, Accessor, createSignal, createEffect, Show } from "solid-js";
+import { For, createMemo, createSignal, createEffect, Show } from "solid-js";
 import { Tooltip } from "./ui/Tooltip";
 import { formatRupiah, formatMonth } from "../utils/format";
-import { Transaction, state } from "../store";
+import { state } from "../store";
+import { ActivityCalendarProps } from "../types";
 import { getDateRange, isDateInRange } from "../utils/date";
 
-interface ActivityCalendarProps {
-  transactions: Transaction[];
-  loading: boolean;
-  dailyBudget: Accessor<number>;
-}
+
 
 export const ActivityCalendar = (props: ActivityCalendarProps) => {
   const [viewMonth, setViewMonth] = createSignal(state.ui.currentMonth);

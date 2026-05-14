@@ -8,7 +8,9 @@ import {
 } from "solid-js";
 import { state, setState } from "../../store";
 import { getCategories, getAccounts } from "../../lib/db";
-import { addTransaction, type TransactionType } from "../../lib/transactions";
+import { addTransaction } from "../../lib/transactions";
+import { TransactionType } from "../../types";
+
 import CloseIcon from "@suid/icons-material/Close";
 import CheckIcon from "@suid/icons-material/Check";
 import LocalOfferIcon from "@suid/icons-material/LocalOfferOutlined";
