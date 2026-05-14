@@ -8,12 +8,29 @@ import { state, setState, nextMonth, prevMonth } from "../../store";
 import { formatUSD, formatUSDCompact } from "../../utils/format";
 import { Show, createSignal } from "solid-js";
 import { currentStockData } from "../../store/stockContext";
+import { getMarketStatus, MarketStatus } from "../../utils/marketTime";
+import { onCleanup, onMount } from "solid-js";
+
 
 const TopBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
   const isStockPage = () => location.pathname.startsWith("/stock");
+
+  const [marketStatus, setMarketStatus] = createSignal<MarketStatus>(getMarketStatus());
+
+  let timer: any;
+  onMount(() => {
+    timer = setInterval(() => {
+      setMarketStatus(getMarketStatus());
+    }, 1000);
+  });
+
+  onCleanup(() => {
+    clearInterval(timer);
+  });
+
 
   const formattedDate = () => {
     const d = new Date(state.ui.currentMonth);
@@ -61,6 +78,14 @@ const TopBar = () => {
                   <span class="text-[9px] text-earth/60 uppercase tracking-widest">
                     As of: {new Date(currentStockData()?.as_of || "").toLocaleDateString()}
                   </span>
+                  
+                  {/* Market Timing Indicator */}
+                  <div class="flex items-center gap-2 px-2 py-0.5 bg-sage/30 rounded-full border border-forest/5">
+                    <div class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}></div>
+                    <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
+                      {marketStatus().session}
+                    </span>
+                  </div>
                 </div>
               </div>
             </Show>

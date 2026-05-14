@@ -28,7 +28,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
       </td>
       <For each={columns}>
         {(col) => (
-          <td class={`py-4 px-4 text-sm font-outfit text-forest font-medium ${col.isCurrent ? "bg-earth/8" : "bg-earth/5"}`}>
+          <td class={`py-4 px-4 text-sm font-outfit text-forest font-medium ${col.isCurrent ? "bg-earth/6" : "bg-earth/3"}`}>
             {props.render(col.data)}
           </td>
         )}
@@ -62,7 +62,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
               <th class="py-3 pl-4 pr-2 text-[10px] font-bold text-earth uppercase tracking-widest w-[180px]">Metric</th>
               <For each={columns}>
                 {(col) => (
-                  <th class={`py-3 px-4 ${col.isCurrent ? "bg-earth/10" : "bg-earth/5"}`}>
+                  <th class={`py-3 px-4 ${col.isCurrent ? "bg-earth/6" : "bg-earth/3"}`}>
                     <div class="flex flex-col">
                       <span class="text-xs font-bold text-forest">{col.label}</span>
                       <span class="text-[9px] text-earth/60 font-medium">{col.period}</span>
@@ -140,7 +140,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
               <td class="py-3 pl-4 pr-2 text-[10px] font-bold text-earth uppercase tracking-widest">Analysts</td>
               <For each={columns}>
                 {(col) => (
-                  <td class={`py-3 px-4 text-xs font-bold text-forest ${col.isCurrent ? "bg-earth/10" : "bg-earth/5"}`}>
+                  <td class={`py-3 px-4 text-xs font-bold text-forest ${col.isCurrent ? "bg-earth/6" : "bg-earth/3"}`}>
                     {col.data.eps_num_analysts} Analysts
                   </td>
                 )}
