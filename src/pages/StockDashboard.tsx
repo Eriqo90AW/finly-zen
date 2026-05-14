@@ -1,4 +1,4 @@
-import { createResource, Show, onCleanup, createEffect } from "solid-js";
+import { createResource, Show, onCleanup, createEffect, createSignal, onMount } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { fetchStockData } from "../data/stockData";
 import { PriceActionChart } from "../components/stock/PriceActionChart";
@@ -7,12 +7,9 @@ import { MetricsCard } from "../components/stock/MetricsCard";
 import { FinancialPerformanceChart } from "../components/stock/FinancialPerformanceChart";
 import { EarningsActualsChart } from "../components/stock/EarningsActualsChart";
 import { EstimatesTable } from "../components/stock/EstimatesTable";
-import { formatUSD, formatUSDCompact } from "../utils/format";
 import { setCurrentStockData } from "../store/stockContext";
 import { getMarketStatus } from "../utils/marketTime";
 import { MarketStatus } from "../types";
-
-import { createSignal, onMount } from "solid-js";
 
 
 const StockDashboard = () => {
@@ -33,6 +30,24 @@ const StockDashboard = () => {
   });
 
 
+  const [timedOut, setTimedOut] = createSignal(false);
+
+  // Handle loading timeout
+  createEffect(() => {
+    if (stockData.loading) {
+      setTimedOut(false);
+      const timeout = setTimeout(() => {
+        if (stockData.loading) {
+          setTimedOut(true);
+        }
+      }, 10000);
+      onCleanup(() => clearTimeout(timeout));
+    } else {
+      setTimedOut(false);
+    }
+  });
+
+
   // Sync data to shared context for TopBar
   createEffect(() => {
     const data = stockData();
@@ -45,22 +60,24 @@ const StockDashboard = () => {
     setCurrentStockData(null);
   });
 
+  const ErrorState = () => (
+    <div class="premium-card p-12 flex flex-col items-center justify-center gap-4 text-center">
+      <div class="w-16 h-16 rounded-full bg-fin-red/10 flex items-center justify-center text-fin-red">
+        <span class="material-icons text-3xl">error_outline</span>
+      </div>
+      <h2 class="text-2xl font-cormorant font-bold text-forest">Ticker Not Found</h2>
+      <p class="text-earth max-w-md">We couldn't find any financial data for "{params.ticker?.toUpperCase()}". Please check the ticker symbol and try again.</p>
+    </div>
+  );
+
   return (
-    <Show when={!stockData.loading} fallback={
-      <div class="flex flex-col items-center justify-center min-h-[400px] gap-4">
+    <Show when={!stockData.loading || timedOut()} fallback={
+      <div class="flex flex-col items-center justify-center min-h-[600px] gap-4">
         <div class="w-12 h-12 border-4 border-forest/10 border-t-forest rounded-full animate-spin"></div>
         <p class="text-earth font-outfit font-medium">Fetching market data for {params.ticker?.toUpperCase()}...</p>
       </div>
     }>
-      <Show when={stockData()} fallback={
-        <div class="premium-card p-12 flex flex-col items-center justify-center gap-4 text-center">
-          <div class="w-16 h-16 rounded-full bg-fin-red/10 flex items-center justify-center text-fin-red">
-            <span class="material-icons text-3xl">error_outline</span>
-          </div>
-          <h2 class="text-2xl font-cormorant font-bold text-forest">Ticker Not Found</h2>
-          <p class="text-earth max-w-md">We couldn't find any financial data for "{params.ticker?.toUpperCase()}". Please check the ticker symbol and try again.</p>
-        </div>
-      }>
+      <Show when={!timedOut() && stockData()} fallback={<ErrorState />}>
         {(data) => {
           const d = data();
           return (
