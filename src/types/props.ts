@@ -13,6 +13,7 @@ export type SortDirection = "asc" | "desc";
 export interface StockHeroProps {
   data: StockData;
   marketStatus: MarketStatus;
+  nextUpdateIn: number;
 }
 
 export interface PriceActionChartProps {

@@ -17,9 +17,11 @@ const StockDashboard = () => {
   const [stockData, { refetch }] = createResource(() => params.ticker, fetchStockData);
   
   const [marketStatus, setMarketStatus] = createSignal<MarketStatus>(getMarketStatus());
+  const [nextUpdateIn, setNextUpdateIn] = createSignal(120);
 
   let marketTimer: any;
   let refreshTimer: any;
+  let countdownTimer: any;
 
   onMount(() => {
     // Update market status every second
@@ -31,13 +33,27 @@ const StockDashboard = () => {
     refreshTimer = setInterval(() => {
       if (!stockData.loading) {
         refetch();
+        setNextUpdateIn(120);
       }
     }, 120000);
+
+    // Countdown for next update
+    countdownTimer = setInterval(() => {
+      setNextUpdateIn(prev => (prev > 0 ? prev - 1 : 120));
+    }, 1000);
+  });
+
+  // Reset countdown when ticker changes
+  createEffect(() => {
+    if (params.ticker) {
+      setNextUpdateIn(120);
+    }
   });
 
   onCleanup(() => {
     clearInterval(marketTimer);
     clearInterval(refreshTimer);
+    clearInterval(countdownTimer);
   });
 
 
@@ -94,7 +110,7 @@ const StockDashboard = () => {
           return (
           <div class="space-y-6 animate-fade-in-up pb-10">
             {/* Hero Section */}
-            <StockHero data={d} marketStatus={marketStatus()} />
+            <StockHero data={d} marketStatus={marketStatus()} nextUpdateIn={nextUpdateIn()} />
 
             {/* Primary Chart + Key Metrics Row */}
             <div class="flex flex-col lg:flex-row gap-6 h-auto lg:h-[470px]">
