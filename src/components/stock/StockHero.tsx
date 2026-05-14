@@ -1,11 +1,13 @@
 import { Show } from "solid-js";
-import { formatUSD, formatUSDCompact } from "../../utils/format";
+import { formatPercent, formatUSD, formatUSDCompact } from "../../utils/format";
 import { StockHeroProps } from "../../types";
 
 
 export const StockHero = (props: StockHeroProps) => {
   const d = () => props.data;
   const status = () => props.marketStatus;
+  const diff = () => d().valuation.price_diff_percentage;
+  const isPositive = () => diff() >= 0;
 
   return (
     <div class="premium-card relative overflow-hidden p-6 bg-gradient-to-br from-white via-sage/5 to-sage/10 border-forest/10 group transition-all duration-500 hover:shadow-lg">
@@ -68,11 +70,11 @@ export const StockHero = (props: StockHeroProps) => {
             <p class="text-[9px] font-bold text-earth/60 uppercase tracking-widest mb-1.5">Price Action</p>
             <div class="flex items-center gap-3">
               <span class="text-[38px] font-outfit font-black text-forest leading-none tracking-tighter">
-                {formatUSD(d().valuation.current_price)}
+                {formatUSD(d().valuation.extended_hours_price)}
               </span>
-                <div class="flex items-center gap-1 bg-fin-green/10 px-1.5 py-0.5 rounded-md border border-fin-green/10">
-                  <span class="text-fin-green font-black text-[12px]">
-                    +1.24%
+                <div class={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${isPositive() ? 'bg-fin-green/10 border-fin-green/10' : 'bg-red-500/10 border-red-500/10'}`}>
+                  <span class={`font-black text-[12px] ${isPositive() ? 'text-fin-green' : 'text-red-500'}`}>
+                    {formatPercent(diff())}
                   </span>
                 </div>
             </div>

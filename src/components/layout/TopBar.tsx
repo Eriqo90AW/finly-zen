@@ -69,7 +69,7 @@ const TopBar = () => {
                 </div>
                 <div class="flex items-center gap-3 mt-1">
                   <span class="text-sm font-outfit font-bold text-forest">
-                    {formatUSD(currentStockData()?.valuation.current_price || 0)}
+                    {formatUSD(currentStockData()?.valuation.extended_hours_price || 0)}
                   </span>
                   <span class="text-[10px] text-earth font-medium">
                     Mkt Cap: {formatUSDCompact(currentStockData()?.valuation.market_cap || 0)}

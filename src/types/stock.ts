@@ -18,6 +18,10 @@ export interface Valuation {
   market_cap: number;
   enterprise_value: number;
   current_price: number;
+  pre_market_price: number;
+  post_market_price: number;
+  extended_hours_price: number;
+  price_diff_percentage: number;
   pe_ttm: number;
   pe_forward: number;
   price_to_sales_ttm: number;

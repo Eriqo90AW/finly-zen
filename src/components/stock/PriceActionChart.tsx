@@ -113,7 +113,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
   };
 
   return (
-    <div class="premium-card p-6 h-full flex flex-col">
+    <div class="premium-card p-6 h-full flex flex-col hover:cursor-default">
       <div class="flex items-center justify-between mb-4">
         <div>
           <h4 class="font-outfit font-bold text-forest text-lg">Price Action</h4>

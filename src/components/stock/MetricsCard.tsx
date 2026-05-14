@@ -42,7 +42,7 @@ export const MetricsCard = (props: MetricsCardProps) => {
   ]);
 
   return (
-    <div class="premium-card h-full flex flex-col overflow-hidden bg-gradient-to-b from-white to-sage/5 border-forest/10">
+    <div class="premium-card h-full flex flex-col overflow-hidden bg-gradient-to-b from-white to-sage/5 border-forest/10 hover:cursor-default">
       <div class="p-5 border-b border-forest/5 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
         <div class="flex items-center gap-2">
           <span class="material-icons text-forest text-xl">assessment</span>
@@ -64,7 +64,7 @@ export const MetricsCard = (props: MetricsCardProps) => {
               <div class="grid gap-2">
                 <For each={category.metrics}>
                   {(metric) => (
-                    <div class="flex justify-between items-center p-3 rounded-xl bg-white/40 border border-forest/5 hover:border-forest/20 hover:bg-white hover:shadow-md transition-all group cursor-default">
+                    <div class="flex justify-between items-center p-3 rounded-xl bg-white/40 border border-forest/5 hover:border-forest/20 hover:bg-white hover:shadow-md transition-all group cursor-pointer">
                       <div class="flex items-center gap-2">
                         <div class="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)]" style={{ "background-color": metric.color }} />
                         <span class="text-xs text-earth font-medium opacity-80 group-hover:opacity-100 transition-opacity">
