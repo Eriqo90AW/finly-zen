@@ -6,9 +6,15 @@ import devtools from 'solid-devtools/vite';
 export default defineConfig({
   plugins: [devtools(), solidPlugin(), tailwindcss()],
   server: {
-    port: 3000,
+    port: 3077,
+    host: '0.0.0.0',
+    allowedHosts: ['finlyzen.ercloud.site'],
   },
   build: {
     target: 'esnext',
   },
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: ['finlyzen.ercloud.site'],
+  }
 });

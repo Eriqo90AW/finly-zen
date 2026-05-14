@@ -11,14 +11,14 @@ export async function getTransactions() {
     console.error("Error fetching transactions:", error);
     return [];
   }
-  
+
   // Map view fields to internal Transaction type
-  return (data || []).map(t => {
+  return (data || []).map((t) => {
     // Helper to convert 0xFF8B5CF6 to #8B5CF6
     const formatColor = (c: string | null) => {
       if (!c) return undefined;
-      if (c.startsWith('0x')) {
-        return '#' + c.substring(4); // Skip 0x and Alpha FF
+      if (c.startsWith("0x")) {
+        return "#" + c.substring(4); // Skip 0x and Alpha FF
       }
       return c;
     };
@@ -35,14 +35,12 @@ export async function getTransactions() {
       type: t.transaction_type,
       date: t.created_at,
       note: t.note,
-      isRecurring: t.is_recurring
+      isRecurring: t.is_recurring,
     };
   }) as Transaction[];
 }
 
 // Budgets and Goals are now handled locally via the store/localStorage
-
-
 
 export async function getCategories() {
   const { data, error } = await supabase
@@ -91,5 +89,3 @@ export async function addTransaction(transaction: {
   }
   return data[0];
 }
-
-
