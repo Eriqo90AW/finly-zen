@@ -2,6 +2,11 @@ import { For, createMemo, Show } from "solid-js";
 import { state, Transaction } from "../store";
 import { getDateRange } from "../utils/date";
 import { formatRupiah } from "../utils/format";
+import TrendingDownIcon from "@suid/icons-material/TrendingDown";
+import TrendingUpIcon from "@suid/icons-material/TrendingUp";
+import WhatshotIcon from "@suid/icons-material/Whatshot";
+import EmojiEventsIcon from "@suid/icons-material/EmojiEventsOutlined";
+import LightbulbIcon from "@suid/icons-material/LightbulbOutlined";
 
 interface GardenWinsProps {
   transactions: Transaction[];
@@ -9,42 +14,6 @@ interface GardenWinsProps {
   dailyBudget: () => number;
 }
 
-// Premium SVG Icons
-const Icons = {
-  Streak: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-orange-500">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-    </svg>
-  ),
-  Lowest: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-spring">
-      <path d="M7 10l5 5 5-5"/>
-    </svg>
-  ),
-  Highest: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500">
-      <path d="M17 14l-5-5-5 5"/>
-    </svg>
-  ),
-  Success: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-forest">
-      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-      <path d="M4 22h16"/>
-      <path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34c0-.33.16-.64.44-.83L8 12.67c.3-.21.7-.21 1 0l1.56 1.16c.28.19.44.5.44.83z"/>
-      <path d="M18 14.66V17c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-2.34c0-.33.16-.64.44-.83L16 12.67c.3-.21.7-.21 1 0l1.56 1.16c.28.19.44.5.44.83z"/>
-      <path d="M12 2v20"/>
-      <path d="M12 10h0"/>
-    </svg>
-  ),
-  Insight: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-white">
-      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A4.5 4.5 0 0 0 13.5 3.5c-1.3 0-2.6.5-3.5 1.5-.8.8-1.3 1.5-1.5 2.5"/>
-      <path d="M9 18h6"/>
-      <path d="M10 22h4"/>
-    </svg>
-  )
-};
 
 export const GardenWins = (props: GardenWinsProps) => {
   const stats = createMemo(() => {
@@ -190,7 +159,10 @@ export const GardenWins = (props: GardenWinsProps) => {
           <div class="space-y-4">
             {/* Streak Section (Reverted) */}
             <div class="p-3 bg-sage/80 rounded-xl space-y-2">
-              <p class="text-[10px] font-bold text-forest uppercase tracking-widest">Under Budget Streak</p>
+              <div class="flex items-center gap-2">
+                <WhatshotIcon sx={{ fontSize: 14 }} class="text-orange-500" />
+                <p class="text-[10px] font-bold text-forest uppercase tracking-widest">Under Budget Streak</p>
+              </div>
               <div class="flex gap-2">
                 <For each={Array(Math.min(7, stats()!.streak)).fill(0)}>
                   {() => <div class="w-3 h-3 rounded-full bg-forest" />}
@@ -208,7 +180,7 @@ export const GardenWins = (props: GardenWinsProps) => {
             <div class="grid grid-cols-2 gap-2 mt-2">
               <div class="p-3 bg-spring/5 rounded-xl border border-spring/10 hover:bg-spring/10 transition-colors">
                 <div class="flex items-center gap-1.5 mb-1">
-                  <Icons.Lowest />
+                  <TrendingDownIcon sx={{ fontSize: 16 }} class="text-spring" />
                   <span class="text-[10px] font-bold text-spring uppercase">Lowest</span>
                 </div>
                 <p class="text-[11px] font-bold text-forest truncate">
@@ -221,7 +193,7 @@ export const GardenWins = (props: GardenWinsProps) => {
               
               <div class="p-3 bg-amber-50 rounded-xl border border-amber-100 hover:bg-amber-100/50 transition-colors">
                 <div class="flex items-center gap-1.5 mb-1">
-                  <Icons.Highest />
+                  <TrendingUpIcon sx={{ fontSize: 16 }} class="text-amber-500" />
                   <span class="text-[10px] font-bold text-amber-600 uppercase">Highest</span>
                 </div>
                 <p class="text-[11px] font-bold text-forest truncate">
@@ -251,7 +223,10 @@ export const GardenWins = (props: GardenWinsProps) => {
                 </svg>
               </div>
               <div class="space-y-0.5">
-                <p class="text-[10px] font-bold text-forest/40 uppercase tracking-wider">Success Rate</p>
+                <div class="flex items-center gap-1.5">
+                  <EmojiEventsIcon sx={{ fontSize: 14 }} class="text-forest/40" />
+                  <p class="text-[10px] font-bold text-forest/40 uppercase tracking-wider">Success Rate</p>
+                </div>
                 <p class="text-[12px] font-bold text-forest">{stats()!.underBudgetCount} / {stats()!.totalDays} Days</p>
                 <div class="flex items-center gap-1">
                   <span class={`text-[10px] font-bold ${stats()!.underBudgetPctDiff >= 0 ? 'text-spring' : 'text-red-400'}`}>
@@ -267,7 +242,10 @@ export const GardenWins = (props: GardenWinsProps) => {
       {/* Insights Section (Reverted) */}
       <Show when={stats()}>
         <div class="p-4 bg-forest rounded-2xl text-white space-y-1 mt-4">
-          <p class="text-[10px] font-bold uppercase tracking-widest opacity-60">Insight</p>
+          <div class="flex items-center gap-2 mb-1">
+            <LightbulbIcon sx={{ fontSize: 14 }} class="text-white/60" />
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-60">Insight</p>
+          </div>
           <p class="text-sm font-outfit">
             {stats()!.netSpendDiffPct < 0 
               ? `Your net expenses are ${Math.abs(Math.round(stats()!.netSpendDiffPct))}% lower than last month.`
