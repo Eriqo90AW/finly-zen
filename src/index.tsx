@@ -11,6 +11,7 @@ import Budgets from "./pages/Budgets";
 import Goals from "./pages/Goals";
 import Reports from "./pages/Reports";
 import StockDashboard from "./pages/StockDashboard";
+import Portfolio from "./pages/Portfolio";
 
 const root = document.getElementById('root');
 
@@ -29,6 +30,7 @@ render(
       <Route path="/goals" component={Goals} />
       <Route path="/reports" component={Reports} />
       <Route path="/stock/:ticker" component={StockDashboard} />
+      <Route path="/portfolio" component={Portfolio} />
     </Router>
   ),
   root!

@@ -5,15 +5,12 @@ import AccountBalanceWalletIcon from "@suid/icons-material/AccountBalanceWalletO
 import FlagIcon from "@suid/icons-material/FlagOutlined";
 import AssessmentIcon from "@suid/icons-material/AssessmentOutlined";
 import ShowChartIcon from "@suid/icons-material/ShowChartOutlined";
+import PieChartIcon from "@suid/icons-material/PieChartOutlined";
 import { state } from "../../store";
 
 const Sidebar = () => {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
-
-  // Mock score for now
-  const score = 84;
-  const strokeDasharray = `${(score / 100) * 188} 188`;
 
   return (
     <aside class="w-[220px] h-screen bg-white border-r border-forest/10 flex flex-col shrink-0">
@@ -27,7 +24,8 @@ const Sidebar = () => {
 
       {/* Nav Links */}
       <nav class="flex-1 px-4 space-y-2 mt-4">
-        <A href="/" class={`nav-link ${isActive("/") ? "active" : ""}`}>
+        <div class="px-4 mb-2 text-[10px] font-bold uppercase tracking-widest text-earth/60">Expense Tracker</div>
+        <A href="/" end class={`nav-link ${isActive("/") ? "active" : ""}`}>
           <DashboardIcon />
           <span class="font-outfit">Dashboard</span>
         </A>
@@ -47,47 +45,17 @@ const Sidebar = () => {
           <AssessmentIcon />
           <span class="font-outfit">Reports</span>
         </A>
-        <A href="/stock/AAPL" class={`nav-link ${isActive("/stock/AAPL") ? "active" : ""}`}>
+
+        <div class="px-4 mt-8 mb-2 text-[10px] font-bold uppercase tracking-widest text-earth/60">Financial Management</div>
+        <A href="/stock/AAPL" class={`nav-link ${location.pathname.startsWith("/stock") ? "active" : ""}`}>
           <ShowChartIcon />
           <span class="font-outfit">Markets</span>
         </A>
+        <A href="/portfolio" class={`nav-link ${isActive("/portfolio") || location.pathname.startsWith("/portfolio") ? "active" : ""}`}>
+          <PieChartIcon />
+          <span class="font-outfit">Portfolio</span>
+        </A>
       </nav>
-
-      {/* Monthly Health Score */}
-      <div class="p-6 m-4 bg-sage/30 rounded-2xl flex flex-col items-center">
-        <div class="relative w-24 h-24 flex items-center justify-center">
-          <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="30"
-              stroke="currentColor"
-              stroke-width="8"
-              fill="transparent"
-              class="text-forest/10"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="30"
-              stroke="currentColor"
-              stroke-width="8"
-              fill="transparent"
-              stroke-dasharray={strokeDasharray}
-              stroke-linecap="round"
-              class="text-forest"
-            />
-          </svg>
-          <div class="absolute inset-0 flex flex-col items-center justify-center pt-1">
-            <span class="text-xl font-cormorant text-forest leading-none">{score}</span>
-            <span class="text-[10px] font-outfit uppercase tracking-widest text-forest/60">Zen</span>
-          </div>
-        </div>
-        <div class="mt-3 text-center">
-          <p class="text-sm font-outfit font-medium text-forest">Thriving</p>
-          <p class="text-[10px] text-earth">Monthly Health Score</p>
-        </div>
-      </div>
     </aside>
   );
 };

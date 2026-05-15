@@ -1,14 +1,18 @@
 import { ParentProps, Show } from "solid-js";
 import MainLayout from "./components/layout/MainLayout";
 import { state, setState, setupPersistence } from "./store";
+import { setupPortfolioPersistence } from "./store/portfolioStore";
 import AddIcon from "@suid/icons-material/Add";
 import { useLocation } from "@solidjs/router";
 
 const App = (props: ParentProps) => {
   // Initialize persistence inside the root component
   setupPersistence();
+  setupPortfolioPersistence();
   const location = useLocation();
-  const isStockPage = () => location.pathname.startsWith("/stock");
+  const shouldHideAddButton = () => 
+    location.pathname.startsWith("/stock") || 
+    location.pathname.startsWith("/portfolio");
 
   return (
     <div class="relative h-screen">
@@ -17,7 +21,7 @@ const App = (props: ParentProps) => {
       </MainLayout>
 
       {/* Global Add Button - Hidden on Stock pages */}
-      <Show when={!isStockPage()}>
+      <Show when={!shouldHideAddButton()}>
         <button 
           onClick={() => setState("ui", "showAddExpense", true)}
           class="fixed bottom-10 right-12 w-16 h-16 bg-spring text-white rounded-full flex items-center justify-center shadow-2xl transition-all z-40 group cursor-pointer hover:bg-forest duration-300"

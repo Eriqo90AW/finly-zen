@@ -103,3 +103,13 @@ export const formatHexColor = (c: string | null | undefined): string | undefined
   }
   return c;
 };
+
+export const USD_EXCHANGE_RATE = 16200;
+
+export const formatPortfolioValue = (amount: number, currency: 'IDR' | 'USD', isShort = false) => {
+  if (currency === 'USD') {
+    const usdAmount = amount / USD_EXCHANGE_RATE;
+    return isShort ? formatUSDCompact(usdAmount) : formatUSD(usdAmount);
+  }
+  return isShort ? formatRupiahShort(amount) : formatRupiah(amount);
+};
