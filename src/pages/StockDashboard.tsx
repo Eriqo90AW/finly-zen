@@ -7,17 +7,19 @@ import { MetricsCard } from "../components/stock/MetricsCard";
 import { FinancialPerformanceChart } from "../components/stock/FinancialPerformanceChart";
 import { EarningsActualsChart } from "../components/stock/EarningsActualsChart";
 import { EstimatesTable } from "../components/stock/EstimatesTable";
-import { setCurrentStockData } from "../store/stockContext";
+import { setCurrentStockData, setIsStockLoading } from "../store/stockContext";
 import { getMarketStatus } from "../utils/marketTime";
 import { MarketStatus } from "../types";
 
+
+const REFRESH_INTERVAL_SECONDS = 300;
 
 const StockDashboard = () => {
   const params = useParams();
   const [stockData, { refetch }] = createResource(() => params.ticker, fetchStockData);
   
   const [marketStatus, setMarketStatus] = createSignal<MarketStatus>(getMarketStatus());
-  const [nextUpdateIn, setNextUpdateIn] = createSignal(120);
+  const [nextUpdateIn, setNextUpdateIn] = createSignal(REFRESH_INTERVAL_SECONDS);
 
   let marketTimer: any;
   let countdownTimer: any;
@@ -35,7 +37,7 @@ const StockDashboard = () => {
           if (!stockData.loading) {
             refetch();
           }
-          return 120;
+          return REFRESH_INTERVAL_SECONDS;
         }
         return prev - 1;
       });
@@ -45,7 +47,7 @@ const StockDashboard = () => {
   // Reset countdown when ticker changes to keep it fresh
   createEffect(() => {
     if (params.ticker) {
-      setNextUpdateIn(120);
+      setNextUpdateIn(REFRESH_INTERVAL_SECONDS);
     }
   });
 
@@ -75,6 +77,10 @@ const StockDashboard = () => {
 
   // Sync data to shared context for TopBar
   createEffect(() => {
+    setIsStockLoading(stockData.loading);
+  });
+
+  createEffect(() => {
     const data = stockData();
     if (data) {
       setCurrentStockData(data);
@@ -83,6 +89,7 @@ const StockDashboard = () => {
 
   onCleanup(() => {
     setCurrentStockData(null);
+    setIsStockLoading(false);
   });
 
   const ErrorState = () => (

@@ -5,7 +5,7 @@ import { useLocation, A, useNavigate, useParams } from "@solidjs/router";
 import { state, setState, nextMonth, prevMonth } from "../../store";
 import { formatUSD, formatUSDCompact } from "../../utils/format";
 import { Show, createSignal } from "solid-js";
-import { currentStockData } from "../../store/stockContext";
+import { currentStockData, isStockLoading } from "../../store/stockContext";
 import { getMarketStatus } from "../../utils/marketTime";
 import { onCleanup, onMount } from "solid-js";
 import type { MarketStatus } from "../../types";
@@ -52,7 +52,7 @@ const TopBar = () => {
                 <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider uppercase">
                   {params.ticker}
                 </span>
-                <span class="text-xs text-earth font-medium animate-pulse">Loading data...</span>
+                <span class="text-xs text-earth font-medium animate-ellipsis">Loading data</span>
               </div>
             }>
               <div class="flex flex-col">
@@ -77,7 +77,7 @@ const TopBar = () => {
                   <span class="text-[9px] text-earth/60 uppercase tracking-widest">
                     As of: {new Date(currentStockData()?.as_of || "").toLocaleDateString()}
                   </span>
-                  
+                                    
                   {/* Market Timing Indicator */}
                   <div class="flex items-center gap-2 px-2 py-0.5 bg-sage/30 rounded-full border border-forest/5">
                     <div class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}></div>
@@ -85,6 +85,14 @@ const TopBar = () => {
                       {marketStatus().session}
                     </span>
                   </div>
+
+                  <Show when={isStockLoading()}>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[9px] text-forest font-bold uppercase tracking-widest animate-ellipsis">
+                        Loading
+                      </span>
+                    </div>
+                  </Show>
                 </div>
               </div>
             </Show>
