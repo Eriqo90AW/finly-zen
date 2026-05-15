@@ -95,7 +95,10 @@ export function getMarketStatus(): MarketStatus {
     } else {
       session = 'Market Closed';
       color = 'bg-earth';
-      nextTransition = getWibTransition(timings.pre.h, timings.pre.m, currentMinutes >= closedStart ? 1 : 0);
+      // Next transition is always Pre-market. 
+      // On weekdays, if we are in this 'else' block, it means we are between 07:00 and 15:00 WIB,
+      // so the next pre-market is TODAY (offset 0).
+      nextTransition = getWibTransition(timings.pre.h, timings.pre.m, 0);
     }
   }
 
@@ -106,7 +109,14 @@ export function getMarketStatus(): MarketStatus {
   const m = Math.floor((diffSec % 3600) / 60);
   const s = diffSec % 60;
   
-  const timeRemaining = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  let timeRemaining: string;
+  if (h >= 24) {
+    const days = Math.floor(h / 24);
+    const remH = h % 24;
+    timeRemaining = `${days}d ${remH}h ${m}m`;
+  } else {
+    timeRemaining = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
 
   return {
     session,
