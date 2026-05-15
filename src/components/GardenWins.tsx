@@ -6,6 +6,7 @@ import { formatRupiah } from "../utils/format";
 import TrendingDownIcon from "@suid/icons-material/TrendingDown";
 import TrendingUpIcon from "@suid/icons-material/TrendingUp";
 import WhatshotIcon from "@suid/icons-material/Whatshot";
+import EnergySavingsLeafIcon from "@suid/icons-material/EnergySavingsLeaf";
 import EmojiEventsIcon from "@suid/icons-material/EmojiEventsOutlined";
 import LightbulbIcon from "@suid/icons-material/LightbulbOutlined";
 
@@ -156,8 +157,14 @@ export const GardenWins = (props: GardenWinsProps) => {
             {/* Streak Section (Reverted) */}
             <div class="p-3 bg-sage/80 rounded-xl space-y-2">
               <div class="flex items-center gap-2">
-                <WhatshotIcon sx={{ fontSize: 14 }} class="text-orange-500" />
-                <p class="text-[10px] font-bold text-forest uppercase tracking-widest">Under Budget Streak</p>
+                <Show when={stats()!.streak > 0} fallback={
+                  <EnergySavingsLeafIcon sx={{ fontSize: 14 }} class="text-forest/40" />
+                }>
+                  <WhatshotIcon sx={{ fontSize: 14 }} class="text-orange-500" />
+                </Show>
+                <p class="text-[10px] font-bold text-forest uppercase tracking-widest">
+                  {stats()!.streak > 0 ? 'Under Budget Streak' : 'Start Your Streak'}
+                </p>
               </div>
               <div class="flex gap-2">
                 <For each={Array(Math.min(7, stats()!.streak)).fill(0)}>
@@ -168,7 +175,9 @@ export const GardenWins = (props: GardenWinsProps) => {
                 </For>
               </div>
               <p class="text-xs font-outfit text-forest font-semibold">
-                {stats()!.streak} {stats()!.streak === 1 ? 'Day' : 'Days'} and growing!
+                {stats()!.streak > 0 
+                  ? `${stats()!.streak} ${stats()!.streak === 1 ? 'Day' : 'Days'} and growing!`
+                  : 'Maintain your budget to start a streak!'}
               </p>
             </div>
 
