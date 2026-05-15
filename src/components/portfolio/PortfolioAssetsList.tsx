@@ -7,6 +7,7 @@ interface PortfolioAssetsListProps {
   assets: PortfolioAsset[];
   onSelectAsset: (asset: PortfolioAsset) => void;
   onAddAsset: () => void;
+  onDeleteAsset: (assetId: string) => void;
 }
 
 export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
@@ -76,7 +77,19 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                           style={{ width: `${Math.min(asset.actualAllocation, 100)}%` }}
                         />
                       </div>
-                      <span class="text-[10px] text-earth mt-0.5">Target: {asset.targetAllocation}%</span>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-[10px] text-earth">Target: {asset.targetAllocation}%</span>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            props.onDeleteAsset(asset.id);
+                          }}
+                          class="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded-md cursor-pointer"
+                          title="Delete Asset"
+                        >
+                          <span class="material-icons text-xs">delete</span>
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>

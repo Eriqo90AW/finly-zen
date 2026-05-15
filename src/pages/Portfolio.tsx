@@ -1,5 +1,5 @@
 import { createSignal, createMemo, Show, For } from "solid-js";
-import { portfolioState, createPortfolio, addTransactionToPortfolio, setActivePortfolioId } from "../store/portfolioStore";
+import { portfolioState, createPortfolio, addTransactionToPortfolio, addCapitalToPortfolio, setActivePortfolioId, deletePortfolio, deleteAssetFromPortfolio } from "../store/portfolioStore";
 import { PortfolioHero } from "../components/portfolio/PortfolioHero";
 import { PortfolioCharts } from "../components/portfolio/PortfolioCharts";
 import { PortfolioAssetsList } from "../components/portfolio/PortfolioAssetsList";
@@ -13,6 +13,7 @@ const Portfolio = () => {
   const [selectedAsset, setSelectedAsset] = createSignal<PortfolioAsset | null>(null);
   const [showCreateModal, setShowCreateModal] = createSignal(false);
   const [showAddAssetModal, setShowAddAssetModal] = createSignal(false);
+  const [showAddCapitalModal, setShowAddCapitalModal] = createSignal(false);
   
   // Create Portfolio Form State
   const [pName, setPName] = createSignal("");
@@ -23,6 +24,10 @@ const Portfolio = () => {
   const [shares, setShares] = createSignal(0);
   const [price, setPrice] = createSignal(0);
   const [type, setType] = createSignal<PortfolioTransactionType>('BUY');
+
+  // Add Capital State
+  const [capitalAmount, setCapitalAmount] = createSignal(0);
+  const [isAdjustment, setIsAdjustment] = createSignal(false);
 
   const activePortfolio = createMemo(() => {
     return portfolioState.portfolios.find(p => p.id === portfolioState.activePortfolioId) || null;
@@ -65,6 +70,18 @@ const Portfolio = () => {
     }
   };
 
+  const handleAddCapital = (e: Event) => {
+    e.preventDefault();
+    const portfolio = activePortfolio();
+    if (portfolio && capitalAmount() >= 0) {
+      addCapitalToPortfolio(portfolio.id, capitalAmount(), isAdjustment());
+      setShowAddCapitalModal(false);
+      setCapitalAmount(0);
+      setIsAdjustment(false);
+    }
+  };
+
+
   return (
     <div class="p-8 max-w-[1400px] mx-auto min-h-screen">
       <div class="flex justify-between items-center mb-10">
@@ -88,17 +105,21 @@ const Portfolio = () => {
         </div>
         
         <div class="flex gap-4">
-           <button 
-            class="premium-card px-6 py-3 flex items-center gap-2 hover:bg-forest/5 transition-all text-forest font-outfit font-bold cursor-pointer"
-            onClick={() => {
-              setPName("");
-              setPCash(0);
-              setShowCreateModal(true);
-            }}
-           >
-              <AddIcon class="text-xl" />
-              <span>{activePortfolio() ? 'New Portfolio' : 'Create Portfolio'}</span>
-           </button>
+            <button 
+             class="premium-card px-6 py-3 flex items-center gap-2 hover:bg-forest/5 transition-all text-forest font-outfit font-bold cursor-pointer"
+             onClick={() => {
+               if (activePortfolio()) {
+                 setShowAddAssetModal(true);
+               } else {
+                 setPName("");
+                 setPCash(0);
+                 setShowCreateModal(true);
+               }
+             }}
+            >
+               <AddIcon class="text-xl" />
+               <span>{activePortfolio() ? 'Add Assets' : 'Create Portfolio'}</span>
+            </button>
         </div>
       </div>
 
@@ -147,6 +168,21 @@ const Portfolio = () => {
                       </span>
                     </div>
                   </div>
+                  
+                  <div class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Are you sure you want to delete the portfolio "${p.name}"?`)) {
+                          deletePortfolio(p.id);
+                        }
+                      }}
+                      class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                      title="Delete Portfolio"
+                    >
+                      <span class="material-icons text-sm">delete</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </For>
@@ -165,12 +201,21 @@ const Portfolio = () => {
       >
         {(portfolio) => (
           <>
-            <PortfolioHero portfolio={portfolio()} />
+            <PortfolioHero 
+              portfolio={portfolio()} 
+              onAddAsset={() => setShowAddAssetModal(true)} 
+              onAddCapital={() => setShowAddCapitalModal(true)}
+            />
             <PortfolioCharts portfolio={portfolio()} />
             <PortfolioAssetsList 
               assets={portfolio().assets} 
               onSelectAsset={(a) => setSelectedAsset(a)} 
               onAddAsset={() => setShowAddAssetModal(true)}
+              onDeleteAsset={(assetId) => {
+                if (confirm("Are you sure you want to delete this asset? All related transactions will be removed and cash will be adjusted.")) {
+                  deleteAssetFromPortfolio(portfolio().id, assetId);
+                }
+              }}
             />
           </>
         )}
@@ -182,6 +227,13 @@ const Portfolio = () => {
         transactions={assetTransactions()} 
         isOpen={!!selectedAsset()} 
         onClose={() => setSelectedAsset(null)} 
+        onDeleteAsset={(assetId) => {
+          const portfolio = activePortfolio();
+          if (portfolio && confirm("Are you sure you want to delete this asset? All related transactions will be removed and cash will be adjusted.")) {
+            deleteAssetFromPortfolio(portfolio.id, assetId);
+            setSelectedAsset(null);
+          }
+        }}
       />
 
       {/* Add Asset Modal */}
@@ -299,6 +351,63 @@ const Portfolio = () => {
                   class="flex-1 bg-forest text-white px-6 py-3 rounded-xl font-outfit font-bold shadow-lg hover:bg-forest/90 transition-all cursor-pointer"
                 >
                   Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Show>
+
+      {/* Add Capital Modal */}
+      <Show when={showAddCapitalModal()}>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6" onClick={() => setShowAddCapitalModal(false)}>
+          <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div class="absolute top-0 left-0 w-full h-1 bg-spring"></div>
+            <h3 class="text-2xl font-cormorant text-forest font-bold mb-6">Manage Capital</h3>
+            <p class="text-earth text-sm mb-6">
+              {isAdjustment() 
+                ? "Set the total initial capital for this portfolio. This will not change your cash balance but will update your gain percentage."
+                : "Add new funds to this portfolio. This increases both your cash balance and your capital basis."}
+            </p>
+            <form onSubmit={handleAddCapital} class="space-y-6">
+              <div class="flex bg-forest/5 p-1 rounded-xl mb-4">
+                <button 
+                  type="button"
+                  class={`flex-1 py-2 rounded-lg font-outfit font-bold text-xs transition-all cursor-pointer ${!isAdjustment() ? 'bg-white text-forest shadow-sm' : 'text-earth hover:text-forest'}`}
+                  onClick={() => setIsAdjustment(false)}
+                >ADD FUNDS</button>
+                <button 
+                  type="button"
+                  class={`flex-1 py-2 rounded-lg font-outfit font-bold text-xs transition-all cursor-pointer ${isAdjustment() ? 'bg-white text-forest shadow-sm' : 'text-earth hover:text-forest'}`}
+                  onClick={() => setIsAdjustment(true)}
+                >ADJUST BASIS</button>
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
+                  {isAdjustment() ? "Initial Capital Basis (IDR)" : "Amount to Add (IDR)"}
+                </label>
+                <input 
+                  type="number" 
+                  value={capitalAmount()} 
+                  onInput={(e) => setCapitalAmount(Number(e.currentTarget.value))}
+                  placeholder="0"
+                  class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
+                  required
+                />
+              </div>
+              <div class="flex gap-4 pt-4">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddCapitalModal(false)}
+                  class="flex-1 px-6 py-3 rounded-xl font-outfit font-bold text-earth hover:bg-forest/5 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  class="flex-1 bg-forest text-white px-6 py-3 rounded-xl font-outfit font-bold shadow-lg hover:bg-forest/90 transition-all cursor-pointer"
+                >
+                  Add Funds
                 </button>
               </div>
             </form>

@@ -44,12 +44,22 @@ export const setCurrencyView = (view: 'IDR' | 'USD') => {
 export const setActivePortfolioId = (id: string | null) => {
   setPortfolioState("activePortfolioId", id);
 };
+
+// Helper to calculate portfolio metrics consistently
+const calculateMetrics = (totalValue: number, initialCapital: number) => {
+  const allTimeGain = totalValue - initialCapital;
+  // Multiply by 100 to get percentage value (e.g. 5.0 instead of 0.05)
+  const allTimeGainPercentage = initialCapital > 0 ? (allTimeGain / initialCapital) * 100 : 0;
+  return { allTimeGain, allTimeGainPercentage };
+};
+
 export const createPortfolio = (name: string, initialCash: number) => {
   const id = Math.random().toString(36).substr(2, 9);
   const newPortfolio: Portfolio = {
     id,
     name,
     cash: initialCash,
+    initialCapital: initialCash,
     totalBuyingPower: initialCash,
     totalValue: initialCash,
     allTimeGain: 0,
@@ -65,12 +75,13 @@ export const createPortfolio = (name: string, initialCash: number) => {
   setPortfolioState("activePortfolioId", id);
 };
 
-export const addTransactionToPortfolio = (portfolioId: string, transaction: Omit<PortfolioTransaction, "id">) => {
+export const addTransactionToPortfolio = (portfolioId: string, transaction: Omit<PortfolioTransaction, "id" | "assetId">) => {
   const id = Math.random().toString(36).substr(2, 9);
-  const newTx = { ...transaction, id };
+  const assetId = Math.random().toString(36).substr(2, 9); // Fallback for new assets
+  const newTx = { ...transaction, id, assetId };
 
   setPortfolioState("portfolios", (p) => p.id === portfolioId, (p) => {
-    const updatedTransactions = [...p.transactions, newTx];
+    const updatedTransactions = [...p.transactions, newTx as PortfolioTransaction];
     
     // Update assets based on transaction
     let updatedAssets = [...p.assets];
@@ -78,7 +89,7 @@ export const addTransactionToPortfolio = (portfolioId: string, transaction: Omit
     
     if (assetIndex === -1 && transaction.type === 'BUY') {
       updatedAssets.push({
-        id: Math.random().toString(36).substr(2, 9),
+        id: assetId,
         ticker: transaction.ticker,
         name: transaction.ticker, 
         currentValue: transaction.totalAmount,
@@ -111,15 +122,9 @@ export const addTransactionToPortfolio = (portfolioId: string, transaction: Omit
     const assetsValue = updatedAssets.reduce((sum, a) => sum + a.currentValue, 0);
     const totalValue = newCash + assetsValue;
     
-    // Simple gain calculation (current total - historical cost)
-    // For a more accurate gain, we'd need to track total deposits
-    const allTimeGain = updatedAssets.reduce((sum, a) => {
-      const costBasis = a.totalShares * a.averagePrice;
-      return sum + (a.currentValue - costBasis);
-    }, 0);
-
-    const totalCost = updatedAssets.reduce((sum, a) => sum + (a.totalShares * a.averagePrice), 0);
-    const allTimeGainPercentage = totalCost > 0 ? (allTimeGain / totalCost) * 100 : 0;
+    // Portfolio gain vs Initial Capital
+    const initialCapital = p.initialCapital !== undefined ? p.initialCapital : (p.history.length > 0 ? p.history[0].value : totalValue);
+    const { allTimeGain, allTimeGainPercentage } = calculateMetrics(totalValue, initialCapital);
 
     // Update allocations
     updatedAssets = updatedAssets.map(a => ({
@@ -131,6 +136,86 @@ export const addTransactionToPortfolio = (portfolioId: string, transaction: Omit
       ...p,
       transactions: updatedTransactions,
       assets: updatedAssets,
+      cash: newCash,
+      initialCapital, // Ensure it's preserved or initialized
+      totalValue,
+      allTimeGain,
+      allTimeGainPercentage,
+      totalBuyingPower: newCash,
+      history: [...p.history, { date: new Date().toISOString(), value: totalValue }]
+    };
+  });
+};
+
+export const addCapitalToPortfolio = (portfolioId: string, amount: number, isAdjustment: boolean = false) => {
+  setPortfolioState("portfolios", (p) => p.id === portfolioId, (p) => {
+    const newCash = isAdjustment ? p.cash : p.cash + amount;
+    const currentInitial = p.initialCapital || (p.history.length > 0 ? p.history[0].value : p.totalValue);
+    const newInitialCapital = isAdjustment ? amount : currentInitial + amount;
+    
+    const assetsValue = p.assets.reduce((sum, a) => sum + a.currentValue, 0);
+    const totalValue = newCash + assetsValue;
+    
+    const { allTimeGain, allTimeGainPercentage } = calculateMetrics(totalValue, newInitialCapital);
+
+    return {
+      ...p,
+      cash: newCash,
+      initialCapital: newInitialCapital,
+      totalValue,
+      allTimeGain,
+      allTimeGainPercentage,
+      totalBuyingPower: newCash,
+      history: [...p.history, { date: new Date().toISOString(), value: totalValue }]
+    };
+  });
+};
+export const deletePortfolio = (portfolioId: string) => {
+  if (portfolioState.activePortfolioId === portfolioId) {
+    setPortfolioState("activePortfolioId", null);
+  }
+  setPortfolioState("portfolios", (p) => p.filter(item => item.id !== portfolioId));
+};
+
+export const deleteAssetFromPortfolio = (portfolioId: string, assetId: string) => {
+  setPortfolioState("portfolios", (p) => p.id === portfolioId, (p) => {
+    const assetToRemove = p.assets.find(a => a.id === assetId);
+    if (!assetToRemove) return p;
+
+    const tickerToRemove = assetToRemove.ticker;
+    const updatedTransactions = p.transactions.filter(t => t.ticker !== tickerToRemove);
+    const updatedAssets = p.assets.filter(a => a.id !== assetId);
+
+    // Recalculate cash by undoing all transactions of this asset
+    let cashAdjustment = 0;
+    p.transactions.filter(t => t.ticker === tickerToRemove).forEach(t => {
+      if (t.type === 'BUY') {
+        cashAdjustment += t.totalAmount;
+      } else {
+        cashAdjustment -= t.totalAmount;
+      }
+    });
+
+    const newCash = p.cash + cashAdjustment;
+
+    // Recalculate totals
+    const assetsValue = updatedAssets.reduce((sum, a) => sum + a.currentValue, 0);
+    const totalValue = newCash + assetsValue;
+    
+    // Portfolio gain vs Initial Capital
+    const initialCapital = p.initialCapital !== undefined ? p.initialCapital : (p.history.length > 0 ? p.history[0].value : totalValue);
+    const { allTimeGain, allTimeGainPercentage } = calculateMetrics(totalValue, initialCapital);
+
+    // Update allocations
+    const finalAssets = updatedAssets.map(a => ({
+      ...a,
+      actualAllocation: totalValue > 0 ? (a.currentValue / totalValue) * 100 : 0
+    }));
+
+    return {
+      ...p,
+      transactions: updatedTransactions,
+      assets: finalAssets,
       cash: newCash,
       totalValue,
       allTimeGain,

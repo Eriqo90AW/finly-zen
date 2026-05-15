@@ -33,6 +33,7 @@ export interface Portfolio {
   id: string;
   name: string;
   cash: number;
+  initialCapital: number;
   totalBuyingPower: number;
   totalValue: number;
   allTimeGain: number;

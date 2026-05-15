@@ -9,6 +9,7 @@ interface AssetDetailsSlideOverProps {
   transactions: PortfolioTransaction[];
   isOpen: boolean;
   onClose: () => void;
+  onDeleteAsset: (assetId: string) => void;
 }
 
 export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
@@ -37,9 +38,18 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                     <p class="text-[10px] text-earth uppercase tracking-widest">{asset().name}</p>
                   </div>
                 </div>
-                <button onClick={props.onClose} class="text-earth hover:text-forest transition-colors p-2 hover:bg-forest/5 rounded-full cursor-pointer">
-                  <CloseIcon />
-                </button>
+                <div class="flex items-center gap-2">
+                  <button 
+                    onClick={() => asset() && props.onDeleteAsset(asset().id)} 
+                    class="text-red-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-full cursor-pointer"
+                    title="Delete Asset"
+                  >
+                    <span class="material-icons">delete_outline</span>
+                  </button>
+                  <button onClick={props.onClose} class="text-earth hover:text-forest transition-colors p-2 hover:bg-forest/5 rounded-full cursor-pointer">
+                    <CloseIcon />
+                  </button>
+                </div>
               </div>
 
               {/* Asset Summary */}
