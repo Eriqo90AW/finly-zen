@@ -180,7 +180,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
             6M
           </span>
           <span class="px-3 py-1 bg-sage/20 text-earth text-[10px] font-bold rounded-lg uppercase tracking-widest">
-            Candlestick
+            1W Candlestick
           </span>
         </div>
       </div>

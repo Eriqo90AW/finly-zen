@@ -10,6 +10,7 @@ import {
 export const RecentTransactions = (props: RecentTransactionsProps) => {
   const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = createSignal(false);
+  const [showOnlyRecurring, setShowOnlyRecurring] = createSignal(false);
   const [sortKey, setSortKey] = createSignal<SortKey>("date");
   const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc");
 
@@ -48,6 +49,11 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
 
   const sortedTransactions = () => {
     let list = [...props.transactions];
+
+    if (showOnlyRecurring()) {
+      list = list.filter((t) => t.isRecurring);
+    }
+
     const sel = selectedCategories();
     if (sel.size > 0) {
       list = list.filter((t) => sel.has(t.category));
@@ -88,28 +94,55 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
     `px-6 py-4 font-semibold cursor-pointer select-none transition-colors hover:text-forest group${key === "amount" ? " text-right" : ""}`;
 
   return (
-    <div class="col-span-12 premium-card overflow-hidden">
+    <div class="col-span-12 premium-card overflow-hidden cursor-default">
       <div class="p-6 border-b border-forest/10 flex items-center justify-between">
         <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
-        <button
-          class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors"
-          classList={{
-            "text-spring": filtersOpen() || selectedCategories().size > 0,
-            "text-mid-green hover:text-spring": !filtersOpen() && selectedCategories().size === 0,
-          }}
-          onClick={() => setFiltersOpen((v) => !v)}
-        >
-          <span class="material-icons !text-[14px]">filter_list</span>
-          Filters
-          <Show when={selectedCategories().size > 0}>
+        <div class="flex items-center gap-4">
+          <div
+            class="flex items-center gap-2 group cursor-pointer"
+            onClick={() => setShowOnlyRecurring((v) => !v)}
+          >
             <span
-              class="ml-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
-              style={{ "background-color": "var(--color-spring)", color: "var(--color-forest)" }}
+              class="text-[10px] font-bold uppercase tracking-widest transition-colors"
+              classList={{
+                "text-forest": showOnlyRecurring(),
+                "text-mid-green group-hover:text-forest": !showOnlyRecurring(),
+              }}
             >
-              {selectedCategories().size}
+              Recurring
             </span>
-          </Show>
-        </button>
+            <div class="ios-switch" aria-checked={showOnlyRecurring()}>
+              <div
+                class="ios-switch-thumb"
+                data-state={showOnlyRecurring() ? "checked" : "unchecked"}
+              />
+            </div>
+          </div>
+
+          <button
+            class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors hover:cursor-pointer"
+            classList={{
+              "text-spring": filtersOpen() || selectedCategories().size > 0,
+              "text-mid-green hover:text-spring":
+                !filtersOpen() && selectedCategories().size === 0,
+            }}
+            onClick={() => setFiltersOpen((v) => !v)}
+          >
+            <span class="material-icons !text-[14px]">filter_list</span>
+            Filters
+            <Show when={selectedCategories().size > 0}>
+              <span
+                class="ml-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
+                style={{
+                  "background-color": "var(--color-spring)",
+                  color: "var(--color-forest)",
+                }}
+              >
+                {selectedCategories().size}
+              </span>
+            </Show>
+          </button>
+        </div>
       </div>
 
       {/* Category Filter Pills */}
@@ -130,7 +163,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
               const isActive = () => selectedCategories().has(cat.name);
               return (
                 <button
-                  class="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest transition-all border"
+                  class="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest transition-all border cursor-pointer"
                   classList={{
                     "border-transparent shadow-sm": isActive(),
                     "bg-transparent border-forest/15 hover:border-forest/30": !isActive(),
