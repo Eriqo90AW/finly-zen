@@ -1,11 +1,22 @@
-import { createMemo, Show } from "solid-js";
-import { portfolioState } from "../store/portfolioStore";
+import { createMemo, Show, onMount } from "solid-js";
+import { portfolioState, loadPortfolios } from "../store/portfolioStore";
 import { PortfolioOverview } from "../components/screen-portfolio/PortfolioOverview";
 import { PortfolioDetails } from "../components/screen-portfolio/PortfolioDetails";
+import { fetchUsdRate } from "../data/portfolioData";
+import { setUsdExchangeRate } from "../utils/format";
 
 const Portfolio = () => {
   const activePortfolio = createMemo(() => {
     return portfolioState.portfolios.find(p => p.id === portfolioState.activePortfolioId) || null;
+  });
+
+  onMount(async () => {
+    // 1. Load live USD rate first
+    const rate = await fetchUsdRate();
+    setUsdExchangeRate(rate);
+
+    // 2. Load portfolios & transactions from Supabase
+    await loadPortfolios();
   });
 
   return (
@@ -21,4 +32,5 @@ const Portfolio = () => {
 };
 
 export default Portfolio;
+
 

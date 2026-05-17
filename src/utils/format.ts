@@ -104,12 +104,17 @@ export const formatHexColor = (c: string | null | undefined): string | undefined
   return c;
 };
 
-export const USD_EXCHANGE_RATE = 17400;
+import { createSignal } from "solid-js";
+
+const [usdRate, setUsdRate] = createSignal(17400);
+export const getUsdRate = () => usdRate();
+export const setUsdExchangeRate = (rate: number) => setUsdRate(rate);
 
 export const formatPortfolioValue = (amount: number, currency: 'IDR' | 'USD', isShort = false) => {
   if (currency === 'USD') {
-    const usdAmount = amount / USD_EXCHANGE_RATE;
+    const usdAmount = amount / getUsdRate();
     return isShort ? formatUSDCompact(usdAmount) : formatUSD(usdAmount);
   }
   return isShort ? formatRupiahShort(amount) : formatRupiah(amount);
 };
+

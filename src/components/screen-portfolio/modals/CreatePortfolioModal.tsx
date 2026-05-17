@@ -4,7 +4,7 @@ import {
   formatNumericInput,
   formatRupiah,
   formatUSD,
-  USD_EXCHANGE_RATE,
+  getUsdRate,
 } from "../../../utils/format";
 
 interface CreatePortfolioModalProps {
@@ -43,7 +43,7 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
     if (pName() && enteredValue >= 0) {
       const cashValue =
         currency() === "USD"
-          ? Math.round(enteredValue * USD_EXCHANGE_RATE)
+          ? Math.round(enteredValue * getUsdRate())
           : enteredValue;
       createPortfolio(pName(), cashValue);
       setPName("");
@@ -56,10 +56,10 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
     const rawVal = parseFloat(pCash()) || 0;
     if (rawVal === 0) return "";
     if (currency() === "IDR") {
-      const usdValue = rawVal / USD_EXCHANGE_RATE;
+      const usdValue = rawVal / getUsdRate();
       return `≈ ${formatUSD(usdValue, 2)}`;
     } else {
-      const idrValue = rawVal * USD_EXCHANGE_RATE;
+      const idrValue = rawVal * getUsdRate();
       return `≈ ${formatRupiah(idrValue)}`;
     }
   };
@@ -154,7 +154,7 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
                       setCurrency("IDR");
                       const currentVal = parseFloat(pCash()) || 0;
                       if (currentVal > 0) {
-                        const idrValue = currentVal * USD_EXCHANGE_RATE;
+                        const idrValue = currentVal * getUsdRate();
                         setPCash(Math.round(idrValue).toString());
                       }
                     }}
@@ -173,7 +173,7 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
                       setCurrency("USD");
                       const currentVal = parseFloat(pCash()) || 0;
                       if (currentVal > 0) {
-                        const usdValue = currentVal / USD_EXCHANGE_RATE;
+                        const usdValue = currentVal / getUsdRate();
                         setPCash(Number(usdValue.toFixed(2)).toString());
                       }
                     }}

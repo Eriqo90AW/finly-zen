@@ -1,8 +1,9 @@
 import { createSignal, For, Show } from "solid-js";
 import { formatPortfolioValue } from "../../../utils/format";
-import { PortfolioAsset } from "../../../types";
 import { portfolioState } from "../../../store/portfolioStore";
 import { SetTargetAllocationModal } from "../modals/SetTargetModal";
+import { getAssetColor } from "../../../lib/colors";
+import type { PortfolioAsset } from "../../../types";
 
 interface PortfolioAssetsListProps {
   assets: PortfolioAsset[];
@@ -10,27 +11,6 @@ interface PortfolioAssetsListProps {
   onAddAsset: () => void;
   onDeleteAsset: (assetId: string) => void;
 }
-
-// Helper to generate a deterministic color from a string (the ticker)
-const getAssetColor = (ticker: string) => {
-  const colors = [
-    "#3B82F6",
-    "#10B981",
-    "#F59E0B",
-    "#EF4444",
-    "#8B5CF6",
-    "#EC4899",
-    "#06B6D4",
-    "#F97316",
-    "#14B8A6",
-    "#6366F1",
-  ];
-  let hash = 0;
-  for (let i = 0; i < ticker.length; i++) {
-    hash = ticker.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-};
 
 export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
   const currency = () => portfolioState.currencyView;
@@ -127,7 +107,42 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
 
           {/* Assets List */}
           <div class="flex flex-col">
-            <For
+            <Show
+              when={!portfolioState.isLoading}
+              fallback={
+                <For each={[1, 2, 3]}>
+                  {() => (
+                    <div class="flex items-center px-8 py-5 border-b border-forest/5 animate-pulse">
+                      <div class="w-1 mr-4 h-12 bg-sage/20 rounded-full" />
+                      <div class="flex-[2] pr-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-sage/20" />
+                        <div class="flex-1 space-y-2">
+                          <div class="h-4 bg-sage/20 rounded w-2/3" />
+                          <div class="h-3 bg-sage/20 rounded w-1/3" />
+                        </div>
+                      </div>
+                      <div class="flex-1 text-right space-y-2 pr-4">
+                        <div class="h-4 bg-sage/20 rounded w-3/4 ml-auto" />
+                        <div class="h-3 bg-sage/20 rounded w-1/2 ml-auto" />
+                      </div>
+                      <div class="flex-1 text-right space-y-2 pr-4">
+                        <div class="h-4 bg-sage/20 rounded w-2/3 ml-auto" />
+                        <div class="h-3 bg-sage/20 rounded w-1/2 ml-auto" />
+                      </div>
+                      <div class="flex-1 text-right space-y-2 pr-4">
+                        <div class="h-4 bg-sage/20 rounded w-3/4 ml-auto" />
+                        <div class="h-3 bg-sage/20 rounded w-1/2 ml-auto" />
+                      </div>
+                      <div class="w-32 flex justify-end">
+                        <div class="h-4 bg-sage/20 rounded w-12" />
+                      </div>
+                      <div class="w-12" />
+                    </div>
+                  )}
+                </For>
+              }
+            >
+              <For
               each={props.assets}
               fallback={
                 <div class="px-8 py-16 text-center text-earth/40 italic font-outfit">
@@ -255,9 +270,10 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                 );
               }}
             </For>
-          </div>
+          </Show>
         </div>
       </div>
+    </div>
 
       <SetTargetAllocationModal
         isOpen={targetModalOpen()}

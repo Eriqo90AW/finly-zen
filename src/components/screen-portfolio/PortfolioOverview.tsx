@@ -256,139 +256,175 @@ export const PortfolioOverview = () => {
 
             {/* Portfolios List */}
             <div class="flex flex-col">
-              <For
-                each={portfolioState.portfolios}
+              <Show
+                when={!portfolioState.isLoading}
                 fallback={
-                  <div class="px-8 py-24 text-center text-earth/40 italic font-outfit flex flex-col items-center justify-center">
-                    <div class="w-20 h-20 bg-sage/20 rounded-2xl flex items-center justify-center text-forest mb-6">
-                      <span class="material-icons text-4xl">
-                        account_balance_wallet
-                      </span>
-                    </div>
-                    <h2 class="text-2xl font-cormorant text-forest font-bold mb-2">
-                      No Portfolios Yet
-                    </h2>
-                    <p class="text-earth font-outfit text-sm mb-8 max-w-sm mx-auto not-italic">
-                      Start your investment journey by creating your first
-                      portfolio.
-                    </p>
-                    <button
-                      onClick={() => setShowCreateModal(true)}
-                      class="bg-forest text-white px-8 py-3 rounded-xl font-outfit font-bold shadow-md hover:bg-forest/90 transition-all cursor-pointer text-xs not-italic"
-                    >
-                      Get Started
-                    </button>
-                  </div>
+                  <For each={[1, 2, 3]}>
+                    {() => (
+                      <div class="flex items-center px-8 py-5 border-b border-forest/5 animate-pulse">
+                        <div class="w-1 mr-4 h-12 bg-sage/20 rounded-full" />
+                        <div class="flex-[2] pr-4 flex items-center gap-4">
+                          <div class="w-10 h-10 rounded-xl bg-sage/20" />
+                          <div class="flex-1 space-y-2">
+                            <div class="h-4 bg-sage/20 rounded w-2/3" />
+                            <div class="h-3 bg-sage/20 rounded w-1/3" />
+                          </div>
+                        </div>
+                        <div class="flex-1 text-right space-y-2 pr-4">
+                          <div class="h-4 bg-sage/20 rounded w-3/4 ml-auto" />
+                        </div>
+                        <div class="flex-1 text-right space-y-2 pr-4">
+                          <div class="h-4 bg-sage/20 rounded w-2/3 ml-auto" />
+                        </div>
+                        <div class="flex-1 text-right space-y-2 pr-4">
+                          <div class="h-4 bg-sage/20 rounded w-3/4 ml-auto" />
+                        </div>
+                        <div class="flex-1 text-right space-y-2 pr-4">
+                          <div class="h-4 bg-sage/20 rounded w-1/2 ml-auto" />
+                        </div>
+                        <div class="w-36 flex justify-end">
+                          <div class="h-4 bg-sage/20 rounded w-20" />
+                        </div>
+                        <div class="w-12" />
+                      </div>
+                    )}
+                  </For>
                 }
               >
-                {(p) => {
-                  const pColor = getPortfolioColor(p.name);
-                  const isPositive = p.allTimeGain >= 0;
-
-                  return (
-                    <div
-                      onClick={() => setActivePortfolioId(p.id)}
-                      class="group flex items-center px-8 py-5 border-b border-forest/5 hover:bg-slate-50/80 transition-colors duration-200 cursor-pointer relative"
-                    >
-                      {/* Left side dynamic indicator stripe */}
-                      <div
-                        class="absolute left-0 top-0 bottom-0 w-1 transition-transform duration-200 group-hover:scale-x-[1.5] origin-left"
-                        style={{ "background-color": pColor }}
-                      />
-
-                      {/* Portfolio Name Badge Column */}
-                      <div class="flex-[2] flex pr-4 items-center gap-4 min-w-0">
-                        <div
-                          class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
-                          style={{ "background-color": pColor }}
-                        >
-                          {p.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                          <span class="font-outfit font-bold text-forest text-base leading-tight group-hover:text-spring transition-colors">
-                            {p.name}
-                          </span>
-                          <span class="text-xs text-earth/60 truncate max-w-[180px]">
-                            ID: {p.id.slice(0, 8)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Total Value Column */}
-                      <div class="flex-1 flex flex-col items-end gap-0.5">
-                        <span class="font-outfit font-bold text-forest text-sm">
-                          {formatPortfolioValue(p.totalValue, currency())}
+                <For
+                  each={portfolioState.portfolios}
+                  fallback={
+                    <div class="px-8 py-24 text-center text-earth/40 italic font-outfit flex flex-col items-center justify-center">
+                      <div class="w-20 h-20 bg-sage/20 rounded-2xl flex items-center justify-center text-forest mb-6">
+                        <span class="material-icons text-4xl">
+                          account_balance_wallet
                         </span>
                       </div>
-
-                      {/* All-Time Gain Column */}
-                      <div class="flex-1 flex flex-col items-end gap-0.5">
-                        <span
-                          class={`font-outfit font-bold text-sm ${isPositive ? "text-emerald-600" : "text-rose-500"}`}
-                        >
-                          {isPositive ? "+" : ""}
-                          {formatPortfolioValue(
-                            p.allTimeGain,
-                            currency(),
-                            true,
-                          )}
-                        </span>
-                        <div
-                          class={`flex items-center text-[11px] font-bold ${isPositive ? "text-emerald-600/80" : "text-rose-500/80"}`}
-                        >
-                          <span class="material-icons !text-[14px]">
-                            {isPositive ? "arrow_drop_up" : "arrow_drop_down"}
-                          </span>
-                          {Math.abs(p.allTimeGainPercentage).toFixed(2)}%
-                        </div>
-                      </div>
-
-                      {/* Initial / Cash Column */}
-                      <div class="flex-1 flex flex-col items-end gap-0.5">
-                        <span class="font-outfit font-medium text-forest text-sm">
-                          {formatPortfolioValue(p.initialCapital, currency())}
-                        </span>
-                        <span class="text-[11px] text-earth/60 font-medium">
-                          Cash: {formatPortfolioValue(p.cash, currency())}
-                        </span>
-                      </div>
-
-                      {/* Assets Column */}
-                      <div class="flex-1 flex flex-col items-end gap-0.5">
-                        <span class="font-outfit text-forest font-bold text-sm">
-                          {p.assets.length}{" "}
-                          {p.assets.length === 1 ? "Asset" : "Assets"}
-                        </span>
-                        <span class="text-[11px] text-earth/60 font-medium">
-                          Total Assets
-                        </span>
-                      </div>
-
-                      {/* Chart Column */}
-                      <div class="w-36 flex justify-end items-center">
-                        <PortfolioMiniDonut portfolio={p} />
-                      </div>
-
-                      {/* Action Column */}
-                      <div class="w-12 flex justify-end items-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPortfolioToDelete({ id: p.id, name: p.name });
-                            setDeleteConfirmOpen(true);
-                          }}
-                          class="opacity-0 group-hover:opacity-100 transition-opacity text-earth/20 hover:text-rose-500 pt-1.5 px-1 hover:bg-rose-50 rounded-md cursor-pointer"
-                          title="Delete Portfolio"
-                        >
-                          <span class="material-icons text-base">
-                            delete_outline
-                          </span>
-                        </button>
-                      </div>
+                      <h2 class="text-2xl font-cormorant text-forest font-bold mb-2">
+                        No Portfolios Yet
+                      </h2>
+                      <p class="text-earth font-outfit text-sm mb-8 max-w-sm mx-auto not-italic">
+                        Start your investment journey by creating your first
+                        portfolio.
+                      </p>
+                      <button
+                        onClick={() => setShowCreateModal(true)}
+                        class="bg-forest text-white px-8 py-3 rounded-xl font-outfit font-bold shadow-md hover:bg-forest/90 transition-all cursor-pointer text-xs not-italic"
+                      >
+                        Get Started
+                      </button>
                     </div>
-                  );
-                }}
-              </For>
+                  }
+                >
+                  {(p) => {
+                    const pColor = getPortfolioColor(p.name);
+                    const isPositive = p.allTimeGain >= 0;
+
+                    return (
+                      <div
+                        onClick={() => setActivePortfolioId(p.id)}
+                        class="group flex items-center px-8 py-5 border-b border-forest/5 hover:bg-slate-50/80 transition-colors duration-200 cursor-pointer relative"
+                      >
+                        {/* Left side dynamic indicator stripe */}
+                        <div
+                          class="absolute left-0 top-0 bottom-0 w-1 transition-transform duration-200 group-hover:scale-x-[1.5] origin-left"
+                          style={{ "background-color": pColor }}
+                        />
+
+                        {/* Portfolio Name Badge Column */}
+                        <div class="flex-[2] flex pr-4 items-center gap-4 min-w-0">
+                          <div
+                            class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                            style={{ "background-color": pColor }}
+                          >
+                            {p.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div class="flex flex-col min-w-0">
+                            <span class="font-outfit font-bold text-forest text-base leading-tight group-hover:text-spring transition-colors">
+                              {p.name}
+                            </span>
+                            <span class="text-xs text-earth/60 truncate max-w-[180px]">
+                              ID: {p.id.slice(0, 8)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Total Value Column */}
+                        <div class="flex-1 flex flex-col items-end gap-0.5">
+                          <span class="font-outfit font-bold text-forest text-sm">
+                            {formatPortfolioValue(p.totalValue, currency())}
+                          </span>
+                        </div>
+
+                        {/* All-Time Gain Column */}
+                        <div class="flex-1 flex flex-col items-end gap-0.5">
+                          <span
+                            class={`font-outfit font-bold text-sm ${isPositive ? "text-emerald-600" : "text-rose-500"}`}
+                          >
+                            {isPositive ? "+" : ""}
+                            {formatPortfolioValue(
+                              p.allTimeGain,
+                              currency(),
+                              true,
+                            )}
+                          </span>
+                          <div
+                            class={`flex items-center text-[11px] font-bold ${isPositive ? "text-emerald-600/80" : "text-rose-500/80"}`}
+                          >
+                            <span class="material-icons !text-[14px]">
+                              {isPositive ? "arrow_drop_up" : "arrow_drop_down"}
+                            </span>
+                            {Math.abs(p.allTimeGainPercentage).toFixed(2)}%
+                          </div>
+                        </div>
+
+                        {/* Initial / Cash Column */}
+                        <div class="flex-1 flex flex-col items-end gap-0.5">
+                          <span class="font-outfit font-medium text-forest text-sm">
+                            {formatPortfolioValue(p.initialCapital, currency())}
+                          </span>
+                          <span class="text-[11px] text-earth/60 font-medium">
+                            Cash: {formatPortfolioValue(p.cash, currency())}
+                          </span>
+                        </div>
+
+                        {/* Assets Column */}
+                        <div class="flex-1 flex flex-col items-end gap-0.5">
+                          <span class="font-outfit text-forest font-bold text-sm">
+                            {p.assets.length}{" "}
+                            {p.assets.length === 1 ? "Asset" : "Assets"}
+                          </span>
+                          <span class="text-[11px] text-earth/60 font-medium">
+                            Total Assets
+                          </span>
+                        </div>
+
+                        {/* Chart Column */}
+                        <div class="w-36 flex justify-end items-center">
+                          <PortfolioMiniDonut portfolio={p} />
+                        </div>
+
+                        {/* Action Column */}
+                        <div class="w-12 flex justify-end items-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPortfolioToDelete({ id: p.id, name: p.name });
+                              setDeleteConfirmOpen(true);
+                            }}
+                            class="opacity-0 group-hover:opacity-100 transition-opacity text-earth/20 hover:text-rose-500 pt-1.5 px-1 hover:bg-rose-50 rounded-md cursor-pointer"
+                            title="Delete Portfolio"
+                          >
+                            <span class="material-icons text-base">
+                              delete_outline
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }}
+                </For>
+              </Show>
             </div>
           </div>
         </div>

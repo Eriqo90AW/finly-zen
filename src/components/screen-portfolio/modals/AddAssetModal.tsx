@@ -1,6 +1,8 @@
-import { createSignal, Show } from "solid-js";
-import { addTransactionToPortfolio } from "../../../store/portfolioStore";
-import type { PortfolioTransactionType } from "../../../types";
+import { createSignal, Show, createEffect } from "solid-js";
+import {
+  addTransactionToPortfolio,
+} from "../../../store/portfolioStore";
+import { getUsdRate } from "../../../utils/format";
 
 interface AddAssetModalProps {
   isOpen: boolean;
@@ -10,25 +12,57 @@ interface AddAssetModalProps {
 
 export const AddAssetModal = (props: AddAssetModalProps) => {
   const [ticker, setTicker] = createSignal("");
-  const [shares, setShares] = createSignal(0);
-  const [price, setPrice] = createSignal(0);
-  const [type, setType] = createSignal<PortfolioTransactionType>("BUY");
+  const [shares, setShares] = createSignal<number | null>(null);
+  const [price, setPrice] = createSignal<number | null>(null);
+  const [currency, setCurrency] = createSignal<string>("USD");
+  const [priceCurrency, setPriceCurrency] = createSignal<number>(getUsdRate());
+  const [transactionDate, setTransactionDate] = createSignal(
+    new Date().toISOString().split("T")[0],
+  );
+  const [notes, setNotes] = createSignal("");
+  const [type, setType] = createSignal<"BUY" | "SELL">("BUY");
+  const [isSubmitting, setIsSubmitting] = createSignal(false);
 
-  const handleSubmit = (e: Event) => {
+  // Initialize or update the exchange rate when modal opens
+  createEffect(() => {
+    if (props.isOpen) {
+      setPriceCurrency(getUsdRate());
+    }
+  });
+
+  const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    if (ticker() && shares() > 0 && price() > 0) {
-      addTransactionToPortfolio(props.portfolioId, {
-        ticker: ticker().toUpperCase(),
-        shares: shares(),
-        pricePerShare: price(),
-        totalAmount: shares() * price(),
-        type: type(),
-        date: new Date().toISOString(),
-      });
-      setTicker("");
-      setShares(0);
-      setPrice(0);
-      props.onClose();
+    const t = ticker().trim().toUpperCase();
+    const qty = Number(shares());
+    const p = Number(price());
+    const rate = Number(priceCurrency());
+
+    if (t && qty > 0 && p > 0 && rate > 0) {
+      setIsSubmitting(true);
+      try {
+        await addTransactionToPortfolio(props.portfolioId, {
+          ticker: t,
+          qty,
+          pricePerUnit: p,
+          priceCurrency: rate,
+          currency: currency(),
+          type: type(),
+          notes: notes(),
+          transactionDate: new Date(transactionDate()).toISOString(),
+        });
+
+        // Reset form
+        setTicker("");
+        setShares(null);
+        setPrice(null);
+        setNotes("");
+        props.onClose();
+      } catch (error) {
+        console.error("Failed to add transaction:", error);
+        alert("Failed to save transaction. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -47,6 +81,7 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
             Add Transaction
           </h3>
           <form onSubmit={handleSubmit} class="space-y-4">
+            {/* BUY/SELL Toggle */}
             <div class="flex bg-forest/5 p-1 rounded-xl mb-4">
               <button
                 type="button"
@@ -63,6 +98,8 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                 SELL
               </button>
             </div>
+
+            {/* Ticker Input */}
             <div>
               <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
                 Ticker Symbol
@@ -70,52 +107,135 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
               <input
                 type="text"
                 value={ticker()}
-                onInput={(e) => setTicker(e.currentTarget.value)}
-                placeholder="e.g., AAPL"
+                onInput={(e) => setTicker(e.currentTarget.value.toUpperCase())}
+                placeholder="e.g., NVDA, BTC-USD"
                 class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
                 required
               />
             </div>
+
+            {/* Qty and Price Row */}
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
-                  Shares
+                  Quantity
                 </label>
                 <input
                   type="number"
                   step="0.0001"
-                  value={shares()}
-                  onInput={(e) => setShares(Number(e.currentTarget.value))}
+                  value={shares() ?? ""}
+                  onInput={(e) =>
+                    setShares(
+                      e.currentTarget.value
+                        ? Number(e.currentTarget.value)
+                        : null,
+                    )
+                  }
+                  placeholder="0.00"
                   class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
                   required
                 />
               </div>
               <div>
                 <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
-                  Price per Share
+                  Price per Unit
                 </label>
                 <input
                   type="number"
-                  value={price()}
-                  onInput={(e) => setPrice(Number(e.currentTarget.value))}
+                  step="0.01"
+                  value={price() ?? ""}
+                  onInput={(e) =>
+                    setPrice(
+                      e.currentTarget.value
+                        ? Number(e.currentTarget.value)
+                        : null,
+                    )
+                  }
+                  placeholder="0.00"
                   class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
                   required
                 />
               </div>
             </div>
+
+            {/* Currency and Exchange Rate Row */}
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
+                  Currency
+                </label>
+                <select
+                  value={currency()}
+                  onChange={(e) => setCurrency(e.currentTarget.value)}
+                  class="w-full px-4 py-3 rounded-xl border border-forest/10 bg-transparent focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest cursor-pointer"
+                >
+                  <option value="USD">USD</option>
+                  <option value="IDR">IDR</option>
+                  <option value="SGD">SGD</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
+                  Exchange Rate (to IDR)
+                </label>
+                <input
+                  type="number"
+                  value={priceCurrency()}
+                  onInput={(e) =>
+                    setPriceCurrency(Number(e.currentTarget.value))
+                  }
+                  class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Date Picker */}
+            <div>
+              <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
+                Transaction Date
+              </label>
+              <input
+                type="date"
+                value={transactionDate()}
+                onInput={(e) => setTransactionDate(e.currentTarget.value)}
+                class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest cursor-pointer"
+                required
+              />
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
+                Notes
+              </label>
+              <textarea
+                value={notes()}
+                onInput={(e) => setNotes(e.currentTarget.value)}
+                placeholder="Optional notes..."
+                class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest resize-none h-20"
+              />
+            </div>
+
+            {/* Buttons */}
             <div class="flex gap-4 pt-4">
               <button
                 type="button"
                 onClick={props.onClose}
-                class="flex-1 px-6 py-3 rounded-xl font-outfit font-bold text-earth hover:bg-spring/5 transition-all cursor-pointer"
+                disabled={isSubmitting()}
+                class="flex-1 px-6 py-3 rounded-xl font-outfit font-bold text-earth hover:bg-spring/5 transition-all cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                class="flex-1 bg-forest text-white px-6 py-3 rounded-xl font-outfit font-bold shadow-lg hover:bg-forest/90 transition-all cursor-pointer"
+                disabled={isSubmitting()}
+                class="flex-1 bg-forest text-white px-6 py-3 rounded-xl font-outfit font-bold shadow-lg hover:bg-forest/90 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-80"
               >
-                Submit
+                <Show when={isSubmitting()} fallback="Submit">
+                  <div class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  Saving...
+                </Show>
               </button>
             </div>
           </form>
