@@ -18,17 +18,41 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
   const [selectedAssetForTarget, setSelectedAssetForTarget] =
     createSignal<PortfolioAsset | null>(null);
 
+  // Helper to load sorting state safely from localStorage
+  const getSavedSortBy = (): 'ticker' | 'value' | 'price' | 'gain' | 'allocation' => {
+    try {
+      return (localStorage.getItem("finly_zen_assets_sort_by") as any) || 'value';
+    } catch (e) {
+      return 'value';
+    }
+  };
+
+  const getSavedSortOrder = (): 'asc' | 'desc' => {
+    try {
+      return (localStorage.getItem("finly_zen_assets_sort_order") as any) || 'desc';
+    } catch (e) {
+      return 'desc';
+    }
+  };
+
   // Sorting state for the assets list columns
-  const [sortBy, setSortBy] = createSignal<'ticker' | 'value' | 'price' | 'gain' | 'allocation'>('value');
-  const [sortOrder, setSortOrder] = createSignal<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = createSignal<'ticker' | 'value' | 'price' | 'gain' | 'allocation'>(getSavedSortBy());
+  const [sortOrder, setSortOrder] = createSignal<'asc' | 'desc'>(getSavedSortOrder());
 
   // Handle column header clicks
   const handleSort = (key: 'ticker' | 'value' | 'price' | 'gain' | 'allocation') => {
-    if (sortBy() === key) {
-      setSortOrder(sortOrder() === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(key);
-      setSortOrder(key === 'ticker' ? 'asc' : 'desc');
+    const nextOrder = sortBy() === key
+      ? (sortOrder() === 'asc' ? 'desc' : 'asc')
+      : (key === 'ticker' ? 'asc' : 'desc');
+
+    setSortBy(key);
+    setSortOrder(nextOrder);
+
+    try {
+      localStorage.setItem("finly_zen_assets_sort_by", key);
+      localStorage.setItem("finly_zen_assets_sort_order", nextOrder);
+    } catch (e) {
+      console.warn("localStorage sorting persistence failed:", e);
     }
   };
 
@@ -152,48 +176,48 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
               onClick={() => handleSort('value')}
               class="flex-1 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
             >
-              Value
               <span class={`material-icons !text-[16px] transition-all duration-200 ${
                 sortBy() === 'value' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
               }`}>
                 {sortBy() === 'value' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
               </span>
+              Value
             </button>
 
             <button
               onClick={() => handleSort('price')}
               class="flex-1 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
             >
-              Price / Avg
               <span class={`material-icons !text-[16px] transition-all duration-200 ${
                 sortBy() === 'price' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
               }`}>
                 {sortBy() === 'price' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
               </span>
+              Price / Avg
             </button>
 
             <button
               onClick={() => handleSort('gain')}
-              class="flex-1 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
+              class="flex-1 flex justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
             >
-              Total Gain
               <span class={`material-icons !text-[16px] transition-all duration-200 ${
                 sortBy() === 'gain' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
               }`}>
                 {sortBy() === 'gain' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
               </span>
+              Total Gain
             </button>
 
             <button
               onClick={() => handleSort('allocation')}
               class="w-32 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
             >
-              Allocation
               <span class={`material-icons !text-[16px] transition-all duration-200 ${
                 sortBy() === 'allocation' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
               }`}>
                 {sortBy() === 'allocation' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
               </span>
+              Allocation
             </button>
 
             <div class="w-12" />

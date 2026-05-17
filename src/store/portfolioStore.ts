@@ -22,10 +22,26 @@ interface PortfolioStore {
   isRefreshing: boolean;
 }
 
+const getInitialActivePortfolioId = (): string | null => {
+  try {
+    return localStorage.getItem("finly_zen_active_portfolio_id");
+  } catch (e) {
+    return null;
+  }
+};
+
+const getInitialCurrencyView = (): 'IDR' | 'USD' => {
+  try {
+    return (localStorage.getItem("finly_zen_currency_view") as 'IDR' | 'USD') || 'IDR';
+  } catch (e) {
+    return 'IDR';
+  }
+};
+
 const DEFAULT_PORTFOLIO_STATE: PortfolioStore = {
   portfolios: [],
-  activePortfolioId: null,
-  currencyView: 'IDR',
+  activePortfolioId: getInitialActivePortfolioId(),
+  currencyView: getInitialCurrencyView(),
   isLoading: true,
   isRefreshing: false,
 };
@@ -35,10 +51,20 @@ export const [portfolioState, setPortfolioState] = createStore<PortfolioStore>(D
 // Helpers
 export const setCurrencyView = (view: 'IDR' | 'USD') => {
   setPortfolioState("currencyView", view);
+  try {
+    localStorage.setItem("finly_zen_currency_view", view);
+  } catch (e) {}
 };
 
 export const setActivePortfolioId = (id: string | null) => {
   setPortfolioState("activePortfolioId", id);
+  try {
+    if (id) {
+      localStorage.setItem("finly_zen_active_portfolio_id", id);
+    } else {
+      localStorage.removeItem("finly_zen_active_portfolio_id");
+    }
+  } catch (e) {}
 };
 
 // Compute standard portfolio aggregates
@@ -243,7 +269,7 @@ export const deletePortfolio = async (portfolioId: string) => {
   try {
     await deletePortfolioDB(portfolioId);
     if (portfolioState.activePortfolioId === portfolioId) {
-      setPortfolioState("activePortfolioId", null);
+      setActivePortfolioId(null);
     }
     await loadPortfolios();
   } catch (e) {

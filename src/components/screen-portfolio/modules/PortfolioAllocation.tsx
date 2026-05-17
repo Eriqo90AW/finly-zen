@@ -132,7 +132,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
               <div class="absolute inset-0 flex items-center justify-center pointer-events-none pb-4">
                 <div class="flex flex-col items-center gap-0.5 font-outfit">
                   <span class="text-[8px] uppercase tracking-widest text-earth/50 font-semibold">
-                    Market Value
+                    Assets Value
                   </span>
                   <span class="text-[12px] font-bold text-terracotta-dark leading-tight">
                     {formatPortfolioValue(assetsValue(), currency())}
