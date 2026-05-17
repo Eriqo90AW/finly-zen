@@ -13,10 +13,10 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
   const isPositive = () => props.portfolio.allTimeGain >= 0;
 
   return (
-    <div class="premium-card relative overflow-hidden p-8 bg-gradient-to-br from-white via-sage/5 to-sage/10 border-forest/10 group transition-all duration-500 mb-8 hover:shadow-lg">
+    <div class="premium-card relative overflow-hidden p-8 bg-gradient-to-br from-white via-sage/5 to-sage/10 border-forest/10 group transition-[box-shadow,transform] duration-500 mb-8 hover:shadow-lg">
       {/* Decorative background element */}
-      <div class="absolute -top-24 -right-24 w-96 h-96 bg-forest/5 rounded-full blur-3xl group-hover:bg-forest/10 transition-colors duration-700"></div>
-      <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-spring/5 rounded-full blur-3xl group-hover:bg-spring/10 transition-colors duration-700"></div>
+      <div class="absolute -top-24 -right-24 w-96 h-96 bg-forest/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+      <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-spring/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
       
       <div class="relative flex flex-col md:flex-row items-center justify-between gap-10">
         {/* Main Highlight: Net Worth */}
