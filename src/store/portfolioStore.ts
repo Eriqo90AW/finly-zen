@@ -158,6 +158,12 @@ export const addCapitalToPortfolio = (portfolioId: string, amount: number, isAdj
     
     const { allTimeGain, allTimeGainPercentage } = calculateMetrics(totalValue, newInitialCapital);
 
+    // Recalculate allocations for each asset based on the new totalValue
+    const updatedAssets = p.assets.map(a => ({
+      ...a,
+      actualAllocation: totalValue > 0 ? (a.currentValue / totalValue) * 100 : 0
+    }));
+
     return {
       ...p,
       cash: newCash,
@@ -166,6 +172,7 @@ export const addCapitalToPortfolio = (portfolioId: string, amount: number, isAdj
       allTimeGain,
       allTimeGainPercentage,
       totalBuyingPower: newCash,
+      assets: updatedAssets,
       history: [...p.history, { date: new Date().toISOString(), value: totalValue }]
     };
   });
