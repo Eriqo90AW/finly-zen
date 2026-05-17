@@ -1,6 +1,6 @@
 import { createResource, Show, onCleanup, createEffect, createSignal, onMount } from "solid-js";
 import { useParams } from "@solidjs/router";
-import { fetchStockData } from "../data/stockData";
+import { fetchStockData } from "../data/marketData";
 import { PriceActionChart } from "../components/scren-markets/PriceActionChart";
 import { StockHero } from "../components/scren-markets/StockHero";
 import { MetricsCard } from "../components/scren-markets/MetricsCard";

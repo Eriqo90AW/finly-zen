@@ -1,6 +1,6 @@
 import { createStore, reconcile } from "solid-js/store";
 import { createEffect, onMount } from "solid-js";
-import { Portfolio, PortfolioAsset, PortfolioTransaction } from "../types";
+import type { Portfolio, PortfolioTransaction } from "../types";
 
 interface PortfolioStore {
   portfolios: Portfolio[];

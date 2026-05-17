@@ -1,8 +1,8 @@
 import { Show, For } from "solid-js";
 import CloseIcon from "@suid/icons-material/Close";
-import { PortfolioAsset, PortfolioTransaction } from "../../../types";
 import { formatPortfolioValue } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
+import type { PortfolioAsset, PortfolioTransaction } from "../../../types";
 
 interface AssetDetailsSlideOverProps {
   asset: PortfolioAsset | null;

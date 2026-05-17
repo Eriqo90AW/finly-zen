@@ -1,6 +1,6 @@
 import { formatPortfolioValue } from "../../../utils/format";
-import { Portfolio } from "../../../types";
 import { portfolioState } from "../../../store/portfolioStore";
+import type { Portfolio } from "../../../types";
 
 interface PortfolioHeroProps {
   portfolio: Portfolio;

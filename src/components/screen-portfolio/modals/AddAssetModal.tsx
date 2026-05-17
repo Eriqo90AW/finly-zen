@@ -1,6 +1,6 @@
 import { createSignal, Show } from "solid-js";
 import { addTransactionToPortfolio } from "../../../store/portfolioStore";
-import { PortfolioTransactionType } from "../../../types";
+import type { PortfolioTransactionType } from "../../../types";
 
 interface AddAssetModalProps {
   isOpen: boolean;

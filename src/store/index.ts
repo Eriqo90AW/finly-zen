@@ -1,6 +1,6 @@
 import { createStore, reconcile } from "solid-js/store";
 import { createEffect, onMount } from "solid-js";
-import { Transaction, Budget, Goal, DatePeriod, AppState } from "../types";
+import type { Transaction, AppState } from "../types";
 
 
 const DEFAULT_STATE: AppState = {

@@ -1,4 +1,4 @@
-import { MarketSession, MarketStatus } from "../types";
+import type { MarketSession, MarketStatus } from "../types";
 
 
 function isDST(date: Date): boolean {

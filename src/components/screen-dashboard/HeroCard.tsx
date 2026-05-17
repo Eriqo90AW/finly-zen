@@ -9,9 +9,9 @@ import {
   untrack,
 } from "solid-js";
 import { state, toggleShowAllTime, toggleRecurringDebt } from "../../store";
-import { HeroCardProps } from "../../types";
 import { formatRupiah } from "../../utils/format";
 import { getDateRange } from "../../utils/date";
+import type { HeroCardProps } from "../../types";
 
 export const HeroCard = (props: HeroCardProps) => {
   const [activeIndex, setActiveIndex] = createSignal(0);

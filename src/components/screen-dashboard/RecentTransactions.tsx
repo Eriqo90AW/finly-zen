@@ -1,6 +1,5 @@
 import { For, Show, createSignal, createMemo } from "solid-js";
 import {
-  Transaction,
   RecentTransactionsProps,
   SortKey,
   SortDirection,

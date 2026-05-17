@@ -2,8 +2,7 @@ import { ParentProps } from "solid-js";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import InsightsSidebar from "../screen-dashboard/InsightsSidebar";
-import AddExpenseSlideOver from "../screen-dashboard/AddExpenseSlideOver";
-import { state } from "../../store";
+import AddExpenseSlideOver from "../screen-dashboard/modules/AddExpenseSlideOver";
 
 const MainLayout = (props: ParentProps) => {
   return (

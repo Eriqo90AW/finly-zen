@@ -1,11 +1,11 @@
 import { createSignal, createMemo, Show } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { Tooltip } from "../modules/Tooltip";
-import { formatRupiah, formatRupiahShort } from "../../utils/format";
 import { state } from "../../store";
-import { DailySpendChartProps } from "../../types";
+import { Tooltip } from "../modules/Tooltip";
 import { getDateRange } from "../../utils/date";
+import { formatRupiah, formatRupiahShort } from "../../utils/format";
+import type { DailySpendChartProps } from "../../types";
 
 export const DailySpendChart = (props: DailySpendChartProps) => {
   const chartData = createMemo(() => {

@@ -6,7 +6,6 @@ import FlagIcon from "@suid/icons-material/FlagOutlined";
 import AssessmentIcon from "@suid/icons-material/AssessmentOutlined";
 import ShowChartIcon from "@suid/icons-material/ShowChartOutlined";
 import PieChartIcon from "@suid/icons-material/PieChartOutlined";
-import { state } from "../../store";
 
 const Sidebar = () => {
   const location = useLocation();

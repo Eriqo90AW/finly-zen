@@ -1,6 +1,6 @@
 import { For, Show, createMemo } from "solid-js";
 import { formatUSD, formatUSDCompact, formatPercent } from "../../utils/format";
-import { EstimatesTableProps, Estimate } from "../../types";
+import type { EstimatesTableProps, Estimate } from "../../types";
 
 
 export const EstimatesTable = (props: EstimatesTableProps) => {

@@ -1,8 +1,9 @@
 import SearchIcon from "@suid/icons-material/SearchOutlined";
 import { createSignal, createEffect, For, Show, onCleanup } from "solid-js";
 import { useLocation, useNavigate } from "@solidjs/router";
-import { searchTickers, TickerSearchResult } from "../../services/tickerService";
+import { searchTickers } from "../../data/marketData";
 import { debounce } from "../../utils/debounce";
+import type { TickerSearchResult } from "../../types";
 
 const SearchBar = () => {
   const location = useLocation();

@@ -6,11 +6,12 @@ import {
   createMemo,
   createEffect,
 } from "solid-js";
-import { state, setState } from "../../store";
-import { getCategories, getAccounts } from "../../lib/db";
-import { addTransaction } from "../../lib/transactions";
-import { TransactionType } from "../../types";
-
+import { state, setState } from "../../../store";
+import {
+  getCategories,
+  getAccounts,
+  addTransaction,
+} from "../../../data/expenseData";
 import CloseIcon from "@suid/icons-material/Close";
 import CheckIcon from "@suid/icons-material/Check";
 import LocalOfferIcon from "@suid/icons-material/LocalOfferOutlined";
@@ -20,7 +21,8 @@ import NotesIcon from "@suid/icons-material/NotesOutlined";
 import SyncIcon from "@suid/icons-material/Sync";
 import RepeatIcon from "@suid/icons-material/Repeat";
 import HistoryIcon from "@suid/icons-material/History";
-import { formatIconName, formatNumericInput } from "../../utils/format";
+import { formatIconName, formatNumericInput } from "../../../utils/format";
+import type { TransactionType } from "../../../types";
 
 const AddExpenseSlideOver = () => {
   // Form State

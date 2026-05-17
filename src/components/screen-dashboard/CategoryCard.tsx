@@ -2,7 +2,7 @@ import { Show, For, createMemo } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { formatRupiah } from "../../utils/format";
-import { CategoryCardProps } from "../../types";
+import type { CategoryCardProps } from "../../types";
 
 export const CategoryCard = (props: CategoryCardProps) => {
   const categoryData = createMemo(() => {

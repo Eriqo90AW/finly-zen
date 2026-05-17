@@ -1,5 +1,5 @@
 import { mergeProps } from "solid-js";
-import { TooltipProps } from "../../types";
+import type { TooltipProps } from "../../types";
 
 
 export const Tooltip = (_props: TooltipProps) => {

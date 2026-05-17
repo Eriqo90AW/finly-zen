@@ -1,8 +1,4 @@
 import { state } from "../../store";
-import TrendingUpIcon from "@suid/icons-material/TrendingUpOutlined";
-import ErrorOutlineIcon from "@suid/icons-material/ErrorOutlineOutlined";
-import EmojiEventsIcon from "@suid/icons-material/EmojiEventsOutlined";
-import InfoOutlinedIcon from "@suid/icons-material/InfoOutlined";
 import { formatRupiah } from "../../utils/format";
 
 const InsightCard = (props: { type: string, headline: string, body: string, colorClass: string }) => (

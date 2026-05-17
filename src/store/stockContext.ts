@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { StockData } from "../types";
+import type { StockData } from "../types";
 
 const [currentStockData, setCurrentStockData] = createSignal<StockData | null>(null);
 const [isStockLoading, setIsStockLoading] = createSignal(false);

@@ -1,8 +1,8 @@
 import { createMemo, createSignal, Show, createEffect } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { EarningsActualsChartProps } from "../../types";
 import { formatUSD } from "../../utils/format";
+import type { EarningsActualsChartProps } from "../../types";
 
 
 export const EarningsActualsChart = (props: EarningsActualsChartProps) => {

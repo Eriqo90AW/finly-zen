@@ -1,6 +1,6 @@
 import { Show } from "solid-js";
 import { formatPercent, formatUSD, formatUSDCompact } from "../../utils/format";
-import { StockHeroProps } from "../../types";
+import type { StockHeroProps } from "../../types";
 
 export const StockHero = (props: StockHeroProps) => {
   const d = () => props.data;

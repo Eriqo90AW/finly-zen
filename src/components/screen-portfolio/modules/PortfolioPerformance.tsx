@@ -9,9 +9,9 @@ import {
 } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { PortfolioHistoryPoint } from "../../../types";
 import { formatPortfolioValue } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
+import type { PortfolioHistoryPoint } from "../../../types";
 
 interface PerformanceHistoryChartProps {
   history: PortfolioHistoryPoint[];

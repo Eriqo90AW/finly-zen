@@ -11,7 +11,7 @@ import { CategoryCard } from "../components/screen-dashboard/CategoryCard";
 import { DailySpendChart } from "../components/screen-dashboard/DailySpendChart";
 import { HeroCard } from "../components/screen-dashboard/HeroCard";
 import { state, nextMonth, prevMonth } from "../store";
-import { getTransactions } from "../lib/db";
+import { getTransactions } from "../data/expenseData";
 import { getDateRange, isDateInRange } from "../utils/date";
 import { GardenWins } from "../components/screen-dashboard/GardenWins";
 import { BudgetPacingChart } from "../components/screen-dashboard/BudgetPacingChart";

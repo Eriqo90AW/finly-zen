@@ -1,8 +1,8 @@
 import { createMemo } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { PriceActionChartProps } from "../../types";
 import { formatUSD } from "../../utils/format";
+import type { PriceActionChartProps } from "../../types";
 
 export const PriceActionChart = (props: PriceActionChartProps) => {
   const chartOptions = createMemo((): ApexOptions => {

@@ -1,10 +1,10 @@
 import { createMemo, Show } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { formatRupiah, formatRupiahShort } from "../../utils/format";
 import { state } from "../../store";
-import { BudgetPacingChartProps } from "../../types";
 import { getDateRange } from "../../utils/date";
+import { formatRupiah, formatRupiahShort } from "../../utils/format";
+import type { BudgetPacingChartProps } from "../../types";
 
 export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
   const chartData = createMemo(() => {

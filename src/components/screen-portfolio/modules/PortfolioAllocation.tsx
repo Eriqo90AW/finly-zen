@@ -1,9 +1,9 @@
 import { For, Show, createMemo } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { Portfolio } from "../../../types";
 import { formatPortfolioValue } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
+import type { Portfolio } from "../../../types";
 
 interface PortfolioChartsProps {
   portfolio: Portfolio;
