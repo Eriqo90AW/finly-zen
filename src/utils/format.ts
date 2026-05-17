@@ -1,24 +1,28 @@
 export const formatRupiah = (amount: number | null | undefined): string => {
   if (amount == null) return "Rp0";
-  return "Rp" + new Intl.NumberFormat("id-ID", {
+  const absAmount = Math.abs(amount);
+  const formatted = new Intl.NumberFormat("id-ID", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(absAmount);
+  return (amount < 0 ? "-" : "") + "Rp" + formatted;
 };
 
 export const formatRupiahShort = (amount: number | null | undefined): string => {
   if (amount == null) return "Rp0";
-  if (amount >= 1000000) {
-    const value = amount / 1000000;
+  const absAmount = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+  if (absAmount >= 1000000) {
+    const value = absAmount / 1000000;
     const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2);
-    return "Rp" + formatted.replace(".", ",") + "jt";
+    return sign + "Rp" + formatted.replace(".", ",") + "jt";
   }
-  if (amount >= 1000) {
-    const value = amount / 1000;
+  if (absAmount >= 1000) {
+    const value = absAmount / 1000;
     const formatted = value % 1 === 0 ? value.toString() : value.toFixed(2);
-    return "Rp" + formatted.replace(".", ",") + "rb";
+    return sign + "Rp" + formatted.replace(".", ",") + "rb";
   }
-  return "Rp" + amount.toString();
+  return sign + "Rp" + absAmount.toString();
 };
 
 export const formatMonth = (date: Date): string => {
@@ -67,14 +71,16 @@ export const formatUSD = (amount: number | null | undefined, decimals = 2): stri
 
 export const formatUSDCompact = (amount: number | null | undefined): string => {
   if (amount == null) return "$0";
-  if (Math.abs(amount) >= 1000000000) {
-    return "$" + (amount / 1000000000).toFixed(2) + "B";
+  const absAmount = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+  if (absAmount >= 1000000000) {
+    return sign + "$" + (absAmount / 1000000000).toFixed(2) + "B";
   }
-  if (Math.abs(amount) >= 1000000) {
-    return "$" + (amount / 1000000).toFixed(2) + "M";
+  if (absAmount >= 1000000) {
+    return sign + "$" + (absAmount / 1000000).toFixed(2) + "M";
   }
-  if (Math.abs(amount) >= 1000) {
-    return "$" + (amount / 1000).toFixed(2) + "K";
+  if (absAmount >= 1000) {
+    return sign + "$" + (absAmount / 1000).toFixed(2) + "K";
   }
   return formatUSD(amount);
 };

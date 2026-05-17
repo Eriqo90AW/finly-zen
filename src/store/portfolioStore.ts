@@ -98,6 +98,7 @@ const computePortfolioState = (
         id: ticker,
         ticker,
         name: priceMap[ticker]?.fundamentals?.price?.shortName || ticker,
+        logoUrl: priceMap[ticker]?.logo_url || undefined,
         currentValue,
         totalGainLoss,
         actualAllocation: 0,

@@ -361,7 +361,7 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                     Price per Unit
                   </label>
                   <div class="relative flex items-stretch border border-forest/10 focus-within:border-forest/30 rounded-xl overflow-hidden bg-white">
-                    <div class="relative flex items-center bg-spring/5 px-3 cursor-pointer shrink-0 border border-forest/10 rounded-l-xl">
+                    <div class="relative flex items-center bg-spring/5 px-3 cursor-pointer shrink-0 border-2 border-forest/5 rounded-l-[10px]">
                       <select
                         value={currency()}
                         onChange={(e) => {
@@ -407,54 +407,75 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                         <div class="w-4 h-4 border-2 border-forest/20 border-t-forest rounded-full animate-spin" />
                       </div>
                     </Show>
-                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Redesigned Total Amount Display */}
-              <div class="py-2.5 px-4 rounded-xl bg-forest/[0.02] border border-forest/10 font-outfit text-forest transition-all flex items-center justify-between min-h-[50px]">
-                <span class="text-xs text-earth/70 font-semibold">Total Amount</span>
-                <div class="flex flex-col items-end gap-0.5">
-                  <span class="text-base font-bold text-forest">{amountDisplay()}</span>
-                  <Show when={amount() !== null}>
-                    <span class="text-[10px] text-earth/60 font-medium">
-                      {currency() === "USD" ? (
-                        <>
-                          ≈{" "}
-                          {new Intl.NumberFormat("id-ID", {
-                            style: "currency",
-                            currency: "IDR",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          }).format((amount() ?? 0) * priceCurrency())}
-                          <span class="text-[9px] text-earth/40 ml-1">
-                            (@{" "}
-                            {new Intl.NumberFormat("id-ID", {
-                              minimumFractionDigits: 0,
-                            }).format(priceCurrency())}
-                            /USD)
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          ≈{" "}
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }).format((amount() ?? 0) / getUsdRate())}
-                          <span class="text-[9px] text-earth/40 ml-1">
-                            (@{" "}
-                            {new Intl.NumberFormat("id-ID", {
-                              minimumFractionDigits: 0,
-                            }).format(getUsdRate())}
-                            /USD)
-                          </span>
-                        </>
-                      )}
-                    </span>
-                  </Show>
+              {/* Exchange Rate & Total Amount Row */}
+              <div class={currency() === "USD" ? "grid grid-cols-2 gap-4" : ""}>
+                {/* Dynamic Exchange Rate Input */}
+                <Show when={currency() === "USD"}>
+                  <div class="animate-in fade-in slide-in-from-top-2 duration-200">
+                    <label class="text-[10px] uppercase tracking-widest text-earth font-bold mb-2 flex items-center justify-between">
+                      <span>USD Rate (IDR)</span>
+                      <button
+                        type="button"
+                        onClick={() => setPriceCurrency(getUsdRate())}
+                        class="text-[9px] text-spring hover:underline font-bold uppercase tracking-wider cursor-pointer font-outfit"
+                      >
+                        Reset to Live
+                      </button>
+                    </label>
+                    <div class="relative">
+                      <span class="absolute left-4 top-1/2 -translate-y-1/2 font-outfit text-xs font-bold text-forest/40">
+                        Rp
+                      </span>
+                      <input
+                        type="number"
+                        value={priceCurrency() ?? ""}
+                        onInput={(e) => {
+                          const val = e.currentTarget.value;
+                          setPriceCurrency(val ? Number(val) : getUsdRate());
+                        }}
+                        placeholder="e.g., 16,300"
+                        class="w-full pl-10 pr-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
+                        required
+                      />
+                    </div>
+                  </div>
+                </Show>
+
+                {/* Redesigned Total Amount Display */}
+                <div class={currency() === "USD" ? "flex flex-col justify-end h-full" : ""}>
+                  <div class="py-2.5 px-4 rounded-xl bg-forest/[0.02] border border-forest/10 font-outfit text-forest transition-all flex items-center justify-between min-h-[50px]">
+                    <span class="text-xs text-earth/70 font-semibold">Amount</span>
+                    <div class="flex flex-col items-end gap-0.5">
+                      <span class="text-base font-bold text-forest">{amountDisplay()}</span>
+                      <Show when={amount() !== null}>
+                        <span class="text-[10px] text-earth/60 font-medium">
+                          {currency() === "USD" ? (
+                            <>
+                              {new Intl.NumberFormat("id-ID", {
+                                style: "currency",
+                                currency: "IDR",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              }).format((amount() ?? 0) * priceCurrency())}
+                            </>
+                          ) : (
+                            <>
+                              {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: "USD",
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }).format((amount() ?? 0) / getUsdRate())}
+                            </>
+                          )}
+                        </span>
+                      </Show>
+                    </div>
+                  </div>
                 </div>
               </div>
 

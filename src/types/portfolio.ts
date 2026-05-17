@@ -17,6 +17,7 @@ export interface PortfolioAsset {
   id: string;
   ticker: string;
   name: string;
+  logoUrl?: string;
   currentValue: number;
   totalGainLoss: number;
   actualAllocation: number; // Percentage 0-100

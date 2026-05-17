@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show, createMemo } from "solid-js";
 import { formatPortfolioValue } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
 import { SetTargetAllocationModal } from "../modals/SetTargetModal";
@@ -17,6 +17,55 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
   const [targetModalOpen, setTargetModalOpen] = createSignal(false);
   const [selectedAssetForTarget, setSelectedAssetForTarget] =
     createSignal<PortfolioAsset | null>(null);
+
+  // Sorting state for the assets list columns
+  const [sortBy, setSortBy] = createSignal<'ticker' | 'value' | 'price' | 'gain' | 'allocation'>('value');
+  const [sortOrder, setSortOrder] = createSignal<'asc' | 'desc'>('desc');
+
+  // Handle column header clicks
+  const handleSort = (key: 'ticker' | 'value' | 'price' | 'gain' | 'allocation') => {
+    if (sortBy() === key) {
+      setSortOrder(sortOrder() === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'ticker' ? 'asc' : 'desc');
+    }
+  };
+
+  // Reactively compute the sorted asset list
+  const sortedAssets = createMemo(() => {
+    const list = [...props.assets];
+    const key = sortBy();
+    const order = sortOrder();
+
+    list.sort((a, b) => {
+      let valA: any;
+      let valB: any;
+
+      if (key === 'ticker') {
+        valA = a.ticker.toLowerCase();
+        valB = b.ticker.toLowerCase();
+      } else if (key === 'value') {
+        valA = a.currentValue;
+        valB = b.currentValue;
+      } else if (key === 'price') {
+        valA = a.totalShares > 0 ? a.currentValue / a.totalShares : 0;
+        valB = b.totalShares > 0 ? b.currentValue / b.totalShares : 0;
+      } else if (key === 'gain') {
+        valA = a.totalGainLoss;
+        valB = b.totalGainLoss;
+      } else if (key === 'allocation') {
+        valA = a.actualAllocation;
+        valB = b.actualAllocation;
+      }
+
+      if (valA < valB) return order === 'asc' ? -1 : 1;
+      if (valA > valB) return order === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  });
 
   const calculateGainPercentage = (asset: PortfolioAsset) => {
     const costBasis = asset.totalShares * asset.averagePrice;
@@ -83,25 +132,70 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
 
         <div class="flex flex-col min-w-[900px]">
           {/* Header Row */}
-          <div class="flex items-center px-8 py-4 border-b border-forest/5 text-[11px] font-bold uppercase tracking-widest text-earth/60">
+          <div class="flex items-center px-8 py-4 border-b border-forest/5 text-[11px] font-bold uppercase tracking-widest text-earth/60 group/header">
             {/* Spacer for the vertical bar */}
             <div class="w-1 mr-4" />
 
-            <div class="flex-[2] min-w-0">Asset</div>
-            <div class="flex-1 flex items-center justify-end gap-1">
+            <button
+              onClick={() => handleSort('ticker')}
+              class="flex-[2] min-w-0 flex items-center gap-1 hover:text-forest transition-colors cursor-pointer uppercase text-left font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
+            >
+              Asset
+              <span class={`material-icons !text-[16px] transition-all duration-200 ${
+                sortBy() === 'ticker' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
+              }`}>
+                {sortBy() === 'ticker' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleSort('value')}
+              class="flex-1 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
+            >
               Value
-              <span class="material-icons !text-[16px] text-earth/40">
-                expand_more
+              <span class={`material-icons !text-[16px] transition-all duration-200 ${
+                sortBy() === 'value' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
+              }`}>
+                {sortBy() === 'value' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
               </span>
-            </div>
-            <div class="flex-1 text-right">Price / Avg</div>
-            <div class="flex-1 flex items-center justify-end gap-1">
+            </button>
+
+            <button
+              onClick={() => handleSort('price')}
+              class="flex-1 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
+            >
+              Price / Avg
+              <span class={`material-icons !text-[16px] transition-all duration-200 ${
+                sortBy() === 'price' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
+              }`}>
+                {sortBy() === 'price' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleSort('gain')}
+              class="flex-1 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
+            >
               Total Gain
-              <span class="material-icons !text-[16px] text-earth/40">
-                info_outline
+              <span class={`material-icons !text-[16px] transition-all duration-200 ${
+                sortBy() === 'gain' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
+              }`}>
+                {sortBy() === 'gain' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
               </span>
-            </div>
-            <div class="w-32 flex justify-end">Allocation</div>
+            </button>
+
+            <button
+              onClick={() => handleSort('allocation')}
+              class="w-32 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none select-none"
+            >
+              Allocation
+              <span class={`material-icons !text-[16px] transition-all duration-200 ${
+                sortBy() === 'allocation' ? 'text-forest font-bold' : 'text-earth/20 opacity-0 group-hover/header:opacity-100'
+              }`}>
+                {sortBy() === 'allocation' && sortOrder() === 'asc' ? 'expand_less' : 'expand_more'}
+              </span>
+            </button>
+
             <div class="w-12" />
           </div>
 
@@ -143,7 +237,7 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
               }
             >
               <For
-              each={props.assets}
+              each={sortedAssets()}
               fallback={
                 <div class="px-8 py-16 text-center text-earth/40 italic font-outfit">
                   No assets in this portfolio yet. Click "+ Add Asset" to start.
@@ -171,12 +265,39 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
 
                     {/* Name Column */}
                     <div class="flex-[2] pr-4 flex items-center gap-4 min-w-0">
-                      <div
-                        class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
-                        style={{ "background-color": assetColor }}
+                      <Show
+                        when={asset.logoUrl}
+                        fallback={
+                          <div
+                            class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                            style={{ "background-color": assetColor }}
+                          >
+                            {asset.ticker.charAt(0)}
+                          </div>
+                        }
                       >
-                        {asset.ticker.charAt(0)}
-                      </div>
+                        {(logoUrl) => {
+                          const [hasError, setHasError] = createSignal(false);
+                          return (
+                            <div
+                              class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden"
+                              style={{ "background-color": hasError() ? assetColor : "#ffffff" }}
+                            >
+                              <Show
+                                when={!hasError()}
+                                fallback={<span>{asset.ticker.charAt(0)}</span>}
+                              >
+                                <img
+                                  src={logoUrl()}
+                                  alt={asset.ticker}
+                                  class="w-full h-full object-contain p-1 bg-white"
+                                  onError={() => setHasError(true)}
+                                />
+                              </Show>
+                            </div>
+                          );
+                        }}
+                      </Show>
                       <div class="flex flex-col min-w-0">
                         <span class="font-outfit font-bold text-forest text-base leading-tight group-hover:text-spring transition-colors">
                           {asset.ticker}
