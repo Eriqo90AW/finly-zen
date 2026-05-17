@@ -8,8 +8,8 @@ import { PortfolioCharts } from "./modules/PortfolioAllocation";
 import { PerformanceHistoryChart } from "./modules/PortfolioPerformance";
 import { PortfolioAssetsList } from "./modules/PortfolioAssetsList";
 import { AssetDetailsSlideOver } from "./modules/AssetDetailsSlideOver";
-import { AddAssetModal } from "./modules/modals/AddAssetModal";
-import { ManageCapitalModal } from "./modules/modals/ManageCapitalModal";
+import { AddAssetModal } from "./modals/AddAssetModal";
+import { ManageCapitalModal } from "./modals/ManageCapitalModal";
 import { PortfolioAsset, Portfolio } from "../../types";
 import AddIcon from "@suid/icons-material/Add";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
@@ -35,11 +35,11 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
 
   return (
     <>
-      <div class="flex justify-between items-center mb-10">
+      <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4">
           <button
             onClick={() => setActivePortfolioId(null)}
-            class="w-10 h-10 rounded-xl hover:bg-forest/5 flex items-center justify-center text-forest transition-all border border-forest/10 cursor-pointer"
+            class="w-10 h-10 rounded-xl hover:bg-forest/5 flex items-center justify-center text-forest transition-colors duration-200 border border-forest/10 cursor-pointer"
           >
             <ChevronLeftIcon />
           </button>
@@ -56,7 +56,7 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         <div class="flex gap-4">
           <button
             onClick={() => setShowAddAssetModal(true)}
-            class="flex items-center gap-2 bg-forest text-white px-6 py-3 rounded-2xl font-outfit font-bold shadow-xl hover:shadow-forest/20 hover:scale-105 transition-all active:scale-95 cursor-pointer w-fit"
+            class="flex items-center gap-2 bg-forest text-white px-6 py-3 rounded-2xl font-outfit font-bold shadow-xl hover:brightness-90  transition-opacity duration-200 cursor-pointer w-fit"
           >
             <span class="material-icons text-lg">add_circle</span>
             Add Assets
@@ -64,7 +64,7 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
 
           <button
             onClick={() => setShowAddAssetModal(true)}
-            class="flex items-center gap-2 bg-white text-forest border border-forest/10 px-6 py-3 rounded-2xl font-outfit font-bold shadow-sm hover:bg-forest/5 hover:scale-105 transition-all active:scale-95 cursor-pointer w-fit"
+            class="flex items-center gap-2 bg-white text-forest border border-forest/10 px-6 py-3 rounded-2xl font-outfit font-bold shadow-sm hover:bg-spring/5 transition-color duration-100 cursor-pointer w-fit"
           >
             <span class="material-icons text-lg">account_balance</span>
             Add Capital

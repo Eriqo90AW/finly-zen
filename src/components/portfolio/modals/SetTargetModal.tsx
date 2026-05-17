@@ -1,5 +1,5 @@
 import { createSignal, Show, createEffect } from "solid-js";
-import { setAssetTargetAllocation } from "../../../../store/portfolioStore";
+import { setAssetTargetAllocation } from "../../../store/portfolioStore";
 
 interface SetTargetAllocationModalProps {
   isOpen: boolean;
@@ -10,7 +10,9 @@ interface SetTargetAllocationModalProps {
   currentTargetAllocation: number;
 }
 
-export const SetTargetAllocationModal = (props: SetTargetAllocationModalProps) => {
+export const SetTargetAllocationModal = (
+  props: SetTargetAllocationModalProps,
+) => {
   const [targetAllocation, setTargetAllocation] = createSignal(0);
 
   // Sync current value when modal opens or properties change
@@ -23,7 +25,11 @@ export const SetTargetAllocationModal = (props: SetTargetAllocationModalProps) =
   const handleSubmit = (e: Event) => {
     e.preventDefault();
     if (targetAllocation() >= 0 && targetAllocation() <= 100) {
-      setAssetTargetAllocation(props.portfolioId, props.assetId, targetAllocation());
+      setAssetTargetAllocation(
+        props.portfolioId,
+        props.assetId,
+        targetAllocation(),
+      );
       props.onClose();
     }
   };
@@ -43,7 +49,9 @@ export const SetTargetAllocationModal = (props: SetTargetAllocationModalProps) =
             Set Target Allocation
           </h3>
           <p class="text-earth text-sm mb-6">
-            Adjust the target percentage for <strong class="text-forest">{props.assetTicker}</strong>. This target will be used to help you rebalance your portfolio.
+            Adjust the target percentage for{" "}
+            <strong class="text-forest">{props.assetTicker}</strong>. This
+            target will be used to help you rebalance your portfolio.
           </p>
           <form onSubmit={handleSubmit} class="space-y-6">
             <div>
@@ -57,12 +65,16 @@ export const SetTargetAllocationModal = (props: SetTargetAllocationModalProps) =
                   max="100"
                   step="0.1"
                   value={targetAllocation()}
-                  onInput={(e) => setTargetAllocation(Number(e.currentTarget.value))}
+                  onInput={(e) =>
+                    setTargetAllocation(Number(e.currentTarget.value))
+                  }
                   placeholder="0"
                   class="w-full px-4 py-3 pr-10 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
                   required
                 />
-                <span class="absolute right-4 top-1/2 -translate-y-1/2 font-outfit text-earth/60 font-bold">%</span>
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 font-outfit text-earth/60 font-bold">
+                  %
+                </span>
               </div>
             </div>
             <div class="flex gap-4 pt-4">

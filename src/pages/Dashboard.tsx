@@ -5,16 +5,16 @@ import {
   createEffect,
   createMemo,
 } from "solid-js";
-import { RecentTransactions } from "../components/RecentTransactions";
-import { ActivityCalendar } from "../components/ActivityCalendar";
-import { CategoryCard } from "../components/CategoryCard";
-import { DailySpendChart } from "../components/DailySpendChart";
-import { HeroCard } from "../components/HeroCard";
+import { RecentTransactions } from "../components/screen-dashboard/RecentTransactions";
+import { ActivityCalendar } from "../components/screen-dashboard/ActivityCalendar";
+import { CategoryCard } from "../components/screen-dashboard/CategoryCard";
+import { DailySpendChart } from "../components/screen-dashboard/DailySpendChart";
+import { HeroCard } from "../components/screen-dashboard/HeroCard";
 import { state, nextMonth, prevMonth } from "../store";
 import { getTransactions } from "../lib/db";
 import { getDateRange, isDateInRange } from "../utils/date";
-import { GardenWins } from "../components/GardenWins";
-import { BudgetPacingChart } from "../components/BudgetPacingChart";
+import { GardenWins } from "../components/screen-dashboard/GardenWins";
+import { BudgetPacingChart } from "../components/screen-dashboard/BudgetPacingChart";
 
 const Dashboard = () => {
   const [dailyBudget, setDailyBudget] = createSignal(300000);
@@ -74,7 +74,7 @@ const Dashboard = () => {
             />
           </div>
           <div class="w-[20%] h-full">
-            <GardenWins 
+            <GardenWins
               transactions={transactions() || []}
               loading={transactions.loading}
               dailyBudget={dailyBudget}
@@ -97,7 +97,7 @@ const Dashboard = () => {
             />
           </div>
           <div class="w-[20%] h-full">
-            <GardenWins 
+            <GardenWins
               transactions={transactions() || []}
               loading={transactions.loading}
               dailyBudget={dailyBudget}

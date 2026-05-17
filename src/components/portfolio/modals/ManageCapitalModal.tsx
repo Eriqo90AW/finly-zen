@@ -1,5 +1,5 @@
 import { createSignal, Show } from "solid-js";
-import { addCapitalToPortfolio } from "../../../../store/portfolioStore";
+import { addCapitalToPortfolio } from "../../../store/portfolioStore";
 
 interface ManageCapitalModalProps {
   isOpen: boolean;

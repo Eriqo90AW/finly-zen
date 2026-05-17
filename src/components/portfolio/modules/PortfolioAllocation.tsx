@@ -47,18 +47,10 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
       chart: {
         type: "donut",
         animations: {
-          enabled: true,
-          speed: 800,
-          animateGradually: { enabled: true, delay: 150 },
-          dynamicAnimation: { enabled: true, speed: 350 },
+          enabled: false,
         },
         dropShadow: {
-          enabled: true,
-          blur: 10,
-          left: 0,
-          top: 4,
-          opacity: 0.05,
-          color: "#1A4D2E",
+          enabled: false,
         },
       },
       labels: [...props.portfolio.assets.map((a) => a.ticker), "Cash"],
@@ -139,7 +131,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
         <div class="flex-1 flex flex-col">
           <div class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar-thin max-h-[160px] pl-1 pr-2.5 space-y-2">
             {/* Cash Entry */}
-            <div class="flex items-center justify-between group hover:bg-earth/2 -mx-3 px-3 py-1.5 transition-all cursor-pointer">
+            <div class="flex items-center justify-between group hover:bg-earth/2 -mx-3 px-3 py-1.5 transition-colors duration-200 cursor-pointer">
               <div class="flex items-center gap-3 self-stretch">
                 <div class="w-1 bg-mid-green self-stretch" />
                 <div class="flex flex-col">
@@ -161,7 +153,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
 
             <For each={props.portfolio.assets}>
               {(asset) => (
-                <div class="flex items-center justify-between group hover:bg-earth/2 -mx-3 px-3 py-1.5 transition-all cursor-pointer">
+                <div class="flex items-center justify-between group hover:bg-earth/2 -mx-3 px-3 py-1.5 transition-colors duration-200 cursor-pointer">
                   <div class="flex items-center gap-3 self-stretch">
                     <div
                       class="w-1 self-stretch"

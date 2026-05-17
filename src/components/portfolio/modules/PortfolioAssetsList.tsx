@@ -2,7 +2,7 @@ import { createSignal, For, Show } from "solid-js";
 import { formatPortfolioValue } from "../../../utils/format";
 import { PortfolioAsset } from "../../../types";
 import { portfolioState } from "../../../store/portfolioStore";
-import { SetTargetAllocationModal } from "./modals/SetTargetModal";
+import { SetTargetAllocationModal } from "../modals/SetTargetModal";
 
 interface PortfolioAssetsListProps {
   assets: PortfolioAsset[];
@@ -60,7 +60,7 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
         width="28"
         height="28"
         viewBox="0 0 24 24"
-        class="transform -rotate-90 drop-shadow-sm"
+        class="transform -rotate-90"
       >
         <circle
           cx="12"
@@ -81,7 +81,7 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
           stroke-dasharray={`${circumference}`}
           stroke-dashoffset={`${strokeDashoffset}`}
           stroke-linecap="round"
-          class="transition-all duration-1000 ease-out"
+          class="transition-[stroke-dashoffset] duration-1000 ease-out"
         />
       </svg>
     );
@@ -89,12 +89,12 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
 
   return (
     <>
-      <div class="premium-card overflow-hidden">
-        <div class="px-8 py-6 border-b border-forest/5 flex justify-between items-center bg-white/50 backdrop-blur-sm">
+      <div class="premium-card overflow-hidden cursor-default">
+        <div class="px-8 py-6 border-b border-forest/5 flex justify-between items-center bg-white">
           <h4 class="font-outfit font-bold text-forest text-lg">Assets</h4>
           <button
             onClick={() => props.onAddAsset()}
-            class="px-4 py-2 bg-forest text-white rounded-lg text-xs font-bold hover:bg-forest/90 transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-2"
+            class="px-4 py-2 bg-forest text-white rounded-lg text-xs font-bold hover:bg-forest/90 transition-[background-color,box-shadow] duration-200 shadow-sm hover:shadow-md cursor-pointer flex items-center gap-2"
           >
             <span class="material-icons text-sm">add</span>
             ADD ASSET
@@ -147,7 +147,7 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                 return (
                   <div
                     onClick={() => props.onSelectAsset(asset)}
-                    class="group flex items-center px-8 py-5 border-b border-forest/5 hover:bg-slate-50/80 transition-colors duration-200 cursor-pointer relative"
+                    class="group flex items-center px-8 py-5 border-b border-forest/5 hover:bg-earth/5 transition-colors duration-200 cursor-pointer relative"
                   >
                     <div
                       class="absolute left-0 top-0 bottom-0 w-1 transition-transform duration-200 group-hover:scale-x-[1.5] origin-left"
@@ -173,9 +173,15 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                     </div>
 
                     {/* Value Column */}
-                    <div class="flex-1 flex justify-end">
-                      <span class="font-outfit font-bold text-forest text-base">
+                    <div class="flex-1 flex flex-col items-end gap-0.5">
+                      <span class="font-outfit font-bold text-forest text-base leading-tight">
                         {formatPortfolioValue(asset.currentValue, currency())}
+                      </span>
+                      <span class="text-[11px] text-earth/60 font-medium">
+                        {formatPortfolioValue(
+                          asset.totalShares * asset.averagePrice,
+                          currency(),
+                        )}
                       </span>
                     </div>
 

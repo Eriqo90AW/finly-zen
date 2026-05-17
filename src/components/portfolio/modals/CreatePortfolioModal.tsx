@@ -1,11 +1,11 @@
 import { createSignal, Show, For } from "solid-js";
-import { createPortfolio } from "../../../../store/portfolioStore";
-import { 
-  formatNumericInput, 
-  formatRupiah, 
-  formatUSD, 
-  USD_EXCHANGE_RATE 
-} from "../../../../utils/format";
+import { createPortfolio } from "../../../store/portfolioStore";
+import {
+  formatNumericInput,
+  formatRupiah,
+  formatUSD,
+  USD_EXCHANGE_RATE,
+} from "../../../utils/format";
 
 interface CreatePortfolioModalProps {
   isOpen: boolean;
@@ -22,9 +22,11 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
     const parts = val.split(".");
     const integerPart = parseInt(parts[0].replace(/\D/g, ""));
     if (isNaN(integerPart) && parts.length === 1) return "";
-    
-    const formattedInteger = isNaN(integerPart) ? "" : new Intl.NumberFormat("en-US").format(integerPart);
-    
+
+    const formattedInteger = isNaN(integerPart)
+      ? ""
+      : new Intl.NumberFormat("en-US").format(integerPart);
+
     if (parts.length > 1) {
       return formattedInteger + "." + parts[1];
     }
@@ -39,7 +41,10 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
     e.preventDefault();
     const enteredValue = parseFloat(pCash()) || 0;
     if (pName() && enteredValue >= 0) {
-      const cashValue = currency() === "USD" ? Math.round(enteredValue * USD_EXCHANGE_RATE) : enteredValue;
+      const cashValue =
+        currency() === "USD"
+          ? Math.round(enteredValue * USD_EXCHANGE_RATE)
+          : enteredValue;
       createPortfolio(pName(), cashValue);
       setPName("");
       setPCash("");
@@ -64,13 +69,13 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
       return [
         { label: "Rp5.000.000", value: "5000000" },
         { label: "Rp10.000.000", value: "10000000" },
-        { label: "Rp50.000.000", value: "50000000" }
+        { label: "Rp50.000.000", value: "50000000" },
       ];
     } else {
       return [
         { label: "$500", value: "500" },
         { label: "$1,000", value: "1000" },
-        { label: "$5,000", value: "5000" }
+        { label: "$5,000", value: "5000" },
       ];
     }
   };
@@ -123,7 +128,10 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
                         val = val.replace(/,/g, ".");
                         const parts = val.split(".");
                         if (parts.length > 1) {
-                          val = parts[0].replace(/\D/g, "") + "." + parts[1].slice(0, 2).replace(/\D/g, "");
+                          val =
+                            parts[0].replace(/\D/g, "") +
+                            "." +
+                            parts[1].slice(0, 2).replace(/\D/g, "");
                         } else {
                           val = val.replace(/\D/g, "");
                         }
@@ -180,7 +188,6 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
                 </div>
               </div>
 
-
               {/* Quick choosing pills */}
               <div class="flex flex-wrap gap-2 mt-3">
                 <For each={pills()}>
@@ -222,5 +229,3 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
     </Show>
   );
 };
-
-

@@ -1,14 +1,20 @@
 import { For, Show, createSignal, createMemo } from "solid-js";
-import { Transaction, RecentTransactionsProps, SortKey, SortDirection } from "../types";
+import {
+  Transaction,
+  RecentTransactionsProps,
+  SortKey,
+  SortDirection,
+} from "../../types";
 import {
   formatIconName,
   formatRupiah,
   formatDateDetail,
-} from "../utils/format";
-
+} from "../../utils/format";
 
 export const RecentTransactions = (props: RecentTransactionsProps) => {
-  const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(new Set());
+  const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(
+    new Set(),
+  );
   const [filtersOpen, setFiltersOpen] = createSignal(false);
   const [showOnlyRecurring, setShowOnlyRecurring] = createSignal(false);
   const [sortKey, setSortKey] = createSignal<SortKey>("date");
@@ -29,13 +35,22 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   };
 
   const uniqueCategories = createMemo(() => {
-    const map = new Map<string, { name: string; icon?: string; color?: string }>();
+    const map = new Map<
+      string,
+      { name: string; icon?: string; color?: string }
+    >();
     for (const t of props.transactions) {
       if (t.category && !map.has(t.category)) {
-        map.set(t.category, { name: t.category, icon: t.categoryIcon, color: t.categoryColor });
+        map.set(t.category, {
+          name: t.category,
+          icon: t.categoryIcon,
+          color: t.categoryColor,
+        });
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
   });
 
   const toggleCategory = (cat: string) => {
@@ -78,8 +93,10 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
           cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
           break;
         case "amount": {
-          const amountA = a.type?.toLowerCase() === "income" ? a.amount : -a.amount;
-          const amountB = b.type?.toLowerCase() === "income" ? b.amount : -b.amount;
+          const amountA =
+            a.type?.toLowerCase() === "income" ? a.amount : -a.amount;
+          const amountB =
+            b.type?.toLowerCase() === "income" ? b.amount : -b.amount;
           cmp = amountA - amountB;
           break;
         }
@@ -151,8 +168,10 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
           <button
             class="px-2.5 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest transition-all border"
             classList={{
-              "bg-forest text-sage border-forest": selectedCategories().size === 0,
-              "bg-transparent text-earth border-forest/15 hover:border-forest/30": selectedCategories().size > 0,
+              "bg-forest text-sage border-forest":
+                selectedCategories().size === 0,
+              "bg-transparent text-earth border-forest/15 hover:border-forest/30":
+                selectedCategories().size > 0,
             }}
             onClick={() => setSelectedCategories(new Set())}
           >
@@ -166,14 +185,19 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                   class="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest transition-all border cursor-pointer"
                   classList={{
                     "border-transparent shadow-sm": isActive(),
-                    "bg-transparent border-forest/15 hover:border-forest/30": !isActive(),
+                    "bg-transparent border-forest/15 hover:border-forest/30":
+                      !isActive(),
                   }}
                   style={{
                     ...(isActive()
                       ? {
-                          "background-color": cat.color ? `${cat.color}25` : "rgba(232, 245, 236, 0.5)",
+                          "background-color": cat.color
+                            ? `${cat.color}25`
+                            : "rgba(232, 245, 236, 0.5)",
                           color: cat.color || "var(--color-forest)",
-                          "border-color": cat.color ? `${cat.color}50` : "var(--color-spring)",
+                          "border-color": cat.color
+                            ? `${cat.color}50`
+                            : "var(--color-spring)",
                         }
                       : {
                           color: cat.color || "var(--color-earth)",
@@ -182,7 +206,9 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                   onClick={() => toggleCategory(cat.name)}
                 >
                   <Show when={formatIconName(cat.icon)}>
-                    <span class="material-icons !text-[12px]">{formatIconName(cat.icon)}</span>
+                    <span class="material-icons !text-[12px]">
+                      {formatIconName(cat.icon)}
+                    </span>
                   </Show>
                   {cat.name}
                 </button>
@@ -195,7 +221,10 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
         <table class="w-full text-left font-outfit relative">
           <thead class="bg-sage/70 text-earth text-[10px] uppercase tracking-widest sticky top-0 z-10 backdrop-blur-sm shadow-sm">
             <tr>
-              <th class={headerClass("name")} onClick={() => handleSort("name")}>
+              <th
+                class={headerClass("name")}
+                onClick={() => handleSort("name")}
+              >
                 <span class="inline-flex items-center gap-1">
                   Name
                   <span
@@ -209,35 +238,46 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                   </span>
                 </span>
               </th>
-              <th class={headerClass("category")} onClick={() => handleSort("category")}>
+              <th
+                class={headerClass("category")}
+                onClick={() => handleSort("category")}
+              >
                 <span class="inline-flex items-center gap-1">
                   Category
                   <span
                     class="material-icons !text-[12px] transition-all"
                     classList={{
                       "opacity-100 text-spring": sortKey() === "category",
-                      "opacity-0 group-hover:opacity-50": sortKey() !== "category",
+                      "opacity-0 group-hover:opacity-50":
+                        sortKey() !== "category",
                     }}
                   >
                     {sortArrow("category")}
                   </span>
                 </span>
               </th>
-              <th class={headerClass("account")} onClick={() => handleSort("account")}>
+              <th
+                class={headerClass("account")}
+                onClick={() => handleSort("account")}
+              >
                 <span class="inline-flex items-center gap-1">
                   Account
                   <span
                     class="material-icons !text-[12px] transition-all"
                     classList={{
                       "opacity-100 text-spring": sortKey() === "account",
-                      "opacity-0 group-hover:opacity-50": sortKey() !== "account",
+                      "opacity-0 group-hover:opacity-50":
+                        sortKey() !== "account",
                     }}
                   >
                     {sortArrow("account")}
                   </span>
                 </span>
               </th>
-              <th class={headerClass("date")} onClick={() => handleSort("date")}>
+              <th
+                class={headerClass("date")}
+                onClick={() => handleSort("date")}
+              >
                 <span class="inline-flex items-center gap-1">
                   Date
                   <span
@@ -251,14 +291,18 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                   </span>
                 </span>
               </th>
-              <th class={headerClass("amount")} onClick={() => handleSort("amount")}>
+              <th
+                class={headerClass("amount")}
+                onClick={() => handleSort("amount")}
+              >
                 <span class="inline-flex items-center gap-1 justify-end">
                   Amount
                   <span
                     class="material-icons !text-[12px] transition-all"
                     classList={{
                       "opacity-100 text-spring": sortKey() === "amount",
-                      "opacity-0 group-hover:opacity-50": sortKey() !== "amount",
+                      "opacity-0 group-hover:opacity-50":
+                        sortKey() !== "amount",
                     }}
                   >
                     {sortArrow("amount")}
@@ -278,7 +322,10 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                           {t.name}
                         </p>
                         <Show when={t.isRecurring}>
-                          <span class="material-icons text-[14px] text-spring" title="Recurring Transaction">
+                          <span
+                            class="material-icons text-[14px] text-spring"
+                            title="Recurring Transaction"
+                          >
                             autorenew
                           </span>
                         </Show>
@@ -352,11 +399,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
         </div>
       </Show>
 
-      <Show
-        when={
-          !props.loading && sortedTransactions().length === 0
-        }
-      >
+      <Show when={!props.loading && sortedTransactions().length === 0}>
         <div class="p-12 text-center text-earth/50">
           <span class="material-icons text-4xl mb-2">eco</span>
           <p class="text-sm">

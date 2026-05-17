@@ -11,13 +11,14 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
   const isPositive = () => props.portfolio.allTimeGain >= 0;
 
   return (
-    <div class="premium-card relative overflow-hidden p-8 border-forest/10 group mb-8 cursor-default">
+    <div class="premium-card relative overflow-hidden p-8 border-forest/10 group mb-6 cursor-default">
       <div class="relative flex flex-col md:flex-row items-center justify-between gap-10">
         {/* Main Highlight: Net Worth */}
         <div class="flex flex-col items-center md:items-start text-center md:text-left min-w-[300px]">
           <div class="flex items-center gap-2 mb-2">
             <div
               class={`w-2 h-2 rounded-2xl ${isPositive() ? "bg-spring" : "bg-red-500"} animate-pulse-soft`}
+              style={{ "will-change": "transform, opacity" }}
             ></div>
             <p class="text-[10px] font-bold text-earth/60 uppercase tracking-[0.25em]">
               Portfolio Net Worth
@@ -46,12 +47,13 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
               >
                 ({props.portfolio.allTimeGainPercentage.toFixed(2)}%)
               </span>
+              <span class="text-earth/40 font-medium text-sm">All time Profit / Loss</span>
             </div>
           </div>
         </div>
-
+ 
         {/* Secondary Metrics Grid */}
-        <div class="flex gap-10 bg-forest/[0.025] backdrop-blur-md p-8 rounded-2xl border border-forest/5 w-full md:w-auto items-center">
+        <div class="flex gap-10 bg-forest/[0.03] p-8 rounded-2xl border border-forest/5 w-full md:w-auto items-center">
           <div class="flex flex-col items-center md:items-start group/stat">
             <div class="flex items-center gap-2 mb-3">
               <span class="material-icons text-[16px] text-forest/30 group-hover/stat:text-forest transition-colors">
@@ -61,11 +63,11 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
                 Cash
               </p>
             </div>
-            <div class="flex items-baseline gap-2">
+            <div class="flex items-center gap-1.5">
               <span class="text-2xl font-outfit font-bold text-forest leading-none">
                 {formatPortfolioValue(props.portfolio.cash, currency())}
               </span>
-              <span class="text-[10px] font-bold text-spring bg-spring/10 px-1.5 py-0.5 rounded-2xl border border-spring/20">
+              <span class="text-[10px] font-[900] text-orange-500 bg-orange-300/30 px-1.5 py-0.5 rounded-md border border-spring/20">
                 {props.portfolio.totalValue > 0
                   ? (
                       (props.portfolio.cash / props.portfolio.totalValue) *

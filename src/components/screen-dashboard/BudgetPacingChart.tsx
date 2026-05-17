@@ -1,12 +1,10 @@
 import { createMemo, Show } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { formatRupiah, formatRupiahShort } from "../utils/format";
-import { state } from "../store";
-import { BudgetPacingChartProps } from "../types";
-import { getDateRange } from "../utils/date";
-
-
+import { formatRupiah, formatRupiahShort } from "../../utils/format";
+import { state } from "../../store";
+import { BudgetPacingChartProps } from "../../types";
+import { getDateRange } from "../../utils/date";
 
 export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
   const chartData = createMemo(() => {
@@ -38,20 +36,20 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
 
       if (!isFuture) {
         const dayTransactions = data.filter((t) => {
-            const td = new Date(t.date);
-            return (
-              td.getFullYear() === y &&
-              td.getMonth() === m &&
-              td.getDate() === date
-            );
-          });
+          const td = new Date(t.date);
+          return (
+            td.getFullYear() === y &&
+            td.getMonth() === m &&
+            td.getDate() === date
+          );
+        });
 
         const dailyNetExpense = dayTransactions.reduce((acc, t) => {
           if (t.type === "expense") return acc + t.amount;
           if (t.type === "income" && !t.isRecurring) return acc - t.amount;
           return acc;
         }, 0);
-        
+
         cumulativeActual += dailyNetExpense;
       }
 
@@ -193,7 +191,11 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
       yaxis: {
         opposite: true,
         min: 0,
-        max: Math.max(lastActual, data.length > 0 ? data[data.length - 1].target : 0) + 2000000,
+        max:
+          Math.max(
+            lastActual,
+            data.length > 0 ? data[data.length - 1].target : 0,
+          ) + 2000000,
         labels: {
           style: { colors: "#5C6B5E" },
           formatter: (val) => formatRupiahShort(val),

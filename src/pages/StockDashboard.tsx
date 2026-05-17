@@ -1,12 +1,12 @@
 import { createResource, Show, onCleanup, createEffect, createSignal, onMount } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { fetchStockData } from "../data/stockData";
-import { PriceActionChart } from "../components/stock/PriceActionChart";
-import { StockHero } from "../components/stock/StockHero";
-import { MetricsCard } from "../components/stock/MetricsCard";
-import { FinancialPerformanceChart } from "../components/stock/FinancialPerformanceChart";
-import { EarningsActualsChart } from "../components/stock/EarningsActualsChart";
-import { EstimatesTable } from "../components/stock/EstimatesTable";
+import { PriceActionChart } from "../components/scren-markets/PriceActionChart";
+import { StockHero } from "../components/scren-markets/StockHero";
+import { MetricsCard } from "../components/scren-markets/MetricsCard";
+import { FinancialPerformanceChart } from "../components/scren-markets/FinancialPerformanceChart";
+import { EarningsActualsChart } from "../components/scren-markets/EarningsActualsChart";
+import { EstimatesTable } from "../components/scren-markets/EstimatesTable";
 import { setCurrentStockData, setIsStockLoading } from "../store/stockContext";
 import { getMarketStatus } from "../utils/marketTime";
 import { MarketStatus } from "../types";

@@ -1,4 +1,12 @@
-import { createSignal, createMemo, onMount, onCleanup, For, Show } from "solid-js";
+import {
+  createSignal,
+  createMemo,
+  onMount,
+  onCleanup,
+  For,
+  Show,
+  untrack,
+} from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { PortfolioHistoryPoint } from "../../../types";
@@ -9,10 +17,13 @@ interface PerformanceHistoryChartProps {
   history: PortfolioHistoryPoint[];
 }
 
-export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => {
+export const PerformanceHistoryChart = (
+  props: PerformanceHistoryChartProps,
+) => {
   const currency = () => portfolioState.currencyView;
   const periods = ["1W", "1M", "3M", "6M", "1Y", "ALL"] as const;
-  const [selectedPeriod, setSelectedPeriod] = createSignal<typeof periods[number]>("ALL");
+  const [selectedPeriod, setSelectedPeriod] =
+    createSignal<(typeof periods)[number]>("ALL");
   const [chartReady, setChartReady] = createSignal(false);
 
   onMount(() => {
@@ -55,7 +66,9 @@ export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => 
   });
 
   const lineCategories = createMemo(() => filteredHistory().map((h) => h.date));
-  const lineSeriesData = createMemo(() => filteredHistory().map((h) => h.value));
+  const lineSeriesData = createMemo(() =>
+    filteredHistory().map((h) => h.value),
+  );
 
   const lineSeries = createMemo(() => [
     {
@@ -72,17 +85,10 @@ export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => 
         sparkline: { enabled: false },
         zoom: { enabled: false },
         animations: {
-          enabled: true,
-          speed: 400,
-          dynamicAnimation: { enabled: true, speed: 200 }
+          enabled: false,
         },
         dropShadow: {
-          enabled: true,
-          top: 6,
-          left: 0,
-          blur: 10,
-          opacity: 0.06,
-          color: "#1A4D2E",
+          enabled: false,
         },
       },
       dataLabels: { enabled: false },
@@ -143,7 +149,12 @@ export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => 
             fontSize: "10px",
             fontWeight: 600,
           },
-          formatter: (val) => formatPortfolioValue(val, currency(), true),
+          formatter: (val) =>
+            formatPortfolioValue(
+              val,
+              untrack(() => currency()),
+              true,
+            ),
         },
       },
       grid: {
@@ -159,7 +170,7 @@ export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => 
         intersect: false,
         custom: function ({ series, seriesIndex, dataPointIndex }) {
           const val = series[seriesIndex][dataPointIndex];
-          const historyPoint = filteredHistory()[dataPointIndex];
+          const historyPoint = untrack(() => filteredHistory())[dataPointIndex];
           if (!historyPoint) return "";
           const dateStr = historyPoint.date;
           const d = new Date(dateStr);
@@ -178,7 +189,10 @@ export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => 
                 Net Worth
               </span>
               <span class="font-bold text-sm tracking-tight text-[#52C278]">
-                ${formatPortfolioValue(val, currency())}
+                ${formatPortfolioValue(
+                  val,
+                  untrack(() => currency()),
+                )}
               </span>
             </div>
           </div>
@@ -192,7 +206,9 @@ export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => 
     <div class="flex-1 flex flex-col h-full">
       {/* Header section with Title and Period Tabs */}
       <div class="flex justify-between items-center mb-1">
-        <h4 class="font-outfit font-bold text-forest text-base">Performance History</h4>
+        <h4 class="font-outfit font-bold text-forest text-base">
+          Performance History
+        </h4>
 
         {/* Period Tabs */}
         <div class="flex bg-sage/40 p-1 rounded-xl border border-forest/5 shadow-inner">
@@ -222,24 +238,22 @@ export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => 
           {(stats) => {
             const isGain = () => stats().change >= 0;
             return (
-              <div class="flex items-center gap-2 text-xs font-outfit">
-                <span
-                  class={`font-bold px-2 py-0.5 rounded-full ${
-                    isGain()
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                      : "bg-rose-50 text-rose-700 border border-rose-100"
-                  }`}
+              <div class="flex items-center gap-1.5 mt-4 justify-center md:justify-start text-xs font-outfit">
+                <div
+                  class={`px-2 py-0.5 rounded-lg text-xs font-black shadow-sm flex items-center gap-1.5 ${isGain() ? "bg-spring/10 text-spring border border-spring/20" : "bg-red-500/10 text-red-500 border border-red-500/20"}`}
                 >
-                  {isGain() ? "+" : ""}
-                  {formatPortfolioValue(stats().change, currency())}
-                </span>
-                <span class={`font-bold flex items-center ${isGain() ? "text-emerald-600" : "text-rose-600"}`}>
-                  <span class="material-icons text-xs mr-0.5">
+                  <span class="material-icons !text-sm">
                     {isGain() ? "trending_up" : "trending_down"}
                   </span>
-                  {stats().percentage.toFixed(2)}%
+                  {isGain() ? "+" : ""}
+                  {formatPortfolioValue(stats().change, currency())}
+                </div>
+                <span
+                  class={`text-xs font-bold ${isGain() ? "text-spring" : "text-red-500"}`}
+                >
+                  ({stats().percentage.toFixed(2)}%)
                 </span>
-                <span class="text-earth/40 font-medium">from start of period</span>
+                <span class="text-earth/40 font-medium">Profit / Loss</span>
               </div>
             );
           }}
@@ -255,7 +269,9 @@ export const PerformanceHistoryChart = (props: PerformanceHistoryChartProps) => 
               <span class="material-icons text-4xl text-forest/15 mb-3">
                 {chartReady() ? "analytics" : "hourglass_empty"}
               </span>
-              {chartReady() ? "No history data available for this period" : "Loading metrics..."}
+              {chartReady()
+                ? "No history data available for this period"
+                : "Loading metrics..."}
             </div>
           }
         >

@@ -6,8 +6,8 @@ import {
 } from "../../store/portfolioStore";
 import { formatPortfolioValue } from "../../utils/format";
 import AddIcon from "@suid/icons-material/Add";
-import { CreatePortfolioModal } from "./modules/modals/CreatePortfolioModal";
-import { ConfirmDeleteModal } from "./modules/modals/ConfirmDeleteModal";
+import { CreatePortfolioModal } from "./modals/CreatePortfolioModal";
+import { ConfirmDeleteModal } from "./modals/ConfirmDeleteModal";
 
 // Helper to generate a deterministic color from a string (the portfolio name)
 const getPortfolioColor = (name: string) => {

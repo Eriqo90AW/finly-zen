@@ -61,7 +61,7 @@
   }
 
   .premium-card {
-    @apply bg-card-bg rounded-premium border border-forest/10 shadow-premium transition-all duration-100;
+    @apply bg-card-bg rounded-premium border border-forest/10 shadow-premium transition-shadow duration-100;
   }
 
   .premium-card:hover {
