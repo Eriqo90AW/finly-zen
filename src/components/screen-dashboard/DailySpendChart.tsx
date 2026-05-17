@@ -89,7 +89,7 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
         const val = series[seriesIndex][dataPointIndex];
         const category = w.globals.labels[dataPointIndex];
         return `
-          <div class="px-3 py-1.5 bg-[#1C2B20] text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center whitespace-nowrap">
+          <div class="px-3 py-1.5 bg-near-black text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center whitespace-nowrap">
             <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">${category}</span>
             <span class="font-bold">${formatRupiahShort(val)}</span>
           </div>
@@ -128,7 +128,7 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
   });
 
   return (
-    <div class="col-span-4 row-span-2 premium-card px-3 py-6 flex flex-col relative">
+    <div class="col-span-4 row-span-2 premium-card px-3 py-6 flex flex-col relative cursor-default">
       <style>
         {`
           .apexcharts-tooltip {

@@ -7,7 +7,8 @@ import {
 } from "solid-js";
 import { RecentTransactions } from "../components/screen-dashboard/RecentTransactions";
 import { ActivityCalendar } from "../components/screen-dashboard/ActivityCalendar";
-import { CategoryCard } from "../components/screen-dashboard/CategoryCard";
+import { ExpenseCategoryCard } from "../components/screen-dashboard/ExpenseCategoryCard";
+import { IncomeCategoryCard } from "../components/screen-dashboard/IncomeCategoryCard";
 import { DailySpendChart } from "../components/screen-dashboard/DailySpendChart";
 import { HeroCard } from "../components/screen-dashboard/HeroCard";
 import { state, nextMonth, prevMonth } from "../store";
@@ -61,7 +62,7 @@ const Dashboard = () => {
 
         <div class="col-span-12 flex gap-6 h-[500px]">
           <div class="w-[30%] h-full">
-            <CategoryCard
+            <ExpenseCategoryCard
               transactions={monthlyTransactions()}
               loading={transactions.loading}
             />
@@ -84,7 +85,7 @@ const Dashboard = () => {
 
         <div class="col-span-12 flex gap-6 h-[500px]">
           <div class="w-[30%] h-full">
-            <CategoryCard
+            <IncomeCategoryCard
               transactions={monthlyTransactions()}
               loading={transactions.loading}
             />

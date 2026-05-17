@@ -11,9 +11,9 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
   const isPositive = () => props.portfolio.allTimeGain >= 0;
 
   return (
-    <div class="premium-card relative overflow-hidden p-8 border-forest/10 group mb-6 cursor-default">
+    <div class="premium-card relative overflow-hidden p-8 border-forest/10 group mb-6 cursor-default bg-sand">
       <div class="relative flex flex-col md:flex-row items-center justify-between gap-10">
-        {/* Main Highlight: Net Worth */}
+        {/* Main Highlight */}
         <div class="flex flex-col items-center md:items-start text-center md:text-left min-w-[300px]">
           <div class="flex items-center gap-2 mb-2">
             <div
@@ -25,7 +25,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
             </p>
           </div>
           <div class="flex flex-col">
-            <span class="text-[56px] font-outfit font-black text-forest leading-none tracking-tighter">
+            <span class="text-[56px] font-outfit font-[500] text-forest leading-none tracking-tighter">
               {formatPortfolioValue(props.portfolio.totalValue, currency())}
             </span>
             <div class="flex items-center gap-2 mt-4 justify-center md:justify-start">
@@ -64,7 +64,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
               </p>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-2xl font-outfit font-bold text-forest leading-none">
+              <span class="text-xl font-outfit font-bold text-forest leading-none">
                 {formatPortfolioValue(props.portfolio.cash, currency())}
               </span>
               <span class="text-[10px] font-[900] text-orange-500 bg-orange-300/30 px-1.5 py-0.5 rounded-md border border-spring/20">
@@ -90,7 +90,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
                 Assets Value
               </p>
             </div>
-            <span class="text-2xl font-outfit font-bold text-forest leading-none">
+            <span class="text-xl font-outfit font-bold text-forest leading-none">
               {formatPortfolioValue(
                 props.portfolio.totalValue - props.portfolio.cash,
                 currency(),

@@ -4,7 +4,7 @@ import { ApexOptions } from "apexcharts";
 import { formatRupiah } from "../../utils/format";
 import type { CategoryCardProps } from "../../types";
 
-export const CategoryCard = (props: CategoryCardProps) => {
+export const ExpenseCategoryCard = (props: CategoryCardProps) => {
   const categoryData = createMemo(() => {
     const data = props.transactions || [];
     const expenseData = data.filter((t) => t.type === "expense");
@@ -29,18 +29,17 @@ export const CategoryCard = (props: CategoryCardProps) => {
         pct: total > 0 ? Math.round((info.amount / total) * 100) : 0,
       }));
 
-    // Non-recurring income: income transactions that are NOT recurring
-    const nonRecurringIncome = data
-      .filter((t) => t.type === "income" && !t.isRecurring)
+    const recurringExpense = expenseData
+      .filter((t) => t.isRecurring)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const cleanTotal = total - nonRecurringIncome;
+    const netExpense = total - recurringExpense;
 
-    return { sorted, total, nonRecurringIncome, cleanTotal };
+    return { sorted, total, recurringExpense, netExpense };
   });
 
   const chartOptions = (): ApexOptions => {
-    const { sorted, total } = categoryData();
+    const { sorted } = categoryData();
 
     return {
       chart: {
@@ -118,37 +117,31 @@ export const CategoryCard = (props: CategoryCardProps) => {
             style={{ "padding-bottom": "20px" }}
           >
             <div class="flex flex-col items-center gap-0.5 font-outfit">
-              {/* Total Expense */}
-              <span class="text-[9px] uppercase tracking-widest text-earth/50 font-semibold">
-                Expense
+              {/* Net Expense */}
+              <span class="text-[8px] uppercase tracking-widest text-earth/50 font-semibold">
+                Non-Recurring
               </span>
-              <span class="text-[13px] font-bold text-red-500 leading-tight">
-                {formatRupiah(categoryData().total)}
+              <span class="text-[13px] font-bold text-forest leading-tight">
+                {formatRupiah(categoryData().netExpense)}
               </span>
 
-              {/* Non-recurring income line */}
-              <Show when={categoryData().nonRecurringIncome > 0}>
-                <span class="text-[11px] text-green-500/70 leading-tight flex items-center gap-0.5 mt-0.5">
-                  <span class="material-icons !text-[9px]">remove</span>
-                  {formatRupiah(categoryData().nonRecurringIncome)}
+              {/* Recurring Expense */}
+              <Show when={categoryData().recurringExpense > 0}>
+                <span class="text-[11px] text-red-500/70 leading-tight flex items-center gap-0.5 mt-0.5">
+                  <span class="material-icons !text-[9px]">add</span>
+                  {formatRupiah(categoryData().recurringExpense)}
                 </span>
               </Show>
 
               {/* Divider */}
-              <div class="w-20 h-px bg-forest/15 my-1" />
+              <div class="w-20 h-px bg-forest/25 my-1" />
 
-              {/* Clean Total */}
-              <span class="text-[9px] uppercase tracking-widest text-earth/40 font-semibold">
-                Net Expense
+              {/* Total Expense */}
+              <span class="text-[10px] uppercase tracking-widest text-earth/80 font-semibold">
+                Total Expense
               </span>
-              <span
-                class="text-[18px] font-bold leading-tight"
-                classList={{
-                  "text-forest": categoryData().cleanTotal > 0,
-                  "text-green-600": categoryData().cleanTotal <= 0,
-                }}
-              >
-                {formatRupiah(Math.abs(categoryData().cleanTotal))}
+              <span class="text-[18px] font-bold text-red-500 leading-tight">
+                {formatRupiah(categoryData().total)}
               </span>
             </div>
           </div>

@@ -101,7 +101,7 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
   };
 
   return (
-    <div class="premium-card p-6 flex flex-col h-full">
+    <div class="premium-card p-6 flex flex-col h-full cursor-default">
       <div class="flex items-center justify-between mb-6">
         <div class="flex flex-col">
           <h4 class="font-outfit font-bold text-forest leading-tight">
@@ -114,13 +114,13 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
         <div class="flex items-center gap-2">
           <button
             onClick={handlePrevMonth}
-            class="w-8 h-8 rounded-full hover:bg-sage/20 flex items-center justify-center transition-colors text-forest"
+            class="w-8 h-8 rounded-full hover:bg-sage/20 flex items-center justify-center transition-colors text-forest hover:cursor-pointer"
           >
             <span class="material-icons text-sm">chevron_left</span>
           </button>
           <button
             onClick={handleNextMonth}
-            class="w-8 h-8 rounded-full hover:bg-sage/20 flex items-center justify-center transition-colors text-forest"
+            class="w-8 h-8 rounded-full hover:bg-sage/20 flex items-center justify-center transition-colors text-forest hover:cursor-pointer"
           >
             <span class="material-icons text-sm">chevron_right</span>
           </button>

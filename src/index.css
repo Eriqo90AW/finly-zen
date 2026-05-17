@@ -8,12 +8,14 @@
   --color-spring: #52c278;
   --color-sage: #e8f5ec;
   --color-cream: #fdfaf5;
+  --color-sand: #fdf5e6;
   --color-earth: #5c6b5e;
   --color-near-black: #1c2b20;
   --color-terracotta: #d47b5a;
   --color-terracotta-dark: #823c22;
 
   --font-cormorant: "Cormorant Garamond", serif;
+  --font-cormorant-bold: "Cormorant Garamond", serif;
   --font-outfit: "Outfit", sans-serif;
 
   --shadow-premium: 0 2px 20px rgba(26, 77, 46, 0.08);
@@ -65,7 +67,7 @@
   }
 
   .premium-card:hover {
-    @apply shadow-sm cursor-pointer;
+    @apply shadow-sm;
   }
 
   .nav-link {
@@ -225,4 +227,9 @@
 
 .ios-switch-thumb[data-state="unchecked"] {
   @apply translate-x-1;
+}
+
+@utility font-cormorant-bold {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 900;
 }

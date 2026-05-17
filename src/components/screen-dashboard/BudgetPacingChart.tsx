@@ -44,13 +44,12 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
           );
         });
 
-        const dailyNetExpense = dayTransactions.reduce((acc, t) => {
+        const dailyExpense = dayTransactions.reduce((acc, t) => {
           if (t.type === "expense") return acc + t.amount;
-          if (t.type === "income" && !t.isRecurring) return acc - t.amount;
           return acc;
         }, 0);
 
-        cumulativeActual += dailyNetExpense;
+        cumulativeActual += dailyExpense;
       }
 
       return {

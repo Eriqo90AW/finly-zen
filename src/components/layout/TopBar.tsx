@@ -1,5 +1,6 @@
 import SearchBar from "./SearchBar";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
+import ChevronRightIcon from "@suid/icons-material/ChevronRight";
 import { useLocation, A, useNavigate, useParams } from "@solidjs/router";
 import { state, setState, nextMonth, prevMonth } from "../../store";
 import { portfolioState, setCurrencyView } from "../../store/portfolioStore";
@@ -108,7 +109,7 @@ const TopBar = () => {
               <div class="flex items-center gap-3">
                 <button 
                   onClick={prevMonth}
-                  class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5"
+                  class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 hover:cursor-pointer"
                 >
                   <ChevronLeftIcon />
                 </button>
@@ -117,9 +118,9 @@ const TopBar = () => {
                 </h2>
                 <button 
                   onClick={nextMonth}
-                  class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5"
+                  class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 hover:cursor-pointer"
                 >
-                  <ChevronLeftIcon />
+                  <ChevronRightIcon />
                 </button>
               </div>
 

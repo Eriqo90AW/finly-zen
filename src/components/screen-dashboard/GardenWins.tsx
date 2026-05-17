@@ -1,6 +1,6 @@
 import { For, createMemo, Show } from "solid-js";
 import { state } from "../../store";
-import { getDateRange } from "../../utils/date";
+import { getDateRange, isDateInRange } from "../../utils/date";
 import { formatRupiah } from "../../utils/format";
 import TrendingDownIcon from "@suid/icons-material/TrendingDown";
 import TrendingUpIcon from "@suid/icons-material/TrendingUp";
@@ -31,6 +31,7 @@ export const GardenWins = (props: GardenWinsProps) => {
     // 2. Map Net Spend by Date (covering current and prev periods)
     const netSpendForStreak: Record<string, number> = {};
     const netSpendForInsights: Record<string, number> = {};
+    const totalExpensesForInsights: Record<string, number> = {};
 
     transactions.forEach((t) => {
       const dateKey = new Date(t.date).toISOString().split("T")[0];
@@ -42,6 +43,9 @@ export const GardenWins = (props: GardenWinsProps) => {
       }
 
       if (t.type === "expense") {
+        totalExpensesForInsights[dateKey] =
+          (totalExpensesForInsights[dateKey] || 0) + t.amount;
+
         if (
           !state.ui.showRecurringDebt &&
           t.isRecurring &&
@@ -75,6 +79,7 @@ export const GardenWins = (props: GardenWinsProps) => {
     let underBudgetCount = 0;
     let overBudgetCount = 0;
     let totalNetSpend = 0;
+    let totalExpensesCur = 0;
     let lowestSpend = { amount: Infinity, date: "" };
     let highestSpend = { amount: -Infinity, date: "" };
 
@@ -88,6 +93,7 @@ export const GardenWins = (props: GardenWinsProps) => {
       const netExpense = netSpendForInsights[dateKey] || 0;
 
       totalNetSpend += netExpense;
+      totalExpensesCur += totalExpensesForInsights[dateKey] || 0;
 
       if (dailySpend <= dailyBudget) {
         underBudgetCount++;
@@ -122,6 +128,7 @@ export const GardenWins = (props: GardenWinsProps) => {
 
     let prevUnderBudgetCount = 0;
     let prevTotalNetSpend = 0;
+    let totalExpensesPrev = 0;
 
     prevPeriodDates.forEach((date) => {
       const dateKey = date.toISOString().split("T")[0];
@@ -129,6 +136,7 @@ export const GardenWins = (props: GardenWinsProps) => {
       const netExpense = netSpendForInsights[dateKey] || 0;
 
       prevTotalNetSpend += netExpense;
+      totalExpensesPrev += totalExpensesForInsights[dateKey] || 0;
       if (dailySpend <= dailyBudget) prevUnderBudgetCount++;
     });
 
@@ -146,6 +154,34 @@ export const GardenWins = (props: GardenWinsProps) => {
           100
         : 0;
 
+    let curMonthTotal = 0;
+    let prevMonthTotal = 0;
+
+    const isRecurringDebtExcluded = (t: any) => {
+      return (
+        !state.ui.showRecurringDebt &&
+        t.isRecurring &&
+        t.category?.toLowerCase() === "debt"
+      );
+    };
+
+    transactions.forEach((t) => {
+      if (t.type !== "expense") return;
+      if (isRecurringDebtExcluded(t)) return;
+
+      if (isDateInRange(t.date, currentPeriod.start, currentPeriod.end)) {
+        curMonthTotal += t.amount;
+      } else if (isDateInRange(t.date, prevPeriod.start, prevPeriod.end)) {
+        prevMonthTotal += t.amount;
+      }
+    });
+
+    const totalExpensesDiffPct =
+      prevMonthTotal !== 0
+        ? ((curMonthTotal - prevMonthTotal) / Math.abs(prevMonthTotal)) *
+          100
+        : 0;
+
     return {
       streak,
       lowestSpend,
@@ -157,6 +193,7 @@ export const GardenWins = (props: GardenWinsProps) => {
       underBudgetPctDiff,
       netSpendDiffPct,
       totalNetSpend,
+      totalExpensesDiffPct,
     };
   });
 
@@ -328,9 +365,9 @@ export const GardenWins = (props: GardenWinsProps) => {
             </p>
           </div>
           <p class="text-sm font-outfit">
-            {stats()!.netSpendDiffPct < 0
-              ? `Your net expenses are ${Math.abs(Math.round(stats()!.netSpendDiffPct))}% lower than last month.`
-              : `Your net expenses are ${Math.round(stats()!.netSpendDiffPct)}% higher than last month.`}
+            {stats()!.totalExpensesDiffPct < 0
+              ? `Your total expenses are ${Math.abs(Math.round(stats()!.totalExpensesDiffPct))}% lower than last month.`
+              : `Your total expenses are ${Math.round(stats()!.totalExpensesDiffPct)}% higher than last month.`}
           </p>
           <p class="text-[10px] opacity-80">
             {stats()!.underBudgetPctDiff > 0
