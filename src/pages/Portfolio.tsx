@@ -1,7 +1,7 @@
 import { createMemo, Show } from "solid-js";
 import { portfolioState } from "../store/portfolioStore";
-import { PortfolioOverview } from "../components/portfolio/PortfolioOverview";
-import { PortfolioDetails } from "../components/portfolio/PortfolioDetails";
+import { PortfolioOverview } from "../components/screen-portfolio/PortfolioOverview";
+import { PortfolioDetails } from "../components/screen-portfolio/PortfolioDetails";
 
 const Portfolio = () => {
   const activePortfolio = createMemo(() => {

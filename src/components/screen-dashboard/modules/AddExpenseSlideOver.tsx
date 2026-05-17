@@ -151,7 +151,7 @@ const AddExpenseSlideOver = () => {
     >
       {/* Backdrop */}
       <div
-        class="absolute inset-0 bg-forest/40 transition-opacity duration-300 will-change-opacity"
+        class="absolute inset-0 bg-forest/40 transition-opacity duration-300"
         classList={{
           "opacity-100": state.ui.showAddExpense,
           "opacity-0": !state.ui.showAddExpense,

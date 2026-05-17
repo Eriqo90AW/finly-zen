@@ -10,9 +10,8 @@ import { PortfolioAssetsList } from "./modules/PortfolioAssetsList";
 import { AssetDetailsSlideOver } from "./modules/AssetDetailsSlideOver";
 import { AddAssetModal } from "./modals/AddAssetModal";
 import { ManageCapitalModal } from "./modals/ManageCapitalModal";
-import { PortfolioAsset, Portfolio } from "../../types";
-import AddIcon from "@suid/icons-material/Add";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
+import type { PortfolioAsset, Portfolio } from "../../types";
 
 interface PortfolioDetailsProps {
   portfolio: Portfolio;
@@ -63,7 +62,7 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
           </button>
 
           <button
-            onClick={() => setShowAddAssetModal(true)}
+            onClick={() => setShowAddCapitalModal(true)}
             class="flex items-center gap-2 bg-white text-forest border border-forest/10 px-6 py-3 rounded-2xl font-outfit font-bold shadow-sm hover:bg-spring/5 transition-color duration-100 cursor-pointer w-fit"
           >
             <span class="material-icons text-lg">account_balance</span>

@@ -18,7 +18,7 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
   return (
     <Show when={props.isOpen}>
       <div
-        class="fixed inset-0 z-50 flex justify-end transition-opacity duration-300 bg-black/20 slide-over-backdrop"
+        class="fixed inset-0 z-50 flex justify-end bg-forest/40 transition-opacity duration-300"
         onClick={(e) => e.target === e.currentTarget && props.onClose()}
       >
         <div

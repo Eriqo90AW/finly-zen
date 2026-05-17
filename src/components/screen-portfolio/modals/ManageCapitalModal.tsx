@@ -32,7 +32,7 @@ export const ManageCapitalModal = (props: ManageCapitalModalProps) => {
           onClick={(e) => e.stopPropagation()}
         >
           <div class="absolute top-0 left-0 w-full h-1 bg-spring"></div>
-          <h3 class="text-2xl font-cormorant text-forest font-bold mb-6">
+          <h3 class="text-2xl font-cormorant text-forest font-bold mb-2">
             Manage Capital
           </h3>
           <p class="text-earth text-sm mb-6">
