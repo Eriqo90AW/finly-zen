@@ -11,7 +11,7 @@ export const ConfirmDeleteModal = (props: ConfirmDeleteModalProps) => {
   return (
     <Show when={props.isOpen}>
       <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 transition-opacity duration-300 p-6"
         onClick={props.onClose}
       >
         <div

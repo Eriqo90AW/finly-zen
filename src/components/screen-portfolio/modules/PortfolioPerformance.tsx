@@ -233,7 +233,7 @@ export const PerformanceHistoryChart = (
       </div>
 
       {/* Period Stats Summary */}
-      <div class="mb-4 h-6 flex items-center">
+      <div class="mb-4 h-2 flex items-center">
         <Show when={periodStats()}>
           {(stats) => {
             const isGain = () => stats().change >= 0;
