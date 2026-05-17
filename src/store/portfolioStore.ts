@@ -26,7 +26,7 @@ const DEFAULT_PORTFOLIO_STATE: PortfolioStore = {
   portfolios: [],
   activePortfolioId: null,
   currencyView: 'IDR',
-  isLoading: false,
+  isLoading: true,
   isRefreshing: false,
 };
 

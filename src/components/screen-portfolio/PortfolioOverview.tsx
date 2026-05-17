@@ -259,36 +259,12 @@ export const PortfolioOverview = () => {
               <Show
                 when={!portfolioState.isLoading}
                 fallback={
-                  <For each={[1, 2, 3]}>
-                    {() => (
-                      <div class="flex items-center px-8 py-5 border-b border-forest/5 animate-pulse">
-                        <div class="w-1 mr-4 h-12 bg-sage/20 rounded-full" />
-                        <div class="flex-[2] pr-4 flex items-center gap-4">
-                          <div class="w-10 h-10 rounded-xl bg-sage/20" />
-                          <div class="flex-1 space-y-2">
-                            <div class="h-4 bg-sage/20 rounded w-2/3" />
-                            <div class="h-3 bg-sage/20 rounded w-1/3" />
-                          </div>
-                        </div>
-                        <div class="flex-1 text-right space-y-2 pr-4">
-                          <div class="h-4 bg-sage/20 rounded w-3/4 ml-auto" />
-                        </div>
-                        <div class="flex-1 text-right space-y-2 pr-4">
-                          <div class="h-4 bg-sage/20 rounded w-2/3 ml-auto" />
-                        </div>
-                        <div class="flex-1 text-right space-y-2 pr-4">
-                          <div class="h-4 bg-sage/20 rounded w-3/4 ml-auto" />
-                        </div>
-                        <div class="flex-1 text-right space-y-2 pr-4">
-                          <div class="h-4 bg-sage/20 rounded w-1/2 ml-auto" />
-                        </div>
-                        <div class="w-36 flex justify-end">
-                          <div class="h-4 bg-sage/20 rounded w-20" />
-                        </div>
-                        <div class="w-12" />
-                      </div>
-                    )}
-                  </For>
+                  <div class="px-8 py-24 flex flex-col items-center justify-center gap-4 text-center">
+                    <div class="w-10 h-10 border-4 border-forest/10 border-t-forest rounded-full animate-spin" />
+                    <span class="text-earth/60 font-outfit text-sm tracking-wide animate-pulse">
+                      Loading portfolios...
+                    </span>
+                  </div>
                 }
               >
                 <For
