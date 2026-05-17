@@ -411,61 +411,49 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                 </div>
               </div>
 
-              {/* Redesigned Total Amount Card */}
-              <div>
-                <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
-                  Total Amount
-                </label>
-                <div class="relative w-full p-4 rounded-xl border border-forest/10 bg-spring/5 border-l-4 border-l-spring font-outfit text-forest transition-all flex flex-col gap-1.5 shadow-sm">
-                  <div class="flex items-baseline justify-between">
-                    <span class="text-[10px] text-earth/65 font-bold uppercase tracking-wider">
-                      Total Value
-                    </span>
-                    <span class="text-xl font-bold font-outfit text-forest">
-                      {amountDisplay()}
-                    </span>
-                  </div>
+              {/* Redesigned Total Amount Display */}
+              <div class="py-2.5 px-4 rounded-xl bg-forest/[0.02] border border-forest/10 font-outfit text-forest transition-all flex items-center justify-between min-h-[50px]">
+                <span class="text-xs text-earth/70 font-semibold">Total Amount</span>
+                <div class="flex flex-col items-end gap-0.5">
+                  <span class="text-base font-bold text-forest">{amountDisplay()}</span>
                   <Show when={amount() !== null}>
-                    <div class="flex items-start justify-between pt-1.5 border-t border-forest/5 text-xs">
-                      <span class="text-[10px] text-earth/55 uppercase tracking-wider font-bold">
-                        Equivalent Value
-                      </span>
-                      <span class="font-semibold text-earth font-outfit">
-                        {currency() === "USD" ? (
-                          <>
+                    <span class="text-[10px] text-earth/60 font-medium">
+                      {currency() === "USD" ? (
+                        <>
+                          ≈{" "}
+                          {new Intl.NumberFormat("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format((amount() ?? 0) * priceCurrency())}
+                          <span class="text-[9px] text-earth/40 ml-1">
+                            (@{" "}
                             {new Intl.NumberFormat("id-ID", {
-                              style: "currency",
-                              currency: "IDR",
                               minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            }).format((amount() ?? 0) * priceCurrency())}
-                            <span class="text-[10px] text-earth/50 font-normal ml-1">
-                              (@{" "}
-                              {new Intl.NumberFormat("id-ID", {
-                                minimumFractionDigits: 0,
-                              }).format(priceCurrency())}
-                              /USD)
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            {new Intl.NumberFormat("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }).format((amount() ?? 0) / getUsdRate())}
-                            <span class="text-[10px] text-earth/50 font-normal ml-1">
-                              (@{" "}
-                              {new Intl.NumberFormat("id-ID", {
-                                minimumFractionDigits: 0,
-                              }).format(getUsdRate())}
-                              /USD)
-                            </span>
-                          </>
-                        )}
-                      </span>
-                    </div>
+                            }).format(priceCurrency())}
+                            /USD)
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          ≈{" "}
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }).format((amount() ?? 0) / getUsdRate())}
+                          <span class="text-[9px] text-earth/40 ml-1">
+                            (@{" "}
+                            {new Intl.NumberFormat("id-ID", {
+                              minimumFractionDigits: 0,
+                            }).format(getUsdRate())}
+                            /USD)
+                          </span>
+                        </>
+                      )}
+                    </span>
                   </Show>
                 </div>
               </div>
@@ -493,7 +481,7 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                   value={notes()}
                   onInput={(e) => setNotes(e.currentTarget.value)}
                   placeholder="Optional notes..."
-                  class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest resize-none h-14"
+                  class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest resize-none h-16"
                 />
               </div>
             </div>{" "}
