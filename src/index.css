@@ -1,29 +1,30 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
-  --color-page-bg: #F0F7F2;
-  --color-card-bg: #FFFFFF;
-  --color-forest: #1A4D2E;
-  --color-mid-green: #2D7D46;
-  --color-spring: #52C278;
-  --color-sage: #E8F5EC;
-  --color-cream: #FDFAF5;
-  --color-earth: #5C6B5E;
-  --color-near-black: #1C2B20;
-  --color-terracotta: #D47B5A;
-  
-  --font-cormorant: 'Cormorant Garamond', serif;
-  --font-outfit: 'Outfit', sans-serif;
-  
-  --shadow-premium: 0 2px 20px rgba(26,77,46,0.08);
+  --color-page-bg: #f0f7f2;
+  --color-card-bg: #ffffff;
+  --color-forest: #1a4d2e;
+  --color-mid-green: #2d7d46;
+  --color-spring: #52c278;
+  --color-sage: #e8f5ec;
+  --color-cream: #fdfaf5;
+  --color-earth: #5c6b5e;
+  --color-near-black: #1c2b20;
+  --color-terracotta: #d47b5a;
+  --color-terracotta-dark: #823c22;
+
+  --font-cormorant: "Cormorant Garamond", serif;
+  --font-outfit: "Outfit", sans-serif;
+
+  --shadow-premium: 0 2px 20px rgba(26, 77, 46, 0.08);
   --radius-premium: 18px;
 
   /* Financial semantic colors */
-  --color-fin-green: #10B981;
-  --color-fin-red: #F43F5E;
-  --color-fin-blue: #6366F1;
-  --color-fin-purple: #A78BFA;
-  --color-fin-amber: #F59E0B;
+  --color-fin-green: #10b981;
+  --color-fin-red: #f43f5e;
+  --color-fin-blue: #6366f1;
+  --color-fin-purple: #a78bfa;
+  --color-fin-amber: #f59e0b;
 }
 
 @layer base {
@@ -32,7 +33,10 @@
     margin: 0;
   }
 
-  h1, h2, h3, .hero-numeral {
+  h1,
+  h2,
+  h3,
+  .hero-numeral {
     @apply font-cormorant font-bold;
   }
 
@@ -125,8 +129,12 @@
 }
 
 @keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-spin-slow {
@@ -152,8 +160,15 @@
 
 /* Pulsing animation for status indicators */
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
 }
 
 .animate-pulse-soft {
@@ -161,14 +176,22 @@
 }
 
 @keyframes ellipsis {
-  0% { content: ''; }
-  25% { content: '.'; }
-  50% { content: '..'; }
-  75% { content: '...'; }
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
 }
 
 .animate-ellipsis::after {
-  content: '';
+  content: "";
   animation: ellipsis 1.5s steps(4, end) infinite;
 }
 

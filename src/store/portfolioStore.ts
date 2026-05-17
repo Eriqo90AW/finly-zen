@@ -225,3 +225,20 @@ export const deleteAssetFromPortfolio = (portfolioId: string, assetId: string) =
     };
   });
 };
+
+export const setAssetTargetAllocation = (portfolioId: string, assetId: string, targetAllocation: number) => {
+  setPortfolioState("portfolios", (p) => p.id === portfolioId, (p) => {
+    const updatedAssets = p.assets.map(a => {
+      if (a.id === assetId) {
+        return { ...a, targetAllocation };
+      }
+      return a;
+    });
+
+    return {
+      ...p,
+      assets: updatedAssets
+    };
+  });
+};
+

@@ -104,7 +104,7 @@ export const formatHexColor = (c: string | null | undefined): string | undefined
   return c;
 };
 
-export const USD_EXCHANGE_RATE = 16200;
+export const USD_EXCHANGE_RATE = 17400;
 
 export const formatPortfolioValue = (amount: number, currency: 'IDR' | 'USD', isShort = false) => {
   if (currency === 'USD') {
