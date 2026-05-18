@@ -13,6 +13,7 @@ import {
 } from "../data/portfolioData";
 import { getUsdRate } from "../utils/format";
 import { supabase } from "../lib/supabase";
+import { getMarketStatus } from "../utils/marketTime";
 
 interface PortfolioStore {
   portfolios: Portfolio[];
@@ -103,8 +104,38 @@ const computePortfolioState = (
       const averagePriceIDR = totalBuyQty > 0 ? totalCostIDR / totalBuyQty : 0;
       const averagePriceNative = totalBuyQty > 0 ? totalCostNative / totalBuyQty : 0;
 
-      const livePriceNative = priceMap[ticker]?.current_price ?? averagePriceNative;
-      const livePriceIDR = assetCurrency === "USD" ? livePriceNative * getUsdRate() : livePriceNative;
+      const { session } = getMarketStatus();
+
+      const prePriceNative =
+        priceMap[ticker]?.pre_market_price ??
+        priceMap[ticker]?.preMarketPrice ??
+        priceMap[ticker]?.fundamentals?.price?.preMarketPrice ??
+        null;
+      const postPriceNative =
+        priceMap[ticker]?.post_market_price ??
+        priceMap[ticker]?.postMarketPrice ??
+        priceMap[ticker]?.fundamentals?.price?.postMarketPrice ??
+        null;
+
+      const regularPriceNative = priceMap[ticker]?.current_price ?? averagePriceNative;
+
+      const activePriceNative = (() => {
+        if (session === "Pre-market" && prePriceNative !== null) {
+          return prePriceNative;
+        } else if (session === "After-hours" && postPriceNative !== null) {
+          return postPriceNative;
+        }
+        return regularPriceNative;
+      })();
+
+      const livePriceIDR = assetCurrency === "USD" ? activePriceNative * getUsdRate() : activePriceNative;
+
+      const prePriceIDR = prePriceNative !== null
+        ? (assetCurrency === "USD" ? prePriceNative * getUsdRate() : prePriceNative)
+        : null;
+      const postPriceIDR = postPriceNative !== null
+        ? (assetCurrency === "USD" ? postPriceNative * getUsdRate() : postPriceNative)
+        : null;
 
       const currentValue = totalShares * livePriceIDR;
       const costBasis = totalShares * averagePriceIDR;
@@ -131,6 +162,9 @@ const computePortfolioState = (
         targetAllocation,
         totalShares,
         averagePrice: averagePriceIDR,
+        currentPrice: livePriceIDR,
+        preMarketPrice: prePriceIDR,
+        postMarketPrice: postPriceIDR,
       });
     }
   });

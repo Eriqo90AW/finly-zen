@@ -1,4 +1,5 @@
 import { createMemo, Show, onMount } from "solid-js";
+import { useParams } from "@solidjs/router";
 import { portfolioState, loadPortfolios } from "../store/portfolioStore";
 import { PortfolioOverview } from "../components/screen-portfolio/PortfolioOverview";
 import { PortfolioDetails } from "../components/screen-portfolio/PortfolioDetails";
@@ -6,8 +7,10 @@ import { fetchUsdRate } from "../data/portfolioData";
 import { setUsdExchangeRate } from "../utils/format";
 
 const Portfolio = () => {
+  const params = useParams();
   const activePortfolio = createMemo(() => {
-    return portfolioState.portfolios.find(p => p.id === portfolioState.activePortfolioId) || null;
+    if (!params.id) return null;
+    return portfolioState.portfolios.find(p => p.id === params.id) || null;
   });
 
   onMount(async () => {

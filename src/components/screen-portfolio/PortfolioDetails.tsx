@@ -1,6 +1,6 @@
 import { createSignal, createMemo } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import {
-  setActivePortfolioId,
   deleteAssetFromPortfolio,
 } from "../../store/portfolioStore";
 import { PortfolioHero } from "./modules/PortfolioHero";
@@ -18,6 +18,7 @@ interface PortfolioDetailsProps {
 }
 
 export const PortfolioDetails = (props: PortfolioDetailsProps) => {
+  const navigate = useNavigate();
   const [selectedAsset, setSelectedAsset] = createSignal<PortfolioAsset | null>(
     null,
   );
@@ -37,7 +38,7 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4">
           <button
-            onClick={() => setActivePortfolioId(null)}
+            onClick={() => navigate("/portfolio")}
             class="w-10 h-10 rounded-xl hover:bg-forest/5 flex items-center justify-center text-forest transition-colors duration-200 border border-forest/10 cursor-pointer"
           >
             <ChevronLeftIcon />
@@ -79,6 +80,7 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         </div>
       </div>
       <PortfolioAssetsList
+        portfolioId={props.portfolio.id}
         assets={props.portfolio.assets}
         onSelectAsset={(a) => setSelectedAsset(a)}
         onAddAsset={() => setShowAddAssetModal(true)}

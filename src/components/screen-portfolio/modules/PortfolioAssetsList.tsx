@@ -3,9 +3,11 @@ import { formatPortfolioValue } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
 import { SetTargetAllocationModal } from "../modals/SetTargetModal";
 import { getAssetColor } from "../../../lib/colors";
+import { getMarketStatus } from "../../../utils/marketTime";
 import type { PortfolioAsset } from "../../../types";
 
 interface PortfolioAssetsListProps {
+  portfolioId: string;
   assets: PortfolioAsset[];
   onSelectAsset: (asset: PortfolioAsset) => void;
   onAddAsset: () => void;
@@ -61,6 +63,16 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
     const list = [...props.assets];
     const key = sortBy();
     const order = sortOrder();
+    const { session } = getMarketStatus();
+
+    const getActivePrice = (asset: PortfolioAsset) => {
+      if (session === "Pre-market" && asset.preMarketPrice != null && !isNaN(asset.preMarketPrice)) {
+        return asset.preMarketPrice;
+      } else if (session === "After-hours" && asset.postMarketPrice != null && !isNaN(asset.postMarketPrice)) {
+        return asset.postMarketPrice;
+      }
+      return asset.currentPrice ?? 0;
+    };
 
     list.sort((a, b) => {
       let valA: any;
@@ -70,17 +82,28 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
         valA = a.ticker.toLowerCase();
         valB = b.ticker.toLowerCase();
       } else if (key === 'value') {
-        valA = a.currentValue;
-        valB = b.currentValue;
+        const priceA = getActivePrice(a);
+        const priceB = getActivePrice(b);
+        valA = a.totalShares * priceA;
+        valB = b.totalShares * priceB;
       } else if (key === 'price') {
-        valA = a.totalShares > 0 ? a.currentValue / a.totalShares : 0;
-        valB = b.totalShares > 0 ? b.currentValue / b.totalShares : 0;
+        valA = getActivePrice(a);
+        valB = getActivePrice(b);
       } else if (key === 'gain') {
-        valA = a.totalGainLoss;
-        valB = b.totalGainLoss;
+        const priceA = getActivePrice(a);
+        const priceB = getActivePrice(b);
+        const valueA = a.totalShares * priceA;
+        const valueB = b.totalShares * priceB;
+        const costBasisA = a.totalShares * a.averagePrice;
+        const costBasisB = b.totalShares * b.averagePrice;
+        valA = valueA - costBasisA;
+        valB = valueB - costBasisB;
       } else if (key === 'allocation') {
-        valA = a.actualAllocation;
-        valB = b.actualAllocation;
+        // Sorting by allocation is equivalent to sorting by value
+        const priceA = getActivePrice(a);
+        const priceB = getActivePrice(b);
+        valA = a.totalShares * priceA;
+        valB = b.totalShares * priceB;
       }
 
       if (valA < valB) return order === 'asc' ? -1 : 1;
@@ -270,12 +293,22 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
             >
               {(asset) => {
                 const assetColor = getAssetColor(asset.ticker);
-                const gainPercent = calculateGainPercentage(asset);
-                const isPositive = asset.totalGainLoss >= 0;
-                const currentPrice =
-                  asset.totalShares > 0
-                    ? asset.currentValue / asset.totalShares
-                    : 0;
+                
+                const { session } = getMarketStatus();
+                const activePrice = (() => {
+                  if (session === "Pre-market" && asset.preMarketPrice != null && !isNaN(asset.preMarketPrice)) {
+                    return asset.preMarketPrice;
+                  } else if (session === "After-hours" && asset.postMarketPrice != null && !isNaN(asset.postMarketPrice)) {
+                    return asset.postMarketPrice;
+                  }
+                  return asset.currentPrice ?? 0;
+                })();
+
+                const costBasis = asset.totalShares * asset.averagePrice;
+                const effectiveCurrentValue = asset.totalShares * activePrice;
+                const effectiveTotalGainLoss = effectiveCurrentValue - costBasis;
+                const gainPercent = costBasis === 0 ? 0 : (effectiveTotalGainLoss / costBasis) * 100;
+                const isPositive = effectiveTotalGainLoss >= 0;
 
                 return (
                   <div
@@ -335,11 +368,11 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                     {/* Value Column */}
                     <div class="flex-1 flex flex-col items-end gap-0.5">
                       <span class="font-outfit font-bold text-forest text-base leading-tight">
-                        {formatPortfolioValue(asset.currentValue, currency())}
+                        {formatPortfolioValue(effectiveCurrentValue, currency())}
                       </span>
                       <span class="text-[11px] text-earth/60 font-medium">
                         {formatPortfolioValue(
-                          asset.totalShares * asset.averagePrice,
+                          costBasis,
                           currency(),
                         )}
                       </span>
@@ -348,7 +381,7 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                     {/* Price / Avg Column */}
                     <div class="flex-1 flex flex-col items-end gap-0.5">
                       <span class="font-outfit font-medium text-forest text-sm">
-                        {formatPortfolioValue(currentPrice, currency())}
+                        {formatPortfolioValue(activePrice, currency())}
                       </span>
                       <span class="text-[11px] text-earth/60 font-medium">
                         {formatPortfolioValue(asset.averagePrice, currency())}
@@ -361,7 +394,7 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                         class={`font-outfit font-bold text-sm ${isPositive ? "text-emerald-600" : "text-rose-500"}`}
                       >
                         {isPositive ? "+" : ""}
-                        {formatPortfolioValue(asset.totalGainLoss, currency())}
+                        {formatPortfolioValue(effectiveTotalGainLoss, currency())}
                       </span>
                       <div
                         class={`flex items-center text-[11px] font-bold ${isPositive ? "text-emerald-600/80" : "text-rose-500/80"}`}
@@ -426,7 +459,7 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
           setTargetModalOpen(false);
           setSelectedAssetForTarget(null);
         }}
-        portfolioId={portfolioState.activePortfolioId || ""}
+        portfolioId={props.portfolioId}
         assetId={selectedAssetForTarget()?.id || ""}
         assetTicker={selectedAssetForTarget()?.ticker || ""}
         currentTargetAllocation={

@@ -24,6 +24,9 @@ export interface PortfolioAsset {
   targetAllocation: number; // Percentage 0-100
   totalShares: number;
   averagePrice: number;
+  currentPrice: number;
+  preMarketPrice: number | null;
+  postMarketPrice: number | null;
 }
 
 export interface PortfolioHistoryPoint {

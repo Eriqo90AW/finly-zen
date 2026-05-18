@@ -1,7 +1,7 @@
 import { createSignal, For, Show, createMemo } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import {
   portfolioState,
-  setActivePortfolioId,
   deletePortfolio,
 } from "../../store/portfolioStore";
 import { formatPortfolioValue } from "../../utils/format";
@@ -193,6 +193,7 @@ const PortfolioMiniDonut = (props: { portfolio: any }) => {
 };
 
 export const PortfolioOverview = () => {
+  const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = createSignal(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = createSignal(false);
   const [portfolioToDelete, setPortfolioToDelete] = createSignal<{
@@ -298,7 +299,7 @@ export const PortfolioOverview = () => {
 
                     return (
                       <div
-                        onClick={() => setActivePortfolioId(p.id)}
+                        onClick={() => navigate(`/portfolio/${p.id}`)}
                         class="group flex items-center px-8 py-5 border-b border-forest/5 hover:bg-slate-50/80 transition-colors duration-200 cursor-pointer relative"
                       >
                         {/* Left side dynamic indicator stripe */}
