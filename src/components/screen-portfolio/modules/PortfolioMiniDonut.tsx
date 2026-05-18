@@ -1,5 +1,5 @@
 import { createMemo, For, Show } from "solid-js";
-import { getAssetColor } from "../../../lib/colors";
+import { getAssetColor } from "../../../utils/colors";
 
 interface PortfolioMiniDonutProps {
   portfolio: any;

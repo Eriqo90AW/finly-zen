@@ -1,4 +1,4 @@
-import { DatePeriod } from "../store";
+import { DatePeriod } from "../types";
 
 export const getDateRange = (currentMonthStr: string, period: DatePeriod): { start: Date; end: Date } => {
   const current = new Date(currentMonthStr);

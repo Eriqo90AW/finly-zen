@@ -1,16 +1,12 @@
 import { createSignal, For, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import {
-  portfolioState,
-  deletePortfolio,
-} from "../../store/portfolioStore";
+import { portfolioState, deletePortfolio } from "../../store/portfolioStore";
 import { formatPortfolioValue } from "../../utils/format";
 import AddIcon from "@suid/icons-material/Add";
 import { CreatePortfolioModal } from "./modals/CreatePortfolioModal";
 import { ConfirmDeleteModal } from "./modals/ConfirmDeleteModal";
-import { getPortfolioColor } from "../../lib/colors";
+import { getPortfolioColor } from "../../utils/colors";
 import { PortfolioMiniDonut } from "./modules/PortfolioMiniDonut";
-
 
 export const PortfolioOverview = () => {
   const navigate = useNavigate();

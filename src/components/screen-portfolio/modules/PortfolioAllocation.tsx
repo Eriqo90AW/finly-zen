@@ -9,7 +9,7 @@ interface PortfolioChartsProps {
   portfolio?: Portfolio;
 }
 
-import { getAssetColor } from "../../../lib/colors";
+import { getAssetColor } from "../../../utils/colors";
 
 export const PortfolioCharts = (props: PortfolioChartsProps) => {
   const currency = () => portfolioState.currencyView;
@@ -62,7 +62,8 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
     cashPercentage(),
   ]);
 
-  const assetsValue = () => (props.portfolio?.totalValue ?? 0) - (props.portfolio?.cash ?? 0);
+  const assetsValue = () =>
+    (props.portfolio?.totalValue ?? 0) - (props.portfolio?.cash ?? 0);
 
   return (
     <>
@@ -170,7 +171,10 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
                 </div>
                 <div class="flex flex-col items-end">
                   <span class="text-sm font-outfit font-bold text-forest">
-                    {formatPortfolioValue(props.portfolio?.cash || 0, currency())}
+                    {formatPortfolioValue(
+                      props.portfolio?.cash || 0,
+                      currency(),
+                    )}
                   </span>
                   <span class="text-[10px] font-bold text-earth/40 uppercase tracking-wider">
                     {cashPercentage().toFixed(1)}%
