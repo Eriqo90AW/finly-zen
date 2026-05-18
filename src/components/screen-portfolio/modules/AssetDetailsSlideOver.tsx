@@ -3,6 +3,7 @@ import CloseIcon from "@suid/icons-material/Close";
 import { formatPortfolioValue } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
 import type { PortfolioAsset, PortfolioTransaction } from "../../../types";
+import { useNavigate } from "@solidjs/router";
 
 interface AssetDetailsSlideOverProps {
   asset: PortfolioAsset | null;
@@ -13,6 +14,7 @@ interface AssetDetailsSlideOverProps {
 }
 
 export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
+  const navigate = useNavigate();
   const currency = () => portfolioState.currencyView;
 
   return (
@@ -37,7 +39,13 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                       </span>
                     </div>
                     <div>
-                      <h3 class="text-xl font-cormorant text-forest font-bold leading-tight">
+                      <h3 
+                        onClick={() => {
+                          navigate(`/stock/${asset().ticker}`);
+                          props.onClose();
+                        }}
+                        class="text-xl font-cormorant text-forest font-bold leading-tight hover:underline cursor-pointer"
+                      >
                         {asset().ticker}
                       </h3>
                       <p class="text-[10px] text-earth uppercase tracking-widest">

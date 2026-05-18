@@ -5,6 +5,7 @@ import { SetTargetAllocationModal } from "../modals/SetTargetModal";
 import { getAssetColor } from "../../../utils/colors";
 import { getMarketStatus } from "../../../utils/marketTime";
 import type { PortfolioAsset } from "../../../types";
+import { useNavigate } from "@solidjs/router";
 
 interface PortfolioAssetsListProps {
   portfolioId: string;
@@ -15,6 +16,7 @@ interface PortfolioAssetsListProps {
 }
 
 export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
+  const navigate = useNavigate();
   const currency = () => portfolioState.currencyView;
   const [targetModalOpen, setTargetModalOpen] = createSignal(false);
   const [selectedAssetForTarget, setSelectedAssetForTarget] =
@@ -433,7 +435,13 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                           }}
                         </Show>
                         <div class="flex flex-col min-w-0">
-                          <span class="font-outfit font-bold text-forest text-base leading-tight group-hover:text-spring transition-colors">
+                          <span 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/stock/${asset.ticker}`);
+                            }}
+                            class="font-outfit font-bold text-forest text-base leading-tight group-hover:text-spring transition-colors hover:underline cursor-pointer"
+                          >
                             {asset.ticker}
                           </span>
                           <span class="text-xs text-earth/60 truncate max-w-[180px]">
