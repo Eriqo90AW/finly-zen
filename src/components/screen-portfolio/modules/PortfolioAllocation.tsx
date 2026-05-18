@@ -6,7 +6,7 @@ import { portfolioState } from "../../../store/portfolioStore";
 import type { Portfolio } from "../../../types";
 
 interface PortfolioChartsProps {
-  portfolio: Portfolio;
+  portfolio?: Portfolio;
 }
 
 import { getAssetColor } from "../../../lib/colors";
@@ -15,13 +15,13 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
   const currency = () => portfolioState.currencyView;
 
   const assetColors = createMemo(() =>
-    props.portfolio.assets.map((a) => getAssetColor(a.ticker)),
+    (props.portfolio?.assets || []).map((a) => getAssetColor(a.ticker)),
   );
-  const cashPercentage = createMemo(() =>
-    props.portfolio.totalValue > 0
-      ? (props.portfolio.cash / props.portfolio.totalValue) * 100
-      : 0,
-  );
+  const cashPercentage = createMemo(() => {
+    const total = props.portfolio?.totalValue ?? 0;
+    const cash = props.portfolio?.cash ?? 0;
+    return total > 0 ? (cash / total) * 100 : 0;
+  });
 
   const donutOptions = createMemo(
     (): ApexOptions => ({
@@ -34,7 +34,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
           enabled: false,
         },
       },
-      labels: [...props.portfolio.assets.map((a) => a.ticker), "Cash"],
+      labels: [...(props.portfolio?.assets || []).map((a) => a.ticker), "Cash"],
       colors: [...assetColors(), "#2D7D46"], // Use mid-green for cash
       legend: { show: false },
       dataLabels: { enabled: false },
@@ -58,11 +58,11 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
   // Removed lineOptions and lineSeries - extracted to PerformanceHistoryChart
 
   const donutSeries = createMemo(() => [
-    ...props.portfolio.assets.map((a) => a.actualAllocation),
+    ...(props.portfolio?.assets || []).map((a) => a.actualAllocation),
     cashPercentage(),
   ]);
 
-  const assetsValue = () => props.portfolio.totalValue - props.portfolio.cash;
+  const assetsValue = () => (props.portfolio?.totalValue ?? 0) - (props.portfolio?.cash ?? 0);
 
   return (
     <>
@@ -115,7 +115,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
         >
           <div class="relative h-[220px] mb-6">
             <Show
-              when={props.portfolio.totalValue > 0}
+              when={(props.portfolio?.totalValue ?? 0) > 0}
               fallback={
                 <div class="w-full h-full flex items-center justify-center text-earth/30 font-outfit text-sm italic">
                   No data to display
@@ -145,7 +145,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
                   </span>
                   <span class="text-[16px] font-bold text-forest leading-tight">
                     {formatPortfolioValue(
-                      props.portfolio.totalValue,
+                      props.portfolio?.totalValue || 0,
                       currency(),
                     )}
                   </span>
@@ -170,7 +170,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
                 </div>
                 <div class="flex flex-col items-end">
                   <span class="text-sm font-outfit font-bold text-forest">
-                    {formatPortfolioValue(props.portfolio.cash, currency())}
+                    {formatPortfolioValue(props.portfolio?.cash || 0, currency())}
                   </span>
                   <span class="text-[10px] font-bold text-earth/40 uppercase tracking-wider">
                     {cashPercentage().toFixed(1)}%
@@ -178,7 +178,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
                 </div>
               </div>
 
-              <For each={props.portfolio.assets}>
+              <For each={props.portfolio?.assets || []}>
                 {(asset) => (
                   <div class="flex items-center justify-between group hover:bg-earth/2 -mx-3 px-3 py-1.5 transition-colors duration-200 cursor-pointer">
                     <div class="flex items-center gap-3 self-stretch">

@@ -1,4 +1,4 @@
-import { createSignal, createMemo } from "solid-js";
+import { createSignal, createMemo, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import {
   deleteAssetFromPortfolio,
@@ -14,7 +14,7 @@ import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import type { PortfolioAsset, Portfolio } from "../../types";
 
 interface PortfolioDetailsProps {
-  portfolio: Portfolio;
+  portfolio?: Portfolio;
 }
 
 export const PortfolioDetails = (props: PortfolioDetailsProps) => {
@@ -27,8 +27,8 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
 
   const assetTransactions = createMemo(() => {
     const asset = selectedAsset();
-    if (!asset) return [];
-    return props.portfolio.transactions.filter(
+    if (!asset || !props.portfolio) return [];
+    return (props.portfolio.transactions || []).filter(
       (t) => t.ticker === asset.ticker,
     );
   });
@@ -44,9 +44,16 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
             <ChevronLeftIcon />
           </button>
           <div>
-            <h1 class="text-4xl font-cormorant text-forest font-bold tracking-tight mb-1">
-              {props.portfolio.name}
-            </h1>
+            <Show
+              when={props.portfolio}
+              fallback={
+                <div class="h-9 bg-sage/20 rounded w-48 animate-pulse mb-1.5" />
+              }
+            >
+              <h1 class="text-4xl font-cormorant text-forest font-bold tracking-tight mb-1">
+                {props.portfolio!.name}
+              </h1>
+            </Show>
             <p class="text-earth font-outfit tracking-wide uppercase text-[10px] font-bold">
               Detailed Portfolio Breakdown
             </p>
@@ -56,7 +63,8 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         <div class="flex gap-4">
           <button
             onClick={() => setShowAddAssetModal(true)}
-            class="flex items-center gap-2 bg-forest text-white px-6 py-3 rounded-2xl font-outfit font-bold shadow-xl hover:brightness-90  transition-opacity duration-200 cursor-pointer w-fit"
+            disabled={!props.portfolio}
+            class={`flex items-center gap-2 bg-forest text-white px-6 py-3 rounded-2xl font-outfit font-bold shadow-xl hover:brightness-90 transition-opacity duration-200 cursor-pointer w-fit ${!props.portfolio ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span class="material-icons text-lg">add_circle</span>
             Add Assets
@@ -64,7 +72,8 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
 
           <button
             onClick={() => setShowAddCapitalModal(true)}
-            class="flex items-center gap-2 bg-white text-forest border border-forest/10 px-6 py-3 rounded-2xl font-outfit font-bold shadow-sm hover:bg-spring/5 transition-color duration-100 cursor-pointer w-fit"
+            disabled={!props.portfolio}
+            class={`flex items-center gap-2 bg-white text-forest border border-forest/10 px-6 py-3 rounded-2xl font-outfit font-bold shadow-sm hover:bg-spring/5 transition-color duration-100 cursor-pointer w-fit ${!props.portfolio ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span class="material-icons text-lg">account_balance</span>
             Add Capital
@@ -76,15 +85,16 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
       <div class="grid grid-cols-12 gap-6 mb-8">
         <PortfolioCharts portfolio={props.portfolio} />
         <div class="premium-card p-6 col-span-8 h-[480px] flex flex-col cursor-default">
-          <PerformanceHistoryChart history={props.portfolio.history} />
+          <PerformanceHistoryChart history={props.portfolio?.history} />
         </div>
       </div>
       <PortfolioAssetsList
-        portfolioId={props.portfolio.id}
-        assets={props.portfolio.assets}
+        portfolioId={props.portfolio?.id || ""}
+        assets={props.portfolio?.assets || []}
         onSelectAsset={(a) => setSelectedAsset(a)}
         onAddAsset={() => setShowAddAssetModal(true)}
         onDeleteAsset={(assetId) => {
+          if (!props.portfolio) return;
           if (
             confirm(
               "Are you sure you want to delete this asset? All related transactions will be removed and cash will be adjusted.",
@@ -102,6 +112,7 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         isOpen={!!selectedAsset()}
         onClose={() => setSelectedAsset(null)}
         onDeleteAsset={(assetId) => {
+          if (!props.portfolio) return;
           if (
             confirm(
               "Are you sure you want to delete this asset? All related transactions will be removed and cash will be adjusted.",
@@ -115,16 +126,16 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
 
       {/* Add Asset Modal */}
       <AddAssetModal
-        isOpen={showAddAssetModal()}
+        isOpen={showAddAssetModal() && !!props.portfolio}
         onClose={() => setShowAddAssetModal(false)}
-        portfolioId={props.portfolio.id}
+        portfolioId={props.portfolio?.id || ""}
       />
 
       {/* Add Capital Modal */}
       <ManageCapitalModal
-        isOpen={showAddCapitalModal()}
+        isOpen={showAddCapitalModal() && !!props.portfolio}
         onClose={() => setShowAddCapitalModal(false)}
-        portfolioId={props.portfolio.id}
+        portfolioId={props.portfolio?.id || ""}
       />
     </>
   );

@@ -14,7 +14,7 @@ import { portfolioState } from "../../../store/portfolioStore";
 import type { PortfolioHistoryPoint } from "../../../types";
 
 interface PerformanceHistoryChartProps {
-  history: PortfolioHistoryPoint[];
+  history?: PortfolioHistoryPoint[];
 }
 
 export const PerformanceHistoryChart = (
@@ -32,13 +32,13 @@ export const PerformanceHistoryChart = (
   });
 
   const latestDate = createMemo(() => {
-    const history = props.history;
+    const history = props.history || [];
     if (history.length === 0) return new Date();
     return new Date(history[history.length - 1].date);
   });
 
   const filteredHistory = createMemo(() => {
-    const history = props.history;
+    const history = props.history || [];
     const period = selectedPeriod();
     if (period === "ALL" || history.length === 0) return history;
 

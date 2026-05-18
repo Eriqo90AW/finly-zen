@@ -179,10 +179,9 @@ const computePortfolioState = (
   }));
 
   const initialCapital = Number(p.initial_capital);
-  const allTimeGain = assets.reduce((sum, a) => sum + a.totalGainLoss, 0);
-  const assetsCost = assets.reduce((sum, a) => sum + a.totalShares * a.averagePrice, 0);
-  const totalCost = Number(p.cash) + assetsCost;
-  const allTimeGainPercentage = totalCost > 0 ? (allTimeGain / totalCost) * 100 : 0;
+  const allTimeGain = totalValue - initialCapital;
+  const allTimeGainPercentage = initialCapital > 0 ? (allTimeGain / initialCapital) * 100 : 0;
+
 
   const history: PortfolioHistoryPoint[] = [
     { date: p.created_at || new Date().toISOString(), value: initialCapital },

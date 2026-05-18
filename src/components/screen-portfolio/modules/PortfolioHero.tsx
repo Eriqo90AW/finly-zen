@@ -4,12 +4,12 @@ import { portfolioState } from "../../../store/portfolioStore";
 import type { Portfolio } from "../../../types";
 
 interface PortfolioHeroProps {
-  portfolio: Portfolio;
+  portfolio?: Portfolio;
 }
 
 export const PortfolioHero = (props: PortfolioHeroProps) => {
   const currency = () => portfolioState.currencyView;
-  const isPositive = () => props.portfolio?.allTimeGain >= 0;
+  const isPositive = () => props.portfolio ? props.portfolio.allTimeGain >= 0 : true;
 
   return (
     <Show
@@ -56,7 +56,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
             </div>
             <div class="flex flex-col">
               <span class="text-[56px] font-outfit font-[500] text-forest leading-none tracking-tighter">
-                {formatPortfolioValue(props.portfolio.totalValue, currency())}
+                {formatPortfolioValue(props.portfolio!.totalValue, currency())}
               </span>
               <div class="flex items-center gap-2 mt-4 justify-center md:justify-start">
                 <div
@@ -67,7 +67,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
                   </span>
                   {isPositive() ? "+" : ""}
                   {formatPortfolioValue(
-                    props.portfolio.allTimeGain,
+                    props.portfolio!.allTimeGain,
                     currency(),
                     true,
                   )}
@@ -75,7 +75,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
                 <span
                   class={`text-sm font-bold ${isPositive() ? "text-spring" : "text-red-500"}`}
                 >
-                  ({props.portfolio.allTimeGainPercentage.toFixed(2)}%)
+                  ({props.portfolio!.allTimeGainPercentage.toFixed(2)}%)
                 </span>
                 <span class="text-earth/40 font-medium text-sm">
                   All time Profit / Loss
@@ -97,12 +97,12 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
               </div>
               <div class="flex items-center gap-1.5">
                 <span class="text-xl font-outfit font-bold text-forest leading-none">
-                  {formatPortfolioValue(props.portfolio.cash, currency())}
+                  {formatPortfolioValue(props.portfolio!.cash, currency())}
                 </span>
                 <span class="text-[10px] font-[900] text-orange-500 bg-orange-300/30 px-1.5 py-0.5 rounded-md border border-spring/20">
-                  {props.portfolio.totalValue > 0
+                  {props.portfolio!.totalValue > 0
                     ? (
-                        (props.portfolio.cash / props.portfolio.totalValue) *
+                        (props.portfolio!.cash / props.portfolio!.totalValue) *
                         100
                       ).toFixed(1)
                     : "0.0"}
@@ -124,7 +124,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
               </div>
               <span class="text-xl font-outfit font-bold text-forest leading-none">
                 {formatPortfolioValue(
-                  props.portfolio.totalValue - props.portfolio.cash,
+                  props.portfolio!.totalValue - props.portfolio!.cash,
                   currency(),
                 )}
               </span>

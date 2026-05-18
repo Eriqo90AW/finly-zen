@@ -25,10 +25,20 @@ const Portfolio = () => {
   return (
     <div class="max-w-[1400px] mx-auto min-h-screen">
       <Show 
-        when={activePortfolio()} 
+        when={params.id} 
         fallback={<PortfolioOverview />}
       >
-        {(portfolio) => <PortfolioDetails portfolio={portfolio()} />}
+        <Show
+          when={!portfolioState.isLoading}
+          fallback={<PortfolioDetails portfolio={undefined} />}
+        >
+          <Show
+            when={activePortfolio()}
+            fallback={<PortfolioOverview />}
+          >
+            {(portfolio) => <PortfolioDetails portfolio={portfolio()} />}
+          </Show>
+        </Show>
       </Show>
     </div>
   );
