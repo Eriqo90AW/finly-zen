@@ -21,6 +21,7 @@ interface PortfolioStore {
   currencyView: 'IDR' | 'USD';
   isLoading: boolean;
   isRefreshing: boolean;
+  hasLoadedBefore: boolean;
 }
 
 const getInitialActivePortfolioId = (): string | null => {
@@ -45,6 +46,7 @@ const DEFAULT_PORTFOLIO_STATE: PortfolioStore = {
   currencyView: getInitialCurrencyView(),
   isLoading: true,
   isRefreshing: false,
+  hasLoadedBefore: false,
 };
 
 export const [portfolioState, setPortfolioState] = createStore<PortfolioStore>(DEFAULT_PORTFOLIO_STATE);
@@ -218,7 +220,10 @@ const computePortfolioState = (
 };
 
 export const loadPortfolios = async () => {
-  setPortfolioState("isLoading", true);
+  const isFirstLoad = !portfolioState.hasLoadedBefore;
+  if (isFirstLoad) {
+    setPortfolioState("isLoading", true);
+  }
   try {
     const rawPortfolios = await getPortfolios();
     const allTxs: Record<string, any[]> = {};
@@ -243,10 +248,13 @@ export const loadPortfolios = async () => {
     );
 
     setPortfolioState("portfolios", reconcile(computedPortfolios));
+    setPortfolioState("hasLoadedBefore", true);
   } catch (e) {
     console.error("Failed to load portfolios:", e);
   } finally {
-    setPortfolioState("isLoading", false);
+    if (isFirstLoad) {
+      setPortfolioState("isLoading", false);
+    }
   }
 };
 
