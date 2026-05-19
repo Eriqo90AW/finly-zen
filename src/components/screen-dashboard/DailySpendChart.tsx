@@ -103,7 +103,7 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
     },
     yaxis: {
       min: 0,
-      max: 1000000,
+      max: 500000,
       tickAmount: 5, // 1,000,000 / 5 = 200,000
       labels: {
         style: { colors: "#5C6B5E", fontFamily: "Outfit" },

@@ -106,3 +106,12 @@ export interface MultiStockResponse {
   data: MultiStockItem[];
 }
 
+export interface AllocationItem {
+  isCash: boolean;
+  ticker: string;
+  name: string;
+  value: number;
+  percentage: number;
+  color: string;
+}
+

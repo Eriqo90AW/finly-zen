@@ -1,26 +1,44 @@
+import { ApexOptions } from "apexcharts";
 import { For, Show, createMemo } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
-import { ApexOptions } from "apexcharts";
+import { getAssetColor } from "../../../utils/colors";
 import { formatPortfolioValue } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
-import type { Portfolio } from "../../../types";
+import type { Portfolio, AllocationItem } from "../../../types";
 
 interface PortfolioChartsProps {
   portfolio?: Portfolio;
 }
 
-import { getAssetColor } from "../../../utils/colors";
-
 export const PortfolioCharts = (props: PortfolioChartsProps) => {
   const currency = () => portfolioState.currencyView;
 
-  const assetColors = createMemo(() =>
-    (props.portfolio?.assets || []).map((a) => getAssetColor(a.ticker)),
-  );
-  const cashPercentage = createMemo(() => {
-    const total = props.portfolio?.totalValue ?? 0;
-    const cash = props.portfolio?.cash ?? 0;
-    return total > 0 ? (cash / total) * 100 : 0;
+  const sortedAllocationItems = createMemo((): AllocationItem[] => {
+    const assets = props.portfolio?.assets || [];
+    const cash = props.portfolio?.cash || 0;
+    const total = props.portfolio?.totalValue || 0;
+    const cashPct = total > 0 ? (cash / total) * 100 : 0;
+
+    const items: AllocationItem[] = [
+      ...assets.map((a) => ({
+        isCash: false,
+        ticker: a.ticker,
+        name: a.name,
+        value: a.currentValue,
+        percentage: a.actualAllocation,
+        color: getAssetColor(a.ticker),
+      })),
+      {
+        isCash: true,
+        ticker: "Cash",
+        name: "Liquidity",
+        value: cash,
+        percentage: cashPct,
+        color: "#2D7D46",
+      },
+    ];
+
+    return items.sort((a, b) => b.percentage - a.percentage);
   });
 
   const donutOptions = createMemo(
@@ -34,8 +52,8 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
           enabled: false,
         },
       },
-      labels: [...(props.portfolio?.assets || []).map((a) => a.ticker), "Cash"],
-      colors: [...assetColors(), "#2D7D46"], // Use mid-green for cash
+      labels: sortedAllocationItems().map((item) => item.ticker),
+      colors: sortedAllocationItems().map((item) => item.color),
       legend: { show: false },
       dataLabels: { enabled: false },
       stroke: { show: false },
@@ -57,10 +75,9 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
 
   // Removed lineOptions and lineSeries - extracted to PerformanceHistoryChart
 
-  const donutSeries = createMemo(() => [
-    ...(props.portfolio?.assets || []).map((a) => a.actualAllocation),
-    cashPercentage(),
-  ]);
+  const donutSeries = createMemo(() =>
+    sortedAllocationItems().map((item) => item.percentage),
+  );
 
   const assetsValue = () =>
     (props.portfolio?.totalValue ?? 0) - (props.portfolio?.cash ?? 0);
@@ -158,55 +175,31 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
           {/* Asset List with Scrollbar */}
           <div class="flex-1 flex flex-col">
             <div class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar-thin max-h-[160px] pl-1 pr-2.5 space-y-2">
-              {/* Cash Entry */}
-              <div class="flex items-center justify-between group hover:bg-earth/2 -mx-3 px-3 py-1.5 transition-colors duration-200 cursor-pointer">
-                <div class="flex items-center gap-3 self-stretch">
-                  <div class="w-1 bg-mid-green self-stretch" />
-                  <div class="flex flex-col">
-                    <span class="text-sm font-outfit font-bold text-earth group-hover:text-forest transition-colors leading-tight">
-                      Cash
-                    </span>
-                    <span class="text-[10px] text-earth/40">Liquidity</span>
-                  </div>
-                </div>
-                <div class="flex flex-col items-end">
-                  <span class="text-sm font-outfit font-bold text-forest">
-                    {formatPortfolioValue(
-                      props.portfolio?.cash || 0,
-                      currency(),
-                    )}
-                  </span>
-                  <span class="text-[10px] font-bold text-earth/40 uppercase tracking-wider">
-                    {cashPercentage().toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-
-              <For each={props.portfolio?.assets || []}>
-                {(asset) => (
+              <For each={sortedAllocationItems()}>
+                {(item) => (
                   <div class="flex items-center justify-between group hover:bg-earth/2 -mx-3 px-3 py-1.5 transition-colors duration-200 cursor-pointer">
                     <div class="flex items-center gap-3 self-stretch">
                       <div
                         class="w-1 self-stretch"
                         style={{
-                          "background-color": getAssetColor(asset.ticker),
+                          "background-color": item.color,
                         }}
                       />
                       <div class="flex flex-col">
                         <span class="text-sm font-outfit font-bold text-earth group-hover:text-forest transition-colors leading-tight">
-                          {asset.ticker}
+                          {item.ticker}
                         </span>
                         <span class="text-[10px] text-earth/40 truncate max-w-[120px]">
-                          {asset.name}
+                          {item.name}
                         </span>
                       </div>
                     </div>
                     <div class="flex flex-col items-end">
                       <span class="text-sm font-outfit font-bold text-forest">
-                        {formatPortfolioValue(asset.currentValue, currency())}
+                        {formatPortfolioValue(item.value, currency())}
                       </span>
                       <span class="text-[10px] font-bold text-earth/40 uppercase tracking-wider">
-                        {asset.actualAllocation.toFixed(1)}%
+                        {item.percentage.toFixed(1)}%
                       </span>
                     </div>
                   </div>

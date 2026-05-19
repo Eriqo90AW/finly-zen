@@ -35,7 +35,7 @@ export async function fetchUsdRate(): Promise<number> {
     return Number(rate);
   } catch (error) {
     console.error("Error fetching USD rate:", error);
-    return 17400; // fallback default
+    return Number(import.meta.env.VITE_DEFAULT_USD_RATE) || 17400;
   }
 }
 

@@ -112,7 +112,7 @@ export const formatHexColor = (c: string | null | undefined): string | undefined
 
 import { createSignal } from "solid-js";
 
-const [usdRate, setUsdRate] = createSignal(17400);
+const [usdRate, setUsdRate] = createSignal(Number(import.meta.env.VITE_DEFAULT_USD_RATE) || 17400);
 export const getUsdRate = () => usdRate();
 export const setUsdExchangeRate = (rate: number) => setUsdRate(rate);
 
