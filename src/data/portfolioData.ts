@@ -189,3 +189,32 @@ export async function updatePortfolioCash(id: string, cash: number): Promise<voi
     throw new Error(`Failed to update portfolio cash: ${error.message}`);
   }
 }
+
+export async function getAssetThesis(portfolioId: string, ticker: string): Promise<{ id: string; notes: string | null; updated_at: string } | null> {
+  const { data, error } = await supabase
+    .from("portfolio_transactions")
+    .select("id, notes, updated_at")
+    .eq("portfolio_id", portfolioId)
+    .eq("asset_ticker", ticker)
+    .order("transaction_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching asset thesis:", error);
+    return null;
+  }
+  return data;
+}
+
+export async function updateAssetThesis(transactionId: string, notes: string): Promise<void> {
+  const { error } = await supabase
+    .from("portfolio_transactions")
+    .update({ notes, updated_at: new Date().toISOString() })
+    .eq("id", transactionId);
+
+  if (error) {
+    throw new Error(`Failed to update asset thesis: ${error.message}`);
+  }
+}
+

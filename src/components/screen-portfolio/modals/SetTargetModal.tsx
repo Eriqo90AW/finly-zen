@@ -1,5 +1,5 @@
 import { createSignal, Show, createEffect } from "solid-js";
-import { setAssetTargetAllocation } from "../../../store/portfolioStore";
+import { setAssetTargetAllocation, portfolioState } from "../../../store/portfolioStore";
 
 interface SetTargetAllocationModalProps {
   isOpen: boolean;
@@ -21,6 +21,18 @@ export const SetTargetAllocationModal = (
       setTargetAllocation(props.currentTargetAllocation);
     }
   });
+
+  const otherTargetAllocationSum = () => {
+    const p = portfolioState.portfolios.find((port) => port.id === props.portfolioId);
+    if (!p) return 0;
+    return p.assets
+      .filter((a) => a.id !== props.assetId)
+      .reduce((sum, a) => sum + (a.targetAllocation || 0), 0);
+  };
+
+  const totalTargetAllocation = () => {
+    return Number((otherTargetAllocationSum() + targetAllocation()).toFixed(1));
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -55,9 +67,14 @@ export const SetTargetAllocationModal = (
           </p>
           <form onSubmit={handleSubmit} class="space-y-6">
             <div>
-              <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
-                Target Allocation (%)
-              </label>
+              <div class="flex justify-between items-baseline mb-2">
+                <label class="block text-[10px] uppercase tracking-widest text-earth font-bold">
+                  Target Allocation (%)
+                </label>
+                <span class={`text-xs font-outfit font-bold transition-all duration-350 ${totalTargetAllocation() > 100 ? 'text-red-500 animate-pulse' : 'text-earth/60'}`}>
+                  ({targetAllocation()}% / {totalTargetAllocation()}%)
+                </span>
+              </div>
               <div class="relative">
                 <input
                   type="number"

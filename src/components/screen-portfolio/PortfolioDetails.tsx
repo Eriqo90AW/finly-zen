@@ -111,6 +111,8 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         transactions={assetTransactions()}
         isOpen={!!selectedAsset()}
         onClose={() => setSelectedAsset(null)}
+        portfolioTotalValue={props.portfolio?.totalValue ?? 0}
+        portfolioId={props.portfolio?.id ?? ""}
         onDeleteAsset={(assetId) => {
           if (!props.portfolio) return;
           if (
