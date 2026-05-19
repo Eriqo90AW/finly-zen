@@ -208,13 +208,18 @@ export async function getAssetThesis(portfolioId: string, ticker: string): Promi
 }
 
 export async function updateAssetThesis(transactionId: string, notes: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("portfolio_transactions")
     .update({ notes, updated_at: new Date().toISOString() })
-    .eq("id", transactionId);
+    .eq("id", transactionId)
+    .select();
 
   if (error) {
     throw new Error(`Failed to update asset thesis: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error(`No transaction found with id ${transactionId}`);
   }
 }
 

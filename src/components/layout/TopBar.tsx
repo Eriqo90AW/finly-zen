@@ -1,7 +1,7 @@
 import SearchBar from "./SearchBar";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
-import { useLocation, A, useNavigate, useParams } from "@solidjs/router";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import { state, setState, nextMonth, prevMonth } from "../../store";
 import {
   portfolioState,
@@ -106,12 +106,12 @@ const TopBar = () => {
           when={!isStockPage()}
           fallback={
             <div class="flex items-center gap-4">
-              <A
-                href="/"
-                class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5"
+              <button
+                onClick={() => navigate(-1)}
+                class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
               >
                 <ChevronLeftIcon />
-              </A>
+              </button>
               <div class="h-8 w-px bg-forest/10 mx-1" />
 
               <Show

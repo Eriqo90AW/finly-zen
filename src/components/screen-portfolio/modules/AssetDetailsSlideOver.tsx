@@ -35,7 +35,6 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
   // Fetch the thesis notes when the asset is opened/changed
   createEffect(() => {
     if (props.isOpen && props.asset && props.portfolioId) {
-      setNotesExpanded(false);
       setExposureExpanded(true);
       setHistoryExpanded(true);
       setLoadingNotes(true);
@@ -46,10 +45,13 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
             setThesisNotes(data.notes || "");
             setNotesLastUpdated(data.updated_at);
             setActiveTxId(data.id);
+            // Default open if user has written a thesis
+            setNotesExpanded(!!(data.notes && data.notes.trim()));
           } else {
             setThesisNotes("");
             setNotesLastUpdated(null);
             setActiveTxId(null);
+            setNotesExpanded(false);
           }
         })
         .catch((err) => {
@@ -63,12 +65,22 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
 
   const handleSaveNotes = async () => {
     const txId = activeTxId();
-    if (!txId) return;
+    if (!txId || !props.asset) return;
     setSavingNotes(true);
     setSaveStatus(null);
     try {
       await updateAssetThesis(txId, thesisNotes());
-      setNotesLastUpdated(new Date().toISOString());
+      
+      // Re-fetch the thesis notes from database to confirm it is saved and get accurate updatedAt
+      const freshData = await getAssetThesis(props.portfolioId, props.asset.ticker);
+      if (freshData) {
+        setThesisNotes(freshData.notes || "");
+        setNotesLastUpdated(freshData.updated_at);
+        setActiveTxId(freshData.id);
+      } else {
+        setNotesLastUpdated(new Date().toISOString());
+      }
+      
       setSaveStatus("Saved ✓");
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (err) {
@@ -511,8 +523,9 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                   <div class="p-6">
                     <div
                       onClick={() => setHistoryExpanded(!historyExpanded())}
-                      class="flex items-center justify-between cursor-pointer hover:bg-sage/5 p-2 -m-2 rounded-xl transition-colors select-none"
+                      class="flex items-center gap-1   cursor-pointer hover:bg-sage/5 p-2 -m-2 rounded-xl transition-colors select-none"
                     >
+                      <span class="material-icons !text-[16px] text-earth">receipt</span>
                       <h4 class="font-outfit font-bold text-forest text-xs uppercase tracking-widest">
                         Transaction History
                       </h4>
