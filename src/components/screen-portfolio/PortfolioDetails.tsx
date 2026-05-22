@@ -88,6 +88,9 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
           <PerformanceHistoryChart 
             history={props.portfolio?.history} 
             nativeCurrency={props.portfolio?.nativeCurrency} 
+            priceCurrency={props.portfolio?.price_currency}
+            initialCapital={props.portfolio?.initialCapital}
+            totalValue={props.portfolio?.totalValue}
           />
         </div>
       </div>

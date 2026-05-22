@@ -9,13 +9,16 @@ import {
 } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
-import { formatPortfolioValue } from "../../../utils/format";
+import { formatPortfolioValue, calculateDisplayGainAndPercentage, getUsdRate } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
 import type { PortfolioHistoryPoint } from "../../../types";
 
 interface PerformanceHistoryChartProps {
   history?: PortfolioHistoryPoint[];
   nativeCurrency?: 'IDR' | 'USD';
+  priceCurrency?: number;
+  initialCapital?: number;
+  totalValue?: number;
 }
 
 export const PerformanceHistoryChart = (
@@ -59,11 +62,45 @@ export const PerformanceHistoryChart = (
   const periodStats = createMemo(() => {
     const list = filteredHistory();
     if (list.length < 2) return null;
+
+    const nativeCurr = props.nativeCurrency ?? 'IDR';
+    const dispCurr = currency();
+
+    if (selectedPeriod() === "ALL") {
+      return calculateDisplayGainAndPercentage(
+        props.totalValue ?? 0,
+        props.initialCapital ?? 0,
+        props.priceCurrency ?? 1,
+        nativeCurr,
+        dispCurr,
+      );
+    }
+
+    // Convert both using the live rate for other sub-periods
     const initial = list[0].value;
     const final = list[list.length - 1].value;
-    const change = final - initial;
-    const percentage = initial > 0 ? (change / initial) * 100 : 0;
-    return { change, percentage };
+
+    let displayInitial = initial;
+    if (nativeCurr === 'USD' && dispCurr === 'IDR') {
+      displayInitial = initial * getUsdRate();
+    } else if (nativeCurr === 'IDR' && dispCurr === 'USD') {
+      displayInitial = initial / getUsdRate();
+    }
+
+    let displayFinal = final;
+    if (nativeCurr === 'USD' && dispCurr === 'IDR') {
+      displayFinal = final * getUsdRate();
+    } else if (nativeCurr === 'IDR' && dispCurr === 'USD') {
+      displayFinal = final / getUsdRate();
+    }
+
+    const change = displayFinal - displayInitial;
+    const percentage = displayInitial > 0 ? (change / displayInitial) * 100 : 0;
+    return {
+      gain: change,
+      percentage,
+      isPositive: change >= 0,
+    };
   });
 
   const lineCategories = createMemo(() => filteredHistory().map((h) => h.date));
@@ -241,7 +278,7 @@ export const PerformanceHistoryChart = (
       <div class="mb-4 h-2 flex items-center">
         <Show when={periodStats()}>
           {(stats) => {
-            const isGain = () => stats().change >= 0;
+            const isGain = () => stats().isPositive;
             return (
               <div class="flex items-center gap-1.5 mt-4 justify-center md:justify-start text-xs font-outfit">
                 <div
@@ -251,7 +288,7 @@ export const PerformanceHistoryChart = (
                     {isGain() ? "trending_up" : "trending_down"}
                   </span>
                   {isGain() ? "+" : ""}
-                  {formatPortfolioValue(stats().change, currency(), false, props.nativeCurrency)}
+                  {formatPortfolioValue(stats().gain, currency(), false, currency())}
                 </div>
                 <span
                   class={`text-xs font-bold ${isGain() ? "text-spring" : "text-red-500"}`}

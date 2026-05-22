@@ -137,15 +137,16 @@ export const formatPortfolioValue = (
   displayCurrency: 'IDR' | 'USD',
   isShort = false,
   nativeCurrency: 'IDR' | 'USD' = 'IDR',
+  customRate?: number,
 ) => {
   let displayAmount = amount;
 
   if (nativeCurrency === 'USD' && displayCurrency === 'IDR') {
-    // USD Portfolio → display as IDR: multiply by live rate
-    displayAmount = amount * getUsdRate();
+    // USD Portfolio → display as IDR: multiply by customRate if provided, otherwise live rate
+    displayAmount = amount * (customRate !== undefined ? customRate : getUsdRate());
   } else if (nativeCurrency === 'IDR' && displayCurrency === 'USD') {
-    // IDR Portfolio → display as USD: divide by live rate
-    displayAmount = amount / getUsdRate();
+    // IDR Portfolio → display as USD: divide by customRate if provided, otherwise live rate
+    displayAmount = amount / (customRate !== undefined ? customRate : getUsdRate());
   }
   // If displayCurrency === nativeCurrency, no conversion is needed
 
@@ -169,4 +170,44 @@ export const getCurrencyPills = (isIDR: boolean) => {
       { label: "$500", value: "500" },
     ];
   }
+};
+
+export const calculateDisplayGainAndPercentage = (
+  totalValue: number,
+  initialCapital: number,
+  priceCurrency: number,
+  nativeCurrency: 'IDR' | 'USD',
+  displayCurrency: 'IDR' | 'USD',
+) => {
+  // 1. Calculate Total Value in Display Currency
+  // Total Value is always converted using the current live rate (getUsdRate())
+  let displayTotalValue = totalValue;
+  if (nativeCurrency === 'USD' && displayCurrency === 'IDR') {
+    displayTotalValue = totalValue * getUsdRate();
+  } else if (nativeCurrency === 'IDR' && displayCurrency === 'USD') {
+    displayTotalValue = totalValue / getUsdRate();
+  }
+
+  // 2. Calculate Initial Capital in Display Currency
+  // Initial Capital is converted using the historical rate (priceCurrency)
+  let displayInitialCapital = initialCapital;
+  if (nativeCurrency === 'USD' && displayCurrency === 'IDR') {
+    displayInitialCapital = initialCapital * priceCurrency;
+  } else if (nativeCurrency === 'IDR' && displayCurrency === 'USD') {
+    displayInitialCapital = initialCapital / priceCurrency;
+  }
+
+  // 3. Calculate Gain in Display Currency
+  const displayGain = displayTotalValue - displayInitialCapital;
+
+  // 4. Calculate Gain Percentage in Display Currency
+  const displayGainPercentage = displayInitialCapital > 0 
+    ? (displayGain / displayInitialCapital) * 100 
+    : 0;
+
+  return {
+    gain: displayGain,
+    percentage: displayGainPercentage,
+    isPositive: displayGain >= 0,
+  };
 };

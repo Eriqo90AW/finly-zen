@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-import { formatPortfolioValue } from "../../../utils/format";
+import { formatPortfolioValue, calculateDisplayGainAndPercentage } from "../../../utils/format";
 import { portfolioState } from "../../../store/portfolioStore";
 import type { Portfolio } from "../../../types";
 
@@ -9,7 +9,19 @@ interface PortfolioHeroProps {
 
 export const PortfolioHero = (props: PortfolioHeroProps) => {
   const currency = () => portfolioState.currencyView;
-  const isPositive = () => props.portfolio ? props.portfolio.allTimeGain >= 0 : true;
+  
+  const gainStats = () => {
+    if (!props.portfolio) return { gain: 0, percentage: 0, isPositive: true };
+    return calculateDisplayGainAndPercentage(
+      props.portfolio.totalValue,
+      props.portfolio.initialCapital,
+      props.portfolio.price_currency ?? 1,
+      props.portfolio.nativeCurrency,
+      currency(),
+    );
+  };
+
+  const isPositive = () => gainStats().isPositive;
 
   return (
     <Show
@@ -67,16 +79,16 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
                   </span>
                   {isPositive() ? "+" : ""}
                   {formatPortfolioValue(
-                    props.portfolio!.allTimeGain,
+                    gainStats().gain,
                     currency(),
                     true,
-                    props.portfolio!.nativeCurrency,
+                    currency(),
                   )}
                 </div>
                 <span
                   class={`text-sm font-bold ${isPositive() ? "text-spring" : "text-red-500"}`}
                 >
-                  ({props.portfolio!.allTimeGainPercentage.toFixed(2)}%)
+                  ({gainStats().percentage.toFixed(2)}%)
                 </span>
                 <span class="text-earth/40 font-medium text-sm">
                   All time Profit / Loss

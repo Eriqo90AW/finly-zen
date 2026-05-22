@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { portfolioState, deletePortfolio } from "../../store/portfolioStore";
-import { formatPortfolioValue } from "../../utils/format";
+import { calculateDisplayGainAndPercentage, formatPortfolioValue } from "../../utils/format";
 import AddIcon from "@suid/icons-material/Add";
 import { CreatePortfolioModal } from "./modals/CreatePortfolioModal";
 import { ConfirmDeleteModal } from "./modals/ConfirmDeleteModal";
@@ -111,7 +111,13 @@ export const PortfolioOverview = () => {
                 >
                   {(p) => {
                     const pColor = getPortfolioColor(p.name);
-                    const isPositive = p.allTimeGain >= 0;
+                    const gainStats = () => calculateDisplayGainAndPercentage(
+                      p.totalValue,
+                      p.initialCapital,
+                      p.price_currency ?? 1,
+                      p.nativeCurrency,
+                      currency(),
+                    );
 
                     return (
                       <div
@@ -152,30 +158,30 @@ export const PortfolioOverview = () => {
                         {/* All-Time Gain Column */}
                         <div class="flex-1 flex flex-col items-end gap-0.5">
                           <span
-                            class={`font-outfit font-bold text-sm ${isPositive ? "text-emerald-600" : "text-rose-500"}`}
+                            class={`font-outfit font-bold text-sm ${gainStats().isPositive ? "text-emerald-600" : "text-rose-500"}`}
                           >
-                            {isPositive ? "+" : ""}
+                            {gainStats().isPositive ? "+" : ""}
                             {formatPortfolioValue(
-                              p.allTimeGain,
+                              gainStats().gain,
                               currency(),
                               true,
-                              p.nativeCurrency,
+                              currency(),
                             )}
                           </span>
                           <div
-                            class={`flex items-center text-[11px] font-bold ${isPositive ? "text-emerald-600/80" : "text-rose-500/80"}`}
+                            class={`flex items-center text-[11px] font-bold ${gainStats().isPositive ? "text-emerald-600/80" : "text-rose-500/80"}`}
                           >
                             <span class="material-icons !text-[14px]">
-                              {isPositive ? "arrow_drop_up" : "arrow_drop_down"}
+                              {gainStats().isPositive ? "arrow_drop_up" : "arrow_drop_down"}
                             </span>
-                            {Math.abs(p.allTimeGainPercentage).toFixed(2)}%
+                            {Math.abs(gainStats().percentage).toFixed(2)}%
                           </div>
                         </div>
 
                         {/* Initial / Cash Column */}
                         <div class="flex-1 flex flex-col items-end gap-0.5">
                           <span class="font-outfit font-medium text-forest text-sm">
-                            {formatPortfolioValue(p.initialCapital, currency(), false, p.nativeCurrency)}
+                            {formatPortfolioValue(p.initialCapital, currency(), false, p.nativeCurrency, p.price_currency)}
                           </span>
                           <span class="text-[11px] text-earth/60 font-medium">
                             Cash: {formatPortfolioValue(p.cash, currency(), false, p.nativeCurrency)}
