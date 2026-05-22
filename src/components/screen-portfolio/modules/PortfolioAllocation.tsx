@@ -198,10 +198,10 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
                     </div>
                     <div class="flex flex-col items-end">
                       <span class="text-sm font-outfit font-bold text-forest">
-                        {formatPortfolioValue(item.value, currency(), false, props.portfolio?.nativeCurrency)}
+                        {item.percentage.toFixed(1)}%
                       </span>
                       <span class="text-[10px] font-bold text-earth/40 uppercase tracking-wider">
-                        {item.percentage.toFixed(1)}%
+                        {formatPortfolioValue(item.value, currency(), false, props.portfolio?.nativeCurrency)}
                       </span>
                     </div>
                   </div>

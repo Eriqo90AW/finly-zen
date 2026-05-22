@@ -11,12 +11,14 @@ import { getUsdRate } from "../../../utils/format";
 import { searchTickers } from "../../../data/marketData";
 import { debounce } from "../../../utils/debounce";
 import { fetchMultiStockPrices } from "../../../data/portfolioData";
-import type { TickerSearchResult } from "../../../types";
+import type { TickerSearchResult, PortfolioAsset } from "../../../types";
+import { portfolioState } from "../../../store/portfolioStore";
 
 interface AddAssetModalProps {
   isOpen: boolean;
   onClose: () => void;
   portfolioId: string;
+  assets?: PortfolioAsset[];
 }
 
 export const AddAssetModal = (props: AddAssetModalProps) => {
@@ -33,6 +35,63 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
   const [type, setType] = createSignal<"BUY" | "SELL">("BUY");
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [isLoadingPrice, setIsLoadingPrice] = createSignal(false);
+
+  const selectedHeldAsset = () => {
+    if (type() !== "SELL" || !props.assets) return null;
+    return props.assets.find((a) => a.ticker === selectedTicker()) ?? null;
+  };
+
+  const activePortfolio = () =>
+    portfolioState.portfolios.find((p) => p.id === props.portfolioId);
+  const nativeCurrency = () => activePortfolio()?.nativeCurrency || "USD";
+
+  const formatAveragePrice = (priceVal: number) => {
+    const currencyCode = nativeCurrency();
+    if (currencyCode === "IDR") {
+      return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(priceVal);
+    } else {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(priceVal);
+    }
+  };
+
+  const handleSelectHeldAsset = (symbol: string) => {
+    if (!symbol) {
+      setTicker("");
+      setSelectedTicker(null);
+      setShares(null);
+      setPrice(null);
+      return;
+    }
+    setTicker(symbol);
+    setSelectedTicker(symbol);
+    if (symbol.toUpperCase().endsWith(".JK")) {
+      setCurrency("IDR");
+      setPriceCurrency(1);
+    } else {
+      setCurrency("USD");
+      setPriceCurrency(getUsdRate());
+    }
+    fetchAndSetPrice(symbol);
+  };
+
+  const handleTypeChange = (newType: "BUY" | "SELL") => {
+    if (newType === type()) return;
+    setType(newType);
+    setTicker("");
+    setSelectedTicker(null);
+    setShares(null);
+    setPrice(null);
+  };
 
   // Debounced search signals
   const [searchResults, setSearchResults] = createSignal<TickerSearchResult[]>(
@@ -230,14 +289,14 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                 <button
                   type="button"
                   class={`flex-1 py-2 rounded-lg font-outfit font-bold text-xs transition-all cursor-pointer ${type() === "BUY" ? "bg-white text-forest shadow-sm" : "text-earth hover:text-forest"}`}
-                  onClick={() => setType("BUY")}
+                  onClick={() => handleTypeChange("BUY")}
                 >
                   BUY
                 </button>
                 <button
                   type="button"
                   class={`flex-1 py-2 rounded-lg font-outfit font-bold text-xs transition-all cursor-pointer ${type() === "SELL" ? "bg-white text-red-600 shadow-sm" : "text-earth hover:text-red-500"}`}
-                  onClick={() => setType("SELL")}
+                  onClick={() => handleTypeChange("SELL")}
                 >
                   SELL
                 </button>
@@ -248,85 +307,117 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                 <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
                   Ticker Symbol
                 </label>
-                <div class="relative">
-                  <input
-                    type="text"
-                    value={ticker()}
-                    onInput={(e) => {
-                      const value = e.currentTarget.value.toUpperCase();
-                      setTicker(value);
-                      setSelectedTicker(null);
-                    }}
-                    onFocus={() => {
-                      if (
-                        ticker().trim().toUpperCase() !==
-                          selectedTicker()?.trim().toUpperCase() &&
-                        searchResults().length > 0
-                      ) {
-                        setShowSuggestions(true);
-                      }
-                    }}
-                    placeholder="e.g., NVDA, BTC-USD, BBCA.JK"
-                    class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
-                    required
-                  />
-                  <Show when={isLoadingResults()}>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div class="w-4 h-4 border-2 border-forest/20 border-t-forest rounded-full animate-spin" />
-                    </div>
-                  </Show>
+                <Show
+                  when={type() === "SELL"}
+                  fallback={
+                    <div class="relative">
+                      <input
+                        type="text"
+                        value={ticker()}
+                        onInput={(e) => {
+                          const value = e.currentTarget.value.toUpperCase();
+                          setTicker(value);
+                          setSelectedTicker(null);
+                        }}
+                        onFocus={() => {
+                          if (
+                            ticker().trim().toUpperCase() !==
+                              selectedTicker()?.trim().toUpperCase() &&
+                            searchResults().length > 0
+                          ) {
+                            setShowSuggestions(true);
+                          }
+                        }}
+                        placeholder="e.g., NVDA, BTC-USD, BBCA.JK"
+                        class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
+                        required
+                      />
+                      <Show when={isLoadingResults()}>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div class="w-4 h-4 border-2 border-forest/20 border-t-forest rounded-full animate-spin" />
+                        </div>
+                      </Show>
 
-                  <Show when={showSuggestions()}>
-                    <div class="absolute top-full left-0 right-0 bg-white rounded-xl shadow-xl border border-forest/10 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div class="max-h-48 overflow-y-auto custom-scrollbar-thin">
-                        <For each={searchResults()}>
-                          {(tickerItem) => (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setTicker(tickerItem.symbol);
-                                setSelectedTicker(tickerItem.symbol);
-                                setShowSuggestions(false);
-                                if (
-                                  tickerItem.symbol
-                                    .toUpperCase()
-                                    .endsWith(".JK")
-                                ) {
-                                  setCurrency("IDR");
-                                  setPriceCurrency(1);
-                                } else {
-                                  setCurrency("USD");
-                                  setPriceCurrency(getUsdRate());
-                                }
-                                fetchAndSetPrice(tickerItem.symbol);
-                              }}
-                              class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-sage/10 transition-colors border-b border-forest/5 last:border-0 text-left cursor-pointer"
-                            >
-                              <div class="flex flex-col">
-                                <span class="font-outfit font-bold text-forest text-xs">
-                                  {tickerItem.symbol}
-                                </span>
-                                <span class="text-[9px] text-earth truncate max-w-[180px]">
-                                  {tickerItem.name}
-                                </span>
-                              </div>
-                              <div class="flex flex-col items-end">
-                                <span class="text-[8px] font-bold text-forest/40 uppercase tracking-tighter">
-                                  {tickerItem.exchange}
-                                </span>
-                                <span class="text-[7px] bg-forest/5 text-forest/60 px-1 py-0.5 rounded uppercase mt-0.5">
-                                  {tickerItem.type}
-                                </span>
-                              </div>
-                            </button>
-                          )}
-                        </For>
-                      </div>
+                      <Show when={showSuggestions()}>
+                        <div class="absolute top-full left-0 right-0 bg-white rounded-xl shadow-xl border border-forest/10 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div class="max-h-48 overflow-y-auto custom-scrollbar-thin">
+                            <For each={searchResults()}>
+                              {(tickerItem) => (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setTicker(tickerItem.symbol);
+                                    setSelectedTicker(tickerItem.symbol);
+                                    setShowSuggestions(false);
+                                    if (
+                                      tickerItem.symbol
+                                        .toUpperCase()
+                                        .endsWith(".JK")
+                                    ) {
+                                      setCurrency("IDR");
+                                      setPriceCurrency(1);
+                                    } else {
+                                      setCurrency("USD");
+                                      setPriceCurrency(getUsdRate());
+                                    }
+                                    fetchAndSetPrice(tickerItem.symbol);
+                                  }}
+                                  class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-sage/10 transition-colors border-b border-forest/5 last:border-0 text-left cursor-pointer"
+                                >
+                                  <div class="flex flex-col">
+                                    <span class="font-outfit font-bold text-forest text-xs">
+                                      {tickerItem.symbol}
+                                    </span>
+                                    <span class="text-[9px] text-earth truncate max-w-[180px]">
+                                      {tickerItem.name}
+                                    </span>
+                                  </div>
+                                  <div class="flex flex-col items-end">
+                                    <span class="text-[8px] font-bold text-forest/40 uppercase tracking-tighter">
+                                      {tickerItem.exchange}
+                                    </span>
+                                    <span class="text-[7px] bg-forest/5 text-forest/60 px-1 py-0.5 rounded uppercase mt-0.5">
+                                      {tickerItem.type}
+                                    </span>
+                                  </div>
+                                </button>
+                              )}
+                            </For>
+                          </div>
+                        </div>
+                      </Show>
                     </div>
-                  </Show>
-                </div>
+                  }
+                >
+                  {/* Dropdown for SELL mode */}
+                  <div class="relative">
+                    <select
+                      value={selectedTicker() || ""}
+                      onChange={(e) => {
+                        const val = e.currentTarget.value;
+                        handleSelectHeldAsset(val);
+                      }}
+                      class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest bg-white appearance-none cursor-pointer pr-10"
+                      required
+                    >
+                      <option value="" disabled selected class="text-earth">
+                        Select an asset...
+                      </option>
+                      <For each={props.assets || []}>
+                        {(assetItem) => (
+                          <option value={assetItem.ticker} class="text-forest">
+                            {assetItem.ticker} — {assetItem.name}
+                          </option>
+                        )}
+                      </For>
+                    </select>
+                    <span class="material-icons absolute right-4 top-1/2 -translate-y-1/2 text-forest/40 pointer-events-none text-xl">
+                      expand_more
+                    </span>
+                  </div>
+                </Show>
 
-                <Show when={ticker().trim() !== "" && !isValidTicker()}>
+                <Show when={type() === "BUY" && ticker().trim() !== "" && !isValidTicker()}>
                   <p class="text-[10px] text-red-500 font-outfit mt-1 animate-pulse flex items-center gap-1">
                     <span>⚠️</span> Please select a ticker from the autocomplete
                     suggestions.
@@ -339,6 +430,11 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                 <div>
                   <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
                     Quantity
+                    <Show when={type() === "SELL" && selectedHeldAsset()}>
+                      <span class="text-spring font-bold ml-1 normal-case tracking-normal">
+                        · Owned: {Number(selectedHeldAsset()!.totalShares.toFixed(4))}
+                      </span>
+                    </Show>
                   </label>
                   <input
                     type="number"
@@ -359,6 +455,11 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                 <div>
                   <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
                     Price per Unit
+                    <Show when={type() === "SELL" && selectedHeldAsset()}>
+                      <span class="text-spring font-bold ml-1 normal-case tracking-normal">
+                        · Avg: {formatAveragePrice(selectedHeldAsset()!.averagePrice)}
+                      </span>
+                    </Show>
                   </label>
                   <div class="relative flex items-stretch border border-forest/10 focus-within:border-forest/30 rounded-xl overflow-hidden bg-white">
                     <div class="relative flex items-center bg-spring/5 px-3 cursor-pointer shrink-0 border-2 border-forest/5 rounded-l-[10px]">

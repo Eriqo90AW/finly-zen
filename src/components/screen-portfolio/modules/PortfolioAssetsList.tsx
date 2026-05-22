@@ -12,7 +12,6 @@ interface PortfolioAssetsListProps {
   assets: PortfolioAsset[];
   portfolioNativeCurrency?: 'IDR' | 'USD';
   onSelectAsset: (asset: PortfolioAsset) => void;
-  onAddAsset: () => void;
   onDeleteAsset: (assetId: string) => void;
 }
 
@@ -22,6 +21,19 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
   const [targetModalOpen, setTargetModalOpen] = createSignal(false);
   const [selectedAssetForTarget, setSelectedAssetForTarget] =
     createSignal<PortfolioAsset | null>(null);
+
+  const [activeFilters, setActiveFilters] = createSignal<Set<string>>(new Set());
+  const [filterDropdownOpen, setFilterDropdownOpen] = createSignal(false);
+
+  const toggleFilter = (filter: string) => {
+    const next = new Set(activeFilters());
+    if (next.has(filter)) {
+      next.delete(filter);
+    } else {
+      next.add(filter);
+    }
+    setActiveFilters(next);
+  };
 
   // Helper to load sorting state safely from localStorage
   const getSavedSortBy = ():
@@ -145,6 +157,24 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
     return list;
   });
 
+  // Reactively compute the filtered asset list based on underweight/overweight filters
+  const filteredAssets = createMemo(() => {
+    const list = sortedAssets();
+    const filters = activeFilters();
+    if (filters.size === 0) return list;
+
+    return list.filter((asset) => {
+      // Underweight: targetAllocation > actualAllocation
+      const isUnderweight = asset.targetAllocation > asset.actualAllocation;
+      // Overweight: targetAllocation < actualAllocation
+      const isOverweight = asset.targetAllocation < asset.actualAllocation;
+
+      if (filters.has("underweight") && isUnderweight) return true;
+      if (filters.has("overweight") && isOverweight) return true;
+      return false;
+    });
+  });
+
   const calculateGainPercentage = (asset: PortfolioAsset) => {
     const costBasis = asset.totalShares * asset.averagePrice;
     if (costBasis === 0) return 0;
@@ -198,14 +228,87 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
     <>
       <div class="premium-card overflow-hidden cursor-default">
         <div class="px-8 py-6 border-b border-forest/5 flex justify-between items-center bg-white">
-          <h4 class="font-outfit font-bold text-forest text-lg">Assets</h4>
-          <button
-            onClick={() => props.onAddAsset()}
-            class="px-4 py-2 bg-forest text-white rounded-lg text-xs font-bold hover:bg-forest/90 transition-[background-color,box-shadow] duration-200 shadow-sm hover:shadow-md cursor-pointer flex items-center gap-2"
-          >
-            <span class="material-icons text-sm">add</span>
-            ADD ASSET
-          </button>
+          <h4 class="font-outfit font-bold text-forest text-lg">Assets List</h4>
+          <div class="relative">
+            <button
+              onClick={() => setFilterDropdownOpen(!filterDropdownOpen())}
+              class={`px-4 py-1.5 rounded-lg text-xs font-bold transition-[background-color,box-shadow,color,border-color] duration-200 shadow-sm hover:shadow-md cursor-pointer flex items-center gap-2 outline-none select-none ${
+                activeFilters().size > 0
+                  ? "bg-spring/10 text-forest border border-spring/50"
+                  : "bg-white text-forest border border-forest/10 hover:bg-forest/5"
+              }`}
+            >
+              <span class="material-icons !text-sm">filter_list</span>
+              FILTER
+              <Show when={activeFilters().size > 0}>
+                <span class="ml-0.5 px-1.5 py-0.5 text-[9px] bg-forest text-white rounded-full leading-none font-bold">
+                  {activeFilters().size}
+                </span>
+              </Show>
+            </button>
+
+            {/* Dropdown checklist */}
+            <Show when={filterDropdownOpen()}>
+              <>
+                {/* Backdrop to close dropdown on click outside */}
+                <div 
+                  class="fixed inset-0 z-10 cursor-default" 
+                  onClick={() => setFilterDropdownOpen(false)}
+                />
+                <div class="absolute right-0 mt-2 w-60 bg-white border border-forest/10 rounded-xl shadow-xl z-20 py-2 cursor-default animate-fade-in origin-top-right">
+                  <div class="px-4 py-2 border-b border-forest/5 text-[10px] font-bold text-earth/60 uppercase tracking-wider">
+                    Filter by Weight
+                  </div>
+                  
+                  {/* Underweight Checkbox */}
+                  <label 
+                    class="flex items-center gap-3 px-4 py-3 hover:bg-earth/5 cursor-pointer text-xs font-outfit text-forest font-semibold transition-colors duration-150 select-none"
+                  >
+                    <input 
+                      type="checkbox"
+                      checked={activeFilters().has("underweight")}
+                      onChange={() => toggleFilter("underweight")}
+                      class="accent-forest w-4 h-4 rounded text-forest focus:ring-forest/20 cursor-pointer"
+                    />
+                    <div class="flex flex-col">
+                      <span>Underweight</span>
+                      <span class="text-[10px] text-earth/60 font-normal">Target &gt; Current allocation</span>
+                    </div>
+                  </label>
+
+                  {/* Overweight Checkbox */}
+                  <label 
+                    class="flex items-center gap-3 px-4 py-3 hover:bg-earth/5 cursor-pointer text-xs font-outfit text-forest font-semibold transition-colors duration-150 select-none"
+                  >
+                    <input 
+                      type="checkbox"
+                      checked={activeFilters().has("overweight")}
+                      onChange={() => toggleFilter("overweight")}
+                      class="accent-forest w-4 h-4 rounded text-forest focus:ring-forest/20 cursor-pointer"
+                    />
+                    <div class="flex flex-col">
+                      <span>Overweight</span>
+                      <span class="text-[10px] text-earth/60 font-normal">Target &lt; Current allocation</span>
+                    </div>
+                  </label>
+
+                  <Show when={activeFilters().size > 0}>
+                    <div class="px-4 py-1.5 border-t border-forest/5 flex justify-end">
+                      <button 
+                        onClick={() => {
+                          setActiveFilters(new Set<string>());
+                          setFilterDropdownOpen(false);
+                        }}
+                        class="text-[10px] font-bold text-rose-500 hover:underline bg-transparent border-0 cursor-pointer p-0"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  </Show>
+                </div>
+              </>
+            </Show>
+          </div>
         </div>
 
         <div class="flex flex-col min-w-[900px]">
@@ -345,11 +448,12 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
               }
             >
               <For
-                each={sortedAssets()}
+                each={filteredAssets()}
                 fallback={
                   <div class="px-8 py-16 text-center text-earth/40 italic font-outfit">
-                    No assets in this portfolio yet. Click "+ Add Asset" to
-                    start.
+                    {activeFilters().size > 0
+                      ? "No assets match the active filters."
+                      : "No assets in this portfolio yet. Click \"+ Add Assets\" at the top to start."}
                   </div>
                 }
               >

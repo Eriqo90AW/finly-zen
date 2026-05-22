@@ -99,7 +99,6 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         assets={props.portfolio?.assets || []}
         portfolioNativeCurrency={props.portfolio?.nativeCurrency}
         onSelectAsset={(a) => setSelectedAsset(a)}
-        onAddAsset={() => setShowAddAssetModal(true)}
         onDeleteAsset={(assetId) => {
           if (!props.portfolio) return;
           if (
@@ -139,6 +138,7 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         isOpen={showAddAssetModal() && !!props.portfolio}
         onClose={() => setShowAddAssetModal(false)}
         portfolioId={props.portfolio?.id || ""}
+        assets={props.portfolio?.assets || []}
       />
 
       {/* Add Capital Modal */}
