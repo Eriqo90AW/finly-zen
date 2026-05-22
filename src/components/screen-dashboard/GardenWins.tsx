@@ -364,7 +364,7 @@ export const GardenWins = (props: GardenWinsProps) => {
               Insight
             </p>
           </div>
-          <p class="text-sm font-outfit">
+          <p class="text-[12px] font-outfit">
             {stats()!.totalExpensesDiffPct < 0
               ? `Your total expenses are ${Math.abs(Math.round(stats()!.totalExpensesDiffPct))}% lower than last month.`
               : `Your total expenses are ${Math.round(stats()!.totalExpensesDiffPct)}% higher than last month.`}
