@@ -10,6 +10,7 @@ import { useNavigate } from "@solidjs/router";
 interface PortfolioAssetsListProps {
   portfolioId: string;
   assets: PortfolioAsset[];
+  portfolioNativeCurrency?: 'IDR' | 'USD';
   onSelectAsset: (asset: PortfolioAsset) => void;
   onAddAsset: () => void;
   onDeleteAsset: (assetId: string) => void;
@@ -456,20 +457,22 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                           {formatPortfolioValue(
                             effectiveCurrentValue,
                             currency(),
+                            false,
+                            props.portfolioNativeCurrency,
                           )}
                         </span>
                         <span class="text-[11px] text-earth/60 font-medium">
-                          {formatPortfolioValue(costBasis, currency())}
+                          {formatPortfolioValue(costBasis, currency(), false, props.portfolioNativeCurrency)}
                         </span>
                       </div>
 
                       {/* Price / Avg Column */}
                       <div class="flex-1 flex flex-col items-end gap-0.5">
                         <span class="font-outfit font-medium text-forest text-sm">
-                          {formatPortfolioValue(activePrice, currency())}
+                          {formatPortfolioValue(activePrice, currency(), false, props.portfolioNativeCurrency)}
                         </span>
                         <span class="text-[11px] text-earth/60 font-medium">
-                          {formatPortfolioValue(asset.averagePrice, currency())}
+                          {formatPortfolioValue(asset.averagePrice, currency(), false, props.portfolioNativeCurrency)}
                         </span>
                       </div>
 
@@ -482,6 +485,8 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                           {formatPortfolioValue(
                             effectiveTotalGainLoss,
                             currency(),
+                            false,
+                            props.portfolioNativeCurrency,
                           )}
                         </span>
                         <div

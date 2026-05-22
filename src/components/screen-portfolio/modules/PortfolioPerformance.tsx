@@ -15,6 +15,7 @@ import type { PortfolioHistoryPoint } from "../../../types";
 
 interface PerformanceHistoryChartProps {
   history?: PortfolioHistoryPoint[];
+  nativeCurrency?: 'IDR' | 'USD';
 }
 
 export const PerformanceHistoryChart = (
@@ -154,6 +155,7 @@ export const PerformanceHistoryChart = (
               val,
               untrack(() => currency()),
               true,
+              props.nativeCurrency,
             ),
         },
       },
@@ -192,6 +194,8 @@ export const PerformanceHistoryChart = (
                 ${formatPortfolioValue(
                   val,
                   untrack(() => currency()),
+                  false,
+                  props.nativeCurrency,
                 )}
               </span>
             </div>
@@ -230,6 +234,7 @@ export const PerformanceHistoryChart = (
             }}
           </For>
         </div>
+
       </div>
 
       {/* Period Stats Summary */}
@@ -246,7 +251,7 @@ export const PerformanceHistoryChart = (
                     {isGain() ? "trending_up" : "trending_down"}
                   </span>
                   {isGain() ? "+" : ""}
-                  {formatPortfolioValue(stats().change, currency())}
+                  {formatPortfolioValue(stats().change, currency(), false, props.nativeCurrency)}
                 </div>
                 <span
                   class={`text-xs font-bold ${isGain() ? "text-spring" : "text-red-500"}`}

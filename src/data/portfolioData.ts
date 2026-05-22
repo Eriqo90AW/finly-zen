@@ -84,7 +84,7 @@ export async function getPortfolios(): Promise<PortfolioDB[]> {
   return data || [];
 }
 
-export async function createPortfolioDB(name: string, initialCapital: number): Promise<PortfolioDB> {
+export async function createPortfolioDB(name: string, initialCapital: number, priceCurrency: number): Promise<PortfolioDB> {
   const { data, error } = await supabase
     .from("portfolios")
     .insert({
@@ -92,6 +92,7 @@ export async function createPortfolioDB(name: string, initialCapital: number): P
       name,
       initial_capital: initialCapital,
       cash: initialCapital,
+      price_currency: priceCurrency,
     })
     .select()
     .single();

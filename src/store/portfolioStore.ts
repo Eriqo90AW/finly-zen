@@ -79,6 +79,9 @@ const computePortfolioState = (
   const assets: PortfolioAsset[] = [];
   const tickers = Array.from(new Set(txs.map((tx) => tx.asset_ticker.toUpperCase())));
 
+  const portfolioRate = Number(p.price_currency || 1);
+  const isUSD = portfolioRate > 1;
+
   tickers.forEach((ticker) => {
     const assetTxs = txs.filter((t) => t.asset_ticker.toUpperCase() === ticker);
     let totalShares = 0;
@@ -130,17 +133,28 @@ const computePortfolioState = (
         return regularPriceNative;
       })();
 
-      const livePriceIDR = assetCurrency === "USD" ? activePriceNative * getUsdRate() : activePriceNative;
+      const livePrice = isUSD
+        ? (assetCurrency === "USD" ? activePriceNative : activePriceNative / getUsdRate())
+        : (assetCurrency === "USD" ? activePriceNative * getUsdRate() : activePriceNative);
 
-      const prePriceIDR = prePriceNative !== null
-        ? (assetCurrency === "USD" ? prePriceNative * getUsdRate() : prePriceNative)
-        : null;
-      const postPriceIDR = postPriceNative !== null
-        ? (assetCurrency === "USD" ? postPriceNative * getUsdRate() : postPriceNative)
+      const prePrice = prePriceNative !== null
+        ? (isUSD
+            ? (assetCurrency === "USD" ? prePriceNative : prePriceNative / getUsdRate())
+            : (assetCurrency === "USD" ? prePriceNative * getUsdRate() : prePriceNative))
         : null;
 
-      const currentValue = totalShares * livePriceIDR;
-      const costBasis = totalShares * averagePriceIDR;
+      const postPrice = postPriceNative !== null
+        ? (isUSD
+            ? (assetCurrency === "USD" ? postPriceNative : postPriceNative / getUsdRate())
+            : (assetCurrency === "USD" ? postPriceNative * getUsdRate() : postPriceNative))
+        : null;
+
+      const averagePrice = isUSD
+        ? (assetCurrency === "USD" ? averagePriceNative : averagePriceNative / getUsdRate())
+        : averagePriceIDR;
+
+      const currentValue = totalShares * livePrice;
+      const costBasis = totalShares * averagePrice;
       const totalGainLoss = currentValue - costBasis;
 
       // Load target allocation from localStorage if available
@@ -163,16 +177,19 @@ const computePortfolioState = (
         actualAllocation: 0,
         targetAllocation,
         totalShares,
-        averagePrice: averagePriceIDR,
-        currentPrice: livePriceIDR,
-        preMarketPrice: prePriceIDR,
-        postMarketPrice: postPriceIDR,
+        averagePrice,
+        currentPrice: livePrice,
+        preMarketPrice: prePrice,
+        postMarketPrice: postPrice,
       });
     }
   });
 
+  const initialCapital = Number(p.initial_capital);
+  const portfolioCash = Number(p.cash);
+
   const assetsValue = assets.reduce((sum, a) => sum + a.currentValue, 0);
-  const totalValue = Number(p.cash) + assetsValue;
+  const totalValue = portfolioCash + assetsValue;
 
   // Compute allocations
   const updatedAssets = assets.map((a) => ({
@@ -180,7 +197,6 @@ const computePortfolioState = (
     actualAllocation: totalValue > 0 ? (a.currentValue / totalValue) * 100 : 0,
   }));
 
-  const initialCapital = Number(p.initial_capital);
   const allTimeGain = totalValue - initialCapital;
   const allTimeGainPercentage = initialCapital > 0 ? (allTimeGain / initialCapital) * 100 : 0;
 
@@ -193,17 +209,32 @@ const computePortfolioState = (
   return {
     id: p.id,
     name: p.name,
-    cash: Number(p.cash),
+    cash: portfolioCash,
     initialCapital,
-    totalBuyingPower: Number(p.cash),
+    totalBuyingPower: portfolioCash,
     totalValue,
     allTimeGain,
     allTimeGainPercentage,
     assets: updatedAssets,
+    price_currency: portfolioRate,
+    nativeCurrency: isUSD ? 'USD' : 'IDR',
     transactions: txs.map((tx) => {
       const qty = Number(tx.qty);
       const price = Number(tx.price_per_unit);
-      const rate = Number(tx.price_currency);
+      const rate = Number(tx.price_currency || 1);
+      const txCurrency = tx.currency || "USD";
+
+      let pricePerShare = price;
+      if (isUSD) {
+        if (txCurrency !== "USD") {
+          pricePerShare = price / rate;
+        }
+      } else {
+        if (txCurrency === "USD") {
+          pricePerShare = price * rate;
+        }
+      }
+
       return {
         id: tx.id,
         assetId: tx.asset_ticker,
@@ -211,8 +242,8 @@ const computePortfolioState = (
         type: tx.type,
         date: tx.transaction_date,
         shares: qty,
-        pricePerShare: price * rate,
-        totalAmount: qty * price * rate,
+        pricePerShare: pricePerShare,
+        totalAmount: qty * pricePerShare,
       };
     }),
     history,
@@ -293,10 +324,10 @@ export const refreshPortfolio = async (portfolioId: string) => {
   }
 };
 
-export const createPortfolio = async (name: string, initialCash: number) => {
+export const createPortfolio = async (name: string, initialCash: number, priceCurrency: number) => {
   setPortfolioState("isLoading", true);
   try {
-    await createPortfolioDB(name, initialCash);
+    await createPortfolioDB(name, initialCash, priceCurrency);
     await loadPortfolios();
   } catch (e) {
     console.error("Failed to create portfolio:", e);
@@ -374,15 +405,39 @@ export const addTransactionToPortfolio = async (
     // 3. Update cash balance in portfolio DB
     const { data: pData, error: pError } = await supabase
       .from("portfolios")
-      .select("cash")
+      .select("cash, price_currency")
       .eq("id", portfolioId)
       .single();
 
     if (pError) throw pError;
 
-    const amountIDR = txParams.qty * txParams.pricePerUnit * txParams.priceCurrency;
-    const cashChange = txParams.type === "BUY" ? -amountIDR : amountIDR;
-    const newCash = Number(pData.cash) + cashChange;
+    const portfolioRate = Number(pData.price_currency || 1);
+    let cashChangeNative = 0;
+    const txAmountNative = txParams.qty * txParams.pricePerUnit;
+
+    if (portfolioRate > 1) {
+      // Portfolio is USD-based (cash in DB is stored in USD)
+      if (txParams.currency === "USD") {
+        // Transaction is in USD, so it directly affects USD cash
+        cashChangeNative = txParams.type === "BUY" ? -txAmountNative : txAmountNative;
+      } else {
+        // Transaction is in IDR, so we convert the IDR amount to USD using transaction priceCurrency
+        const amountUSD = txAmountNative / txParams.priceCurrency;
+        cashChangeNative = txParams.type === "BUY" ? -amountUSD : amountUSD;
+      }
+    } else {
+      // Portfolio is IDR-based (cash in DB is stored in IDR)
+      if (txParams.currency === "USD") {
+        // Transaction is in USD, so we convert the USD amount to IDR using transaction priceCurrency
+        const amountIDR = txAmountNative * txParams.priceCurrency;
+        cashChangeNative = txParams.type === "BUY" ? -amountIDR : amountIDR;
+      } else {
+        // Transaction is in IDR, so it directly affects IDR cash
+        cashChangeNative = txParams.type === "BUY" ? -txAmountNative : txAmountNative;
+      }
+    }
+
+    const newCash = Number(pData.cash) + cashChangeNative;
 
     await updatePortfolioCash(portfolioId, newCash);
 
@@ -400,7 +455,7 @@ export const deleteAssetFromPortfolio = async (portfolioId: string, assetId: str
   try {
     const { data: p, error: pError } = await supabase
       .from("portfolios")
-      .select("cash")
+      .select("cash, price_currency")
       .eq("id", portfolioId)
       .single();
 
@@ -408,23 +463,50 @@ export const deleteAssetFromPortfolio = async (portfolioId: string, assetId: str
 
     const { data: txs, error: txsError } = await supabase
       .from("portfolio_transactions")
-      .select("type, qty, price_per_unit, price_currency")
+      .select("type, qty, price_per_unit, price_currency, currency")
       .eq("portfolio_id", portfolioId)
       .eq("asset_ticker", assetId);
 
     if (txsError) throw txsError;
 
-    let cashAdjustment = 0;
+    const portfolioRate = Number(p.price_currency || 1);
+    let cashAdjustmentNative = 0;
+
     (txs || []).forEach((tx) => {
-      const amountIDR = Number(tx.qty) * Number(tx.price_per_unit) * Number(tx.price_currency);
-      if (tx.type === "BUY") {
-        cashAdjustment += amountIDR;
+      const qty = Number(tx.qty);
+      const price = Number(tx.price_per_unit);
+      const txRate = Number(tx.price_currency || 1);
+      const txCurrency = tx.currency || "USD";
+
+      let amountNative = 0;
+      const txAmount = qty * price;
+
+      if (portfolioRate > 1) {
+        // Portfolio is USD-based
+        if (txCurrency === "USD") {
+          amountNative = txAmount;
+        } else {
+          amountNative = txAmount / txRate;
+        }
       } else {
-        cashAdjustment -= amountIDR;
+        // Portfolio is IDR-based
+        if (txCurrency === "USD") {
+          amountNative = txAmount * txRate;
+        } else {
+          amountNative = txAmount;
+        }
+      }
+
+      if (tx.type === "BUY") {
+        // Deleting a BUY transaction returns the cash back
+        cashAdjustmentNative += amountNative;
+      } else {
+        // Deleting a SELL transaction subtracts the cash back
+        cashAdjustmentNative -= amountNative;
       }
     });
 
-    const newCash = Number(p.cash) + cashAdjustment;
+    const newCash = Number(p.cash) + cashAdjustmentNative;
 
     await updatePortfolioCash(portfolioId, newCash);
 
@@ -449,7 +531,7 @@ export const addCapitalToPortfolio = async (portfolioId: string, amount: number,
   try {
     const { data: p, error } = await supabase
       .from("portfolios")
-      .select("cash, initial_capital")
+      .select("cash, initial_capital, price_currency")
       .eq("id", portfolioId)
       .single();
 
@@ -457,15 +539,33 @@ export const addCapitalToPortfolio = async (portfolioId: string, amount: number,
 
     const currentCash = Number(p.cash);
     const currentInitial = Number(p.initial_capital);
+    const oldPriceCurrency = Number(p.price_currency || 1);
 
     const newCash = isAdjustment ? currentCash : currentCash + amount;
     const newInitialCapital = isAdjustment ? amount : currentInitial + amount;
+
+    let newPriceCurrency = oldPriceCurrency;
+    if (oldPriceCurrency > 1) {
+      const currentExchangeRate = getUsdRate();
+      if (!isAdjustment) {
+        const newInitial = currentInitial + amount;
+        if (newInitial > 0) {
+          newPriceCurrency = ((currentInitial * oldPriceCurrency) + (amount * currentExchangeRate)) / newInitial;
+        }
+      } else {
+        if (amount > currentInitial && amount > 0) {
+          const diff = amount - currentInitial;
+          newPriceCurrency = ((currentInitial * oldPriceCurrency) + (diff * currentExchangeRate)) / amount;
+        }
+      }
+    }
 
     const { error: updateError } = await supabase
       .from("portfolios")
       .update({
         cash: newCash,
         initial_capital: newInitialCapital,
+        price_currency: newPriceCurrency,
       })
       .eq("id", portfolioId);
 

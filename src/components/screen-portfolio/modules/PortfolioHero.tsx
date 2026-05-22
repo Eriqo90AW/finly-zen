@@ -56,7 +56,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
             </div>
             <div class="flex flex-col">
               <span class="text-[56px] font-outfit font-[500] text-forest leading-none tracking-tighter">
-                {formatPortfolioValue(props.portfolio!.totalValue, currency())}
+                {formatPortfolioValue(props.portfolio!.totalValue, currency(), false, props.portfolio!.nativeCurrency)}
               </span>
               <div class="flex items-center gap-2 mt-4 justify-center md:justify-start">
                 <div
@@ -70,6 +70,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
                     props.portfolio!.allTimeGain,
                     currency(),
                     true,
+                    props.portfolio!.nativeCurrency,
                   )}
                 </div>
                 <span
@@ -97,7 +98,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
               </div>
               <div class="flex items-center gap-1.5">
                 <span class="text-xl font-outfit font-bold text-forest leading-none">
-                  {formatPortfolioValue(props.portfolio!.cash, currency())}
+                  {formatPortfolioValue(props.portfolio!.cash, currency(), false, props.portfolio!.nativeCurrency)}
                 </span>
                 <span class="text-[10px] font-[900] text-orange-500 bg-orange-300/30 px-1.5 py-0.5 rounded-md border border-spring/20">
                   {props.portfolio!.totalValue > 0
@@ -126,6 +127,8 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
                 {formatPortfolioValue(
                   props.portfolio!.totalValue - props.portfolio!.cash,
                   currency(),
+                  false,
+                  props.portfolio!.nativeCurrency,
                 )}
               </span>
             </div>

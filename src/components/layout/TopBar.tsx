@@ -226,7 +226,7 @@ const TopBar = () => {
           >
             <div class="flex items-center gap-2">
               {/* Ticking WIB Clock */}
-              <div class="flex items-center justify-between px-3 py-2.5 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[11px] font-bold w-[11.5rem] overflow-hidden text-nowrap shrink-0">
+              <div class="flex items-center justify-between px-3 py-2.5 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[11px] font-bold w-[11.6rem] overflow-hidden text-nowrap shrink-0">
                 <div class="flex items-center gap-1.5 truncate">
                   <span class="material-icons !text-[16.5px] text-forest/50 shrink-0">
                     schedule
@@ -319,7 +319,7 @@ const TopBar = () => {
               <div class="w-px h-6 mx-2 bg-forest/10" />
 
               {/* Market Session Indicator */}
-              <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 w-[14.75rem]">
+              <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 w-[15rem]">
                 <div
                   class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
                 ></div>

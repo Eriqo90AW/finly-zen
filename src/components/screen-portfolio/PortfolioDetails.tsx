@@ -85,12 +85,16 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
       <div class="grid grid-cols-12 gap-6 mb-8">
         <PortfolioCharts portfolio={props.portfolio} />
         <div class="premium-card p-6 col-span-8 h-[480px] flex flex-col cursor-default">
-          <PerformanceHistoryChart history={props.portfolio?.history} />
+          <PerformanceHistoryChart 
+            history={props.portfolio?.history} 
+            nativeCurrency={props.portfolio?.nativeCurrency} 
+          />
         </div>
       </div>
       <PortfolioAssetsList
         portfolioId={props.portfolio?.id || ""}
         assets={props.portfolio?.assets || []}
+        portfolioNativeCurrency={props.portfolio?.nativeCurrency}
         onSelectAsset={(a) => setSelectedAsset(a)}
         onAddAsset={() => setShowAddAssetModal(true)}
         onDeleteAsset={(assetId) => {
@@ -113,6 +117,7 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         onClose={() => setSelectedAsset(null)}
         portfolioTotalValue={props.portfolio?.totalValue ?? 0}
         portfolioId={props.portfolio?.id ?? ""}
+        portfolioNativeCurrency={props.portfolio?.nativeCurrency}
         onDeleteAsset={(assetId) => {
           if (!props.portfolio) return;
           if (

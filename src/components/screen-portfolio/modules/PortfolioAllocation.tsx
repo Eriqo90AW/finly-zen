@@ -153,7 +153,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
                     Assets Value
                   </span>
                   <span class="text-[12px] font-bold text-terracotta-dark leading-tight">
-                    {formatPortfolioValue(assetsValue(), currency())}
+                    {formatPortfolioValue(assetsValue(), currency(), false, props.portfolio?.nativeCurrency)}
                   </span>
 
                   <div class="w-16 h-px bg-forest/15 my-1" />
@@ -165,6 +165,8 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
                     {formatPortfolioValue(
                       props.portfolio?.totalValue || 0,
                       currency(),
+                      false,
+                      props.portfolio?.nativeCurrency,
                     )}
                   </span>
                 </div>
@@ -196,7 +198,7 @@ export const PortfolioCharts = (props: PortfolioChartsProps) => {
                     </div>
                     <div class="flex flex-col items-end">
                       <span class="text-sm font-outfit font-bold text-forest">
-                        {formatPortfolioValue(item.value, currency())}
+                        {formatPortfolioValue(item.value, currency(), false, props.portfolio?.nativeCurrency)}
                       </span>
                       <span class="text-[10px] font-bold text-earth/40 uppercase tracking-wider">
                         {item.percentage.toFixed(1)}%

@@ -4,6 +4,8 @@ import {
   formatNumericInput,
   formatRupiah,
   formatUSD,
+  formatUSDInput,
+  getCurrencyPills,
   getUsdRate,
 } from "../../../utils/format";
 
@@ -17,22 +19,6 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
   const [pCash, setPCash] = createSignal("");
   const [currency, setCurrency] = createSignal<"IDR" | "USD">("IDR");
 
-  const formatUSDInput = (val: string): string => {
-    if (!val) return "";
-    const parts = val.split(".");
-    const integerPart = parseInt(parts[0].replace(/\D/g, ""));
-    if (isNaN(integerPart) && parts.length === 1) return "";
-
-    const formattedInteger = isNaN(integerPart)
-      ? ""
-      : new Intl.NumberFormat("en-US").format(integerPart);
-
-    if (parts.length > 1) {
-      return formattedInteger + "." + parts[1];
-    }
-    return formattedInteger;
-  };
-
   const formatInput = (val: string) => {
     return currency() === "USD" ? formatUSDInput(val) : formatNumericInput(val);
   };
@@ -41,11 +27,8 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
     e.preventDefault();
     const enteredValue = parseFloat(pCash()) || 0;
     if (pName() && enteredValue >= 0) {
-      const cashValue =
-        currency() === "USD"
-          ? Math.round(enteredValue * getUsdRate())
-          : enteredValue;
-      createPortfolio(pName(), cashValue);
+      const priceCurrency = currency() === "USD" ? getUsdRate() : 1;
+      createPortfolio(pName(), enteredValue, priceCurrency);
       setPName("");
       setPCash("");
       props.onClose();
@@ -64,21 +47,7 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
     }
   };
 
-  const pills = () => {
-    if (currency() === "IDR") {
-      return [
-        { label: "Rp5.000.000", value: "5000000" },
-        { label: "Rp10.000.000", value: "10000000" },
-        { label: "Rp50.000.000", value: "50000000" },
-      ];
-    } else {
-      return [
-        { label: "$500", value: "500" },
-        { label: "$1,000", value: "1000" },
-        { label: "$5,000", value: "5000" },
-      ];
-    }
-  };
+  const pills = () => getCurrencyPills(currency() === "IDR");
 
   return (
     <Show when={props.isOpen}>
@@ -110,81 +79,88 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
               />
             </div>
             <div>
-              <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
-                Initial Cash
-              </label>
-              <div class="flex gap-3">
-                <div class="relative flex-1">
-                  <span class="absolute left-[1px] top-[1px] bottom-[1px] min-w-[44px] rounded-l-xl bg-spring/5 border-r border-forest/10 flex items-center justify-center text-sm font-outfit font-bold text-forest/40">
-                    {currency() === "IDR" ? "Rp" : "$"}
-                  </span>
-                  <input
-                    type="text"
-                    inputmode="decimal"
-                    value={formatInput(pCash())}
-                    onInput={(e) => {
-                      let val = e.currentTarget.value;
-                      if (currency() === "USD") {
-                        val = val.replace(/,/g, ".");
-                        const parts = val.split(".");
-                        if (parts.length > 1) {
-                          val =
-                            parts[0].replace(/\D/g, "") +
-                            "." +
-                            parts[1].slice(0, 2).replace(/\D/g, "");
+              <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2">
+                  <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
+                    Initial Cash
+                  </label>
+                  <div class="relative">
+                    <span class="absolute left-[1px] top-[1px] bottom-[1px] min-w-[44px] rounded-l-xl bg-spring/5 border-r border-forest/10 flex items-center justify-center text-sm font-outfit font-bold text-forest/40">
+                      {currency() === "IDR" ? "Rp" : "$"}
+                    </span>
+                    <input
+                      type="text"
+                      inputmode="decimal"
+                      value={formatInput(pCash())}
+                      onInput={(e) => {
+                        let val = e.currentTarget.value;
+                        if (currency() === "USD") {
+                          val = val.replace(/,/g, ".");
+                          const parts = val.split(".");
+                          if (parts.length > 1) {
+                            val =
+                              parts[0].replace(/\D/g, "") +
+                              "." +
+                              parts[1].slice(0, 2).replace(/\D/g, "");
+                          } else {
+                            val = val.replace(/\D/g, "");
+                          }
+                          setPCash(val);
                         } else {
-                          val = val.replace(/\D/g, "");
+                          const rawValue = val.replace(/\D/g, "");
+                          setPCash(rawValue);
                         }
-                        setPCash(val);
-                      } else {
-                        const rawValue = val.replace(/\D/g, "");
-                        setPCash(rawValue);
-                      }
-                    }}
-                    placeholder="0"
-                    class="w-full pl-14 pr-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
-                    required
-                  />
+                      }}
+                      placeholder="0"
+                      class="w-full pl-14 pr-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
+                      required
+                    />
+                  </div>
                 </div>
-                <div class="flex p-1 rounded-xl border border-forest/10 bg-spring/5 items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (currency() === "IDR") return;
-                      setCurrency("IDR");
-                      const currentVal = parseFloat(pCash()) || 0;
-                      if (currentVal > 0) {
-                        const idrValue = currentVal * getUsdRate();
-                        setPCash(Math.round(idrValue).toString());
-                      }
-                    }}
-                    class={`px-3 py-2 rounded-lg text-xs font-outfit font-bold transition-all cursor-pointer ${
-                      currency() === "IDR"
-                        ? "bg-white text-forest shadow-sm"
-                        : "text-forest/40 hover:text-forest"
-                    }`}
-                  >
-                    IDR
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (currency() === "USD") return;
-                      setCurrency("USD");
-                      const currentVal = parseFloat(pCash()) || 0;
-                      if (currentVal > 0) {
-                        const usdValue = currentVal / getUsdRate();
-                        setPCash(Number(usdValue.toFixed(2)).toString());
-                      }
-                    }}
-                    class={`px-3 py-2 rounded-lg text-xs font-outfit font-bold transition-all cursor-pointer ${
-                      currency() === "USD"
-                        ? "bg-white text-forest shadow-sm"
-                        : "text-forest/40 hover:text-forest"
-                    }`}
-                  >
-                    USD
-                  </button>
+                <div>
+                  <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
+                    Account Type
+                  </label>
+                  <div class="flex p-1 h-[46px] rounded-xl border border-forest/10 bg-spring/5 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (currency() === "IDR") return;
+                        setCurrency("IDR");
+                        const currentVal = parseFloat(pCash()) || 0;
+                        if (currentVal > 0) {
+                          const idrValue = currentVal * getUsdRate();
+                          setPCash(Math.round(idrValue).toString());
+                        }
+                      }}
+                      class={`flex-1 h-full rounded-lg text-xs font-outfit font-bold transition-all cursor-pointer ${
+                        currency() === "IDR"
+                          ? "bg-white text-forest shadow-sm"
+                          : "text-forest/40 hover:text-forest"
+                      }`}
+                    >
+                      Rp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (currency() === "USD") return;
+                        setCurrency("USD");
+                        const currentVal = parseFloat(pCash()) || 0;
+                        if (currentVal > 0) {
+                          const usdValue = currentVal / getUsdRate();
+                          setPCash(Number(usdValue.toFixed(2)).toString());
+                        }
+                      }}
+                      class={`flex-1 h-full rounded-lg text-xs font-outfit font-bold transition-all cursor-pointer ${
+                        currency() === "USD"
+                          ? "bg-white text-forest shadow-sm"
+                          : "text-forest/40 hover:text-forest"
+                      }`}
+                    >
+                      USD
+                    </button>
+                  </div>
                 </div>
               </div>
 

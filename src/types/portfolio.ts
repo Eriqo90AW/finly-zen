@@ -46,6 +46,8 @@ export interface Portfolio {
   assets: PortfolioAsset[];
   transactions: PortfolioTransaction[];
   history: PortfolioHistoryPoint[];
+  price_currency?: number;
+  nativeCurrency: 'IDR' | 'USD';
 }
 
 // --- DB Row Interfaces ---
@@ -55,6 +57,7 @@ export interface PortfolioDB {
   name: string;
   initial_capital: number;
   cash: number;
+  price_currency?: number;
   created_at: string;
   updated_at: string;
 }

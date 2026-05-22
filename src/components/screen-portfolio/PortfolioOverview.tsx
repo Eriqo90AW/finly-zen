@@ -145,7 +145,7 @@ export const PortfolioOverview = () => {
                         {/* Total Value Column */}
                         <div class="flex-1 flex flex-col items-end gap-0.5">
                           <span class="font-outfit font-bold text-forest text-sm">
-                            {formatPortfolioValue(p.totalValue, currency())}
+                            {formatPortfolioValue(p.totalValue, currency(), false, p.nativeCurrency)}
                           </span>
                         </div>
 
@@ -159,6 +159,7 @@ export const PortfolioOverview = () => {
                               p.allTimeGain,
                               currency(),
                               true,
+                              p.nativeCurrency,
                             )}
                           </span>
                           <div
@@ -174,10 +175,10 @@ export const PortfolioOverview = () => {
                         {/* Initial / Cash Column */}
                         <div class="flex-1 flex flex-col items-end gap-0.5">
                           <span class="font-outfit font-medium text-forest text-sm">
-                            {formatPortfolioValue(p.initialCapital, currency())}
+                            {formatPortfolioValue(p.initialCapital, currency(), false, p.nativeCurrency)}
                           </span>
                           <span class="text-[11px] text-earth/60 font-medium">
-                            Cash: {formatPortfolioValue(p.cash, currency())}
+                            Cash: {formatPortfolioValue(p.cash, currency(), false, p.nativeCurrency)}
                           </span>
                         </div>
 

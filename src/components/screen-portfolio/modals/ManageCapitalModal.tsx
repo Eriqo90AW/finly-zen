@@ -1,5 +1,13 @@
-import { createSignal, Show } from "solid-js";
-import { addCapitalToPortfolio } from "../../../store/portfolioStore";
+import { createSignal, Show, For } from "solid-js";
+import { addCapitalToPortfolio, portfolioState } from "../../../store/portfolioStore";
+import {
+  formatNumericInput,
+  formatRupiah,
+  formatUSD,
+  formatUSDInput,
+  getCurrencyPills,
+  getUsdRate,
+} from "../../../utils/format";
 
 interface ManageCapitalModalProps {
   isOpen: boolean;
@@ -8,18 +16,40 @@ interface ManageCapitalModalProps {
 }
 
 export const ManageCapitalModal = (props: ManageCapitalModalProps) => {
-  const [capitalAmount, setCapitalAmount] = createSignal(0);
+  const [capitalAmount, setCapitalAmount] = createSignal("");
   const [isAdjustment, setIsAdjustment] = createSignal(false);
+
+  const portfolio = () => portfolioState.portfolios.find((p) => p.id === props.portfolioId);
+  const isUSDPortfolio = () => (portfolio()?.price_currency ?? 1) > 1;
+
+  const formatInput = (val: string) => {
+    return isUSDPortfolio() ? formatUSDInput(val) : formatNumericInput(val);
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
-    if (capitalAmount() >= 0) {
-      addCapitalToPortfolio(props.portfolioId, capitalAmount(), isAdjustment());
-      setCapitalAmount(0);
+    const enteredValue = parseFloat(capitalAmount()) || 0;
+    if (enteredValue >= 0) {
+      addCapitalToPortfolio(props.portfolioId, enteredValue, isAdjustment());
+      setCapitalAmount("");
       setIsAdjustment(false);
       props.onClose();
     }
   };
+
+  const reverseConversion = () => {
+    const rawVal = parseFloat(capitalAmount()) || 0;
+    if (rawVal === 0) return "";
+    if (!isUSDPortfolio()) {
+      const usdValue = rawVal / getUsdRate();
+      return `≈ ${formatUSD(usdValue, 2)}`;
+    } else {
+      const idrValue = rawVal * getUsdRate();
+      return `≈ ${formatRupiah(idrValue)}`;
+    }
+  };
+
+  const pills = () => getCurrencyPills(!isUSDPortfolio());
 
   return (
     <Show when={props.isOpen}>
@@ -60,17 +90,61 @@ export const ManageCapitalModal = (props: ManageCapitalModalProps) => {
             <div>
               <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
                 {isAdjustment()
-                  ? "Initial Capital Basis (IDR)"
-                  : "Amount to Add (IDR)"}
+                  ? `Initial Capital Basis (${isUSDPortfolio() ? "USD" : "IDR"})`
+                  : `Amount to Add (${isUSDPortfolio() ? "USD" : "IDR"})`}
               </label>
-              <input
-                type="number"
-                value={capitalAmount()}
-                onInput={(e) => setCapitalAmount(Number(e.currentTarget.value))}
-                placeholder="0"
-                class="w-full px-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
-                required
-              />
+              <div class="relative">
+                <span class="absolute left-[1px] top-[1px] bottom-[1px] min-w-[44px] rounded-l-xl bg-spring/5 border-r border-forest/10 flex items-center justify-center text-sm font-outfit font-bold text-forest/40">
+                  {isUSDPortfolio() ? "$" : "Rp"}
+                </span>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  value={formatInput(capitalAmount())}
+                  onInput={(e) => {
+                    let val = e.currentTarget.value;
+                    if (isUSDPortfolio()) {
+                      val = val.replace(/,/g, ".");
+                      const parts = val.split(".");
+                      if (parts.length > 1) {
+                        val =
+                          parts[0].replace(/\D/g, "") +
+                          "." +
+                          parts[1].slice(0, 2).replace(/\D/g, "");
+                      } else {
+                        val = val.replace(/\D/g, "");
+                      }
+                      setCapitalAmount(val);
+                    } else {
+                      const rawValue = val.replace(/\D/g, "");
+                      setCapitalAmount(rawValue);
+                    }
+                  }}
+                  placeholder="0"
+                  class="w-full pl-14 pr-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
+                  required
+                />
+              </div>
+
+              {/* Quick choosing pills */}
+              <div class="flex flex-wrap gap-2 mt-3">
+                <For each={pills()}>
+                  {(pill) => (
+                    <button
+                      type="button"
+                      onClick={() => setCapitalAmount(pill.value)}
+                      class="px-3 py-1.5 bg-spring/5 border border-forest/5 hover:border-forest/20 rounded-full text-xs font-outfit font-bold text-forest hover:bg-forest hover:text-white transition-all cursor-pointer"
+                    >
+                      {pill.label}
+                    </button>
+                  )}
+                </For>
+              </div>
+
+              {/* Reverse conversion display */}
+              <div class="mt-2 text-xs font-outfit text-earth pl-1 min-h-[16px]">
+                {reverseConversion()}
+              </div>
             </div>
             <div class="flex gap-4 pt-4">
               <button

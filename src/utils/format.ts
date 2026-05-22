@@ -102,6 +102,22 @@ export const formatNumericInput = (val: string): string => {
   if (isNaN(num)) return "";
   return new Intl.NumberFormat("id-ID").format(num);
 };
+
+export const formatUSDInput = (val: string): string => {
+  if (!val) return "";
+  const parts = val.split(".");
+  const integerPart = parseInt(parts[0].replace(/\D/g, ""));
+  if (isNaN(integerPart) && parts.length === 1) return "";
+
+  const formattedInteger = isNaN(integerPart)
+    ? ""
+    : new Intl.NumberFormat("en-US").format(integerPart);
+
+  if (parts.length > 1) {
+    return formattedInteger + "." + parts[1];
+  }
+  return formattedInteger;
+};
 export const formatHexColor = (c: string | null | undefined): string | undefined => {
   if (!c) return undefined;
   if (c.startsWith("0x")) {
@@ -116,11 +132,41 @@ const [usdRate, setUsdRate] = createSignal(Number(import.meta.env.VITE_DEFAULT_U
 export const getUsdRate = () => usdRate();
 export const setUsdExchangeRate = (rate: number) => setUsdRate(rate);
 
-export const formatPortfolioValue = (amount: number, currency: 'IDR' | 'USD', isShort = false) => {
-  if (currency === 'USD') {
-    const usdAmount = amount / getUsdRate();
-    return isShort ? formatUSDCompact(usdAmount) : formatUSD(usdAmount);
+export const formatPortfolioValue = (
+  amount: number,
+  displayCurrency: 'IDR' | 'USD',
+  isShort = false,
+  nativeCurrency: 'IDR' | 'USD' = 'IDR',
+) => {
+  let displayAmount = amount;
+
+  if (nativeCurrency === 'USD' && displayCurrency === 'IDR') {
+    // USD Portfolio → display as IDR: multiply by live rate
+    displayAmount = amount * getUsdRate();
+  } else if (nativeCurrency === 'IDR' && displayCurrency === 'USD') {
+    // IDR Portfolio → display as USD: divide by live rate
+    displayAmount = amount / getUsdRate();
   }
-  return isShort ? formatRupiahShort(amount) : formatRupiah(amount);
+  // If displayCurrency === nativeCurrency, no conversion is needed
+
+  if (displayCurrency === 'USD') {
+    return isShort ? formatUSDCompact(displayAmount) : formatUSD(displayAmount);
+  }
+  return isShort ? formatRupiahShort(displayAmount) : formatRupiah(displayAmount);
 };
 
+export const getCurrencyPills = (isIDR: boolean) => {
+  if (isIDR) {
+    return [
+      { label: "Rp1.000.000", value: "1000000" },
+      { label: "Rp5.000.000", value: "5000000" },
+      { label: "Rp10.000.000", value: "10000000" },
+    ];
+  } else {
+    return [
+      { label: "$100", value: "100" },
+      { label: "$200", value: "200" },
+      { label: "$500", value: "500" },
+    ];
+  }
+};

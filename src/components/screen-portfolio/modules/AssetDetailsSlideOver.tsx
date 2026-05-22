@@ -15,6 +15,7 @@ interface AssetDetailsSlideOverProps {
   onDeleteAsset: (assetId: string) => void;
   portfolioTotalValue: number;
   portfolioId: string;
+  portfolioNativeCurrency?: 'IDR' | 'USD';
 }
 
 export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
@@ -224,7 +225,7 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                         Total Holding
                       </p>
                       <p class="text-lg font-outfit font-bold text-forest">
-                        {formatPortfolioValue(asset().currentValue, currency())}
+                        {formatPortfolioValue(asset().currentValue, currency(), false, props.portfolioNativeCurrency)}
                       </p>
                       <p class="text-[10px] text-earth">
                         {asset().totalShares.toFixed(4)} shares
@@ -238,7 +239,7 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                         class={`text-lg font-outfit font-bold ${asset().totalGainLoss >= 0 ? "text-spring" : "text-red-500"}`}
                       >
                         {asset().totalGainLoss >= 0 ? "+" : ""}
-                        {formatPortfolioValue(asset().totalGainLoss, currency())}
+                        {formatPortfolioValue(asset().totalGainLoss, currency(), false, props.portfolioNativeCurrency)}
                       </p>
                       <p class="text-[10px] text-earth">
                         Avg.{" "}
@@ -246,6 +247,7 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                           asset().averagePrice,
                           currency(),
                           true,
+                          props.portfolioNativeCurrency,
                         )}
                       </p>
                     </div>
@@ -384,7 +386,7 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                                   <span>
                                     Sell{" "}
                                     <span class="font-bold text-red-600">
-                                      {formatPortfolioValue(Math.abs(differenceToTarget()), currency())}
+                                      {formatPortfolioValue(Math.abs(differenceToTarget()), currency(), false, props.portfolioNativeCurrency)}
                                     </span>{" "}
                                     <span class="text-[11px] text-red-500/85">
                                       ({Math.abs(differenceToTargetInShares()).toFixed(4)} shares)
@@ -395,7 +397,7 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                               >
                                 Buy{" "}
                                 <span class="font-bold text-green-600">
-                                  {formatPortfolioValue(differenceToTarget(), currency())}
+                                  {formatPortfolioValue(differenceToTarget(), currency(), false, props.portfolioNativeCurrency)}
                                 </span>{" "}
                                 <span class="text-[11px] text-green-500/85">
                                   ({differenceToTargetInShares().toFixed(4)} shares)
@@ -582,12 +584,13 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                                       tx.pricePerShare,
                                       currency(),
                                       true,
+                                      props.portfolioNativeCurrency,
                                     )}
                                   </p>
                                 </div>
                                 <div class="text-right">
                                   <p class="text-sm font-outfit font-bold text-forest">
-                                    {formatPortfolioValue(tx.totalAmount, currency())}
+                                    {formatPortfolioValue(tx.totalAmount, currency(), false, props.portfolioNativeCurrency)}
                                   </p>
                                   <Show when={tx.gainLoss !== undefined}>
                                     <p
@@ -598,6 +601,7 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                                         tx.gainLoss!,
                                         currency(),
                                         true,
+                                        props.portfolioNativeCurrency,
                                       )}
                                     </p>
                                   </Show>
