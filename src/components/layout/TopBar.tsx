@@ -319,12 +319,12 @@ const TopBar = () => {
               <div class="w-px h-6 mx-2 bg-forest/10" />
 
               {/* Market Session Indicator */}
-              <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 w-[15rem]">
+              <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 w-[12.8rem]">
                 <div
                   class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
                 ></div>
                 <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
-                  US Market: {marketStatus().session}
+                  US: {marketStatus().session}
                 </span>
                 <span class="text-[9px] text-forest/60 font-semibold lowercase">
                   ({marketStatus().timeRemaining} left)
