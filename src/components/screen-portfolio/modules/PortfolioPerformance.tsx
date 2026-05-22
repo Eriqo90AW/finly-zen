@@ -288,7 +288,7 @@ export const PerformanceHistoryChart = (
                     {isGain() ? "trending_up" : "trending_down"}
                   </span>
                   {isGain() ? "+" : ""}
-                  {formatPortfolioValue(stats().gain, currency(), false, currency())}
+                  {formatPortfolioValue(stats().gain, currency(), true, currency())}
                 </div>
                 <span
                   class={`text-xs font-bold ${isGain() ? "text-spring" : "text-red-500"}`}
