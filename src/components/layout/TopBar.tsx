@@ -129,7 +129,7 @@ const TopBar = () => {
               >
                 <div class="flex flex-col">
                   <div class="flex items-center gap-2">
-                    <h2 class="text-xl font-cormorant font-bold text-forest leading-none">
+                    <h2 class="text-xl font-cormorant font-bold text-forest leading-none max-w-[30rem] line-clamp-1">
                       {currentStockData()?.company_name}
                     </h2>
                     <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider">

@@ -18,7 +18,7 @@ export const StockHero = (props: StockHeroProps) => {
         <div class="flex flex-col gap-3 w-full lg:w-auto">
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-3 flex-wrap">
-              <h1 class="text-3xl md:text-4xl font-cormorant font-bold text-forest leading-tight tracking-tight">
+              <h1 class="text-3xl md:text-4xl font-cormorant font-bold text-forest leading-tight tracking-tight line-clamp-1">
                 {d().company_name}
               </h1>
               <div class="flex items-center gap-2">
