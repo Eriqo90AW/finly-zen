@@ -328,17 +328,17 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
           onClick={props.onClose}
         >
           <div 
-            class="bg-white rounded-3xl p-8 w-[95vw] max-w-5xl h-[85vh] shadow-2xl relative flex flex-col border border-forest/10"
+            class="bg-white rounded-3xl py-8 px-10 w-[95vw] max-w-[70rem] h-[85vh] shadow-2xl relative flex flex-col border border-forest/10"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div class="flex items-center justify-between mb-6 border-b border-forest/5 pb-4">
+            <div class="flex items-center justify-between mb-3 border-b border-forest/5 pb-2">
               <div>
-                <h4 class="font-outfit font-bold text-forest text-2xl flex items-center gap-2 leading-none">
-                  <span class="material-icons text-forest text-2xl">compare_arrows</span>
+                <h4 class="font-outfit font-bold text-forest text-xl flex items-center gap-2 leading-none">
+                  <span class="material-icons text-forest text-xl">compare_arrows</span>
                   <span>Fundamentals Comparison</span>
                 </h4>
-                <p class="text-sm text-earth/60 mt-1">Compare up to 4 companies side-by-side with real-time metrics and dynamic strength analysis.</p>
+                <p class="text-[11px] text-earth/60 mt-0.5">Compare up to 4 companies side-by-side with real-time metrics and dynamic strength analysis.</p>
               </div>
               
               <button 
@@ -356,8 +356,8 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                 <thead>
                   <tr class="border-b border-forest/20">
                     {/* Top-Left Cell */}
-                    <th class="sticky top-0 left-0 z-30 bg-sage backdrop-blur-md p-4 w-[150px] border-r border-b border-forest/10">
-                      <span class="text-[10px] font-black uppercase tracking-[0.15em] text-forest/70">
+                    <th class="sticky top-0 left-0 z-30 bg-sage backdrop-blur-md py-2 px-3 w-[150px] border-r border-b border-forest/10">
+                      <span class="text-[9px] font-black uppercase tracking-[0.12em] text-forest/70">
                         Metric Description
                       </span>
                     </th>
@@ -368,35 +368,35 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                         const company = () => compareCompanies()[i];
                         
                         return (
-                          <th class="sticky top-0 z-20 bg-sage backdrop-blur-md p-4 w-[190px] border-r border-b border-forest/10 last:border-r-0">
+                          <th class="sticky top-0 z-20 bg-sage backdrop-blur-md py-2 px-3 w-[190px] border-r border-b border-forest/10 last:border-r-0">
                             <Show when={company()} fallback={
                               <Show when={i === compareCompanies().length} fallback={
                                 // Empty Column Placeholder
-                                <div class="h-20 flex flex-col items-center justify-center border-2 border-dashed border-forest/5 rounded-2xl bg-sage/[0.02] opacity-20">
-                                  <span class="text-[9px] font-black text-earth uppercase tracking-[0.15em]">Locked Slot</span>
+                                <div class="h-12 flex flex-col items-center justify-center border border-dashed border-forest/10 rounded-xl bg-sage/[0.02] opacity-20">
+                                  <span class="text-[8px] font-black text-earth uppercase tracking-[0.12em]">Locked Slot</span>
                                 </div>
                               }>
                                 {/* Add Company Active Slot */}
-                                <div class="relative min-h-20 flex flex-col justify-center">
+                                <div class="relative min-h-12 flex flex-col justify-center">
                                   <Show when={isFetchingColumn()} fallback={
                                     <Show when={searchActive()} fallback={
                                       <button 
                                         onClick={() => setSearchActive(true)}
-                                        class="w-full h-14 flex items-center justify-center gap-2 border-2 border-dashed border-forest/20 hover:border-forest/40 rounded-2xl bg-sage/5 hover:bg-sage/10 text-forest font-bold text-xs tracking-wider transition-all cursor-pointer"
+                                        class="w-full h-9 flex items-center justify-center gap-1 border border-dashed border-forest/25 hover:border-forest/40 rounded-xl bg-sage/5 hover:bg-sage/10 text-forest font-bold text-[10px] tracking-wider transition-all cursor-pointer"
                                       >
-                                        <span class="material-icons text-sm">add</span>
+                                        <span class="material-icons text-xs">add</span>
                                         <span>ADD TICKER</span>
                                       </button>
                                     }>
                                       <div class="relative search-slot-container">
-                                        <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-earth w-4.5 h-4.5" />
+                                        <SearchIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-earth w-3.5 h-3.5" />
                                         <input 
                                           type="text"
                                           value={searchQuery()}
                                           onInput={(e) => setSearchQuery(e.currentTarget.value)}
                                           placeholder="Search Ticker..."
                                           autofocus
-                                          class="w-full h-11 bg-page-bg rounded-xl pl-10 pr-8 font-outfit text-xs focus:outline-none focus:ring-2 focus:ring-forest/20 transition-all text-forest font-bold uppercase"
+                                          class="w-full h-8 bg-page-bg rounded-lg pl-7 pr-6 font-outfit text-[11px] focus:outline-none focus:ring-1 focus:ring-forest/20 transition-all text-forest font-bold uppercase"
                                           onKeyDown={(e) => {
                                             if (e.key === "Escape") {
                                               setSearchActive(false);
@@ -411,7 +411,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                             setSearchQuery("");
                                             setSearchResults([]);
                                           }}
-                                          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-earth/50 hover:text-forest flex items-center justify-center cursor-pointer"
+                                          class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-earth/50 hover:text-forest flex items-center justify-center cursor-pointer"
                                         >
                                           <span class="material-icons text-base">close</span>
                                         </button>
@@ -439,45 +439,45 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                         </Show>
                                         
                                         <Show when={isSearching()}>
-                                          <div class="absolute right-8 top-1/2 -translate-y-1/2">
-                                            <div class="w-3.5 h-3.5 border-2 border-forest/20 border-t-forest rounded-full animate-spin" />
+                                          <div class="absolute right-6 top-1/2 -translate-y-1/2">
+                                            <div class="w-3 h-3 border border-forest/20 border-t-forest rounded-full animate-spin" />
                                           </div>
                                         </Show>
                                       </div>
                                     </Show>
                                   }>
-                                    <div class="flex flex-col items-center justify-center gap-1.5 h-14 bg-sage/5 border border-forest/5 rounded-2xl">
-                                      <div class="w-4.5 h-4.5 border-2 border-forest/20 border-t-forest rounded-full animate-spin"></div>
-                                      <span class="text-[9px] text-earth font-black uppercase tracking-widest">Fetching...</span>
+                                    <div class="flex flex-col items-center justify-center gap-1 h-9 bg-sage/5 border border-forest/5 rounded-xl">
+                                      <div class="w-3.5 h-3.5 border border-forest/20 border-t-forest rounded-full animate-spin"></div>
+                                      <span class="text-[8px] text-earth font-black uppercase tracking-wider">Fetching...</span>
                                     </div>
                                   </Show>
                                 </div>
                               </Show>
                             }>
                               {/* Active Company Column Details */}
-                              <div class="flex flex-col gap-1.5 relative">
+                              <div class="flex flex-col gap-1 relative">
                                 <div class="flex items-center justify-between gap-1">
-                                  <div class="flex items-center gap-1.5">
-                                    <span class="bg-forest text-white text-[10px] px-2 py-0.5 rounded-lg font-black tracking-widest shadow-sm">
+                                  <div class="flex items-center gap-1">
+                                    <span class="bg-forest text-white text-[9px] px-1.5 py-0.2 rounded-md font-black tracking-widest shadow-sm">
                                       {company()?.ticker}
                                     </span>
                                     <Show when={i === 0}>
-                                      <span class="text-[8px] bg-forest/5 text-forest/60 px-1.5 py-0.5 rounded font-black uppercase tracking-widest border border-forest/10">Base</span>
+                                      <span class="text-[8px] bg-forest/5 text-forest/60 px-1 py-0.2 rounded-md font-black uppercase tracking-widest border border-forest/10">Base</span>
                                     </Show>
                                   </div>
                                   
                                   <Show when={i > 0}>
                                     <button 
                                       onClick={() => handleRemoveCompany(i)}
-                                      class="p-1 rounded-lg text-earth/50 hover:text-fin-red hover:bg-rose-50 border border-transparent hover:border-rose-500/10 transition-colors flex items-center justify-center cursor-pointer"
+                                      class="p-0.5 rounded-md text-earth/50 hover:text-fin-red hover:bg-rose-50 border border-transparent hover:border-rose-500/10 transition-colors flex items-center justify-center cursor-pointer"
                                       title="Remove Ticker"
                                     >
-                                      <span class="material-icons text-base">delete</span>
+                                      <span class="material-icons text-sm">delete</span>
                                     </button>
                                   </Show>
                                 </div>
                                 
-                                <h5 class="text-xs font-bold font-outfit text-forest truncate leading-none mt-0.5">
+                                <h5 class="text-[11px] font-bold font-outfit text-forest truncate leading-none mt-0.5">
                                   {company()?.company_name}
                                 </h5>
                                 
@@ -506,10 +506,10 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                       <>
                         {/* Group Category Divider */}
                         <tr class="bg-sage/60 font-bold text-forest">
-                          <td colspan="5" class="sticky left-0 z-10 bg-sage/[0.08] backdrop-blur-sm p-3 border-b border-forest/10 text-left">
-                            <div class="flex items-center gap-1.5 opacity-90">
-                              <span class="material-icons text-sm text-forest">{category.icon}</span>
-                              <span class="text-[10px] font-black uppercase tracking-[0.15em] text-earth">
+                          <td colspan="5" class="sticky left-0 z-10 bg-sage/[0.08] backdrop-blur-sm py-1.5 px-3 border-b border-forest/10 text-left">
+                            <div class="flex items-center gap-1 opacity-90">
+                              <span class="material-icons text-xs text-forest">{category.icon}</span>
+                              <span class="text-[9px] font-black uppercase tracking-[0.12em] text-earth">
                                 {category.title}
                               </span>
                             </div>
@@ -524,8 +524,8 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                             return (
                               <tr class="hover:bg-sage/5 transition-colors">
                                 {/* Metric Label (Sticky Left) */}
-                                <td class="sticky left-0 z-10 bg-sage/30 p-3 font-outfit text-xs font-semibold text-earth border-r border-t border-forest/20">
-                                  <div class="flex items-center gap-1.5">
+                                <td class="sticky left-0 z-10 bg-sage/30 py-1.5 px-3 font-outfit text-xs font-semibold text-earth border-r border-t border-forest/20">
+                                  <div class="flex items-center gap-1">
                                     <div class="w-1.5 h-1.5 rounded-full" style={{ "background-color": metricDef.color }} />
                                     <span>{metricDef.label}</span>
                                   </div>
@@ -537,7 +537,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                     const company = () => compareCompanies()[i];
                                     
                                     return (
-                                      <td class="p-2.5 border-r border-forest/10 last:border-r-0 text-center">
+                                      <td class="py-1 px-1.5 border-r border-forest/10 last:border-r-0 text-center">
                                         <Show when={company()}>
                                           {(() => {
                                             const { rawValue, formatted } = metricDef.getValue(company()!);
@@ -614,20 +614,20 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                             
                                             return (
                                               <Tooltip class="w-full block rounded-xl" position="bottom" content={tooltipContent} overlayBgClass={tooltipOverlayColor()}>
-                                                <div class={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${cellBg()}`}>
-                                                  <div class="flex items-center gap-1.5 justify-center">
-                                                    <span class="text-sm font-outfit font-black text-forest">
+                                                <div class={`flex flex-col items-center justify-center py-1 px-2 rounded-lg border transition-all ${cellBg()}`}>
+                                                  <div class="flex items-center gap-1 justify-center">
+                                                    <span class="text-xs font-outfit font-black text-forest">
                                                       {formatted}
                                                     </span>
                                                     <Show when={isWinner()}>
-                                                      <span class="text-[8px] bg-amber-500/10 text-amber-700 px-1 py-0.2 rounded font-black uppercase tracking-wider flex items-center gap-0.5">
+                                                      <span class="text-[7px] bg-amber-500/10 text-amber-700 px-1 py-0.2 rounded font-black uppercase tracking-wider flex items-center gap-0.5">
                                                         👑 BEST
                                                       </span>
                                                     </Show>
                                                   </div>
                                                   
                                                   <Show when={formatted !== "N/A"}>
-                                                    <span class={`text-[8px] font-bold px-1.5 py-0.2 rounded-full border mt-1 select-none ${badgeStyles()}`}>
+                                                    <span class={`text-[8px] font-bold px-1 py-0.2 rounded-full border mt-0.5 select-none ${badgeStyles()}`}>
                                                       {evalResult().badgeText}
                                                     </span>
                                                   </Show>
