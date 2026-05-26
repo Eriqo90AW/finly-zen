@@ -332,7 +332,7 @@ const TopBar = () => {
               </div>
 
               {/* Unified Exchange Rate & Currency Toggle Capsule */}
-              <div class="flex items-center gap-3 pl-3 pr-1 py-1 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[10px] font-bold shrink-0">
+              <div class="flex items-center gap-3 pl-3 pr-1 py-1 bg-sage/30 rounded-xl border border-forest/5 text-forest/80 text-[10px] font-bold shrink-0">
                 <div class="flex items-center gap-1.5">
                   <span class="material-icons !text-[14px] text-forest/50">
                     currency_exchange
@@ -370,7 +370,7 @@ const TopBar = () => {
                 disabled={
                   portfolioState.isRefreshing || portfolioState.isLoading
                 }
-                class="w-10 h-[2.15rem] rounded-xl flex items-center justify-center bg-sage/20 border border-forest/5 text-forest/80 hover:bg-sage/30 hover:border-forest/10 hover:text-forest transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/refresh"
+                class="w-10 h-[2.15rem] rounded-xl flex items-center justify-center bg-sage/30 border border-forest/6 text-forest/80 hover:bg-sage/30 hover:border-forest/10 hover:text-forest transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/refresh"
                 title="Refresh Portfolio Data"
               >
                 <span
