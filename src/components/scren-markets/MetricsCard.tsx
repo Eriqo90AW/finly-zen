@@ -1,10 +1,12 @@
-import { For, createMemo } from "solid-js";
+import { For, createMemo, createSignal } from "solid-js";
 import { formatUSD, formatUSDCompact, formatPercent, formatMultiple } from "../../utils/format";
 import type { MetricsCardProps, LocalMetric, MetricCategory } from "../../types";
 import { evaluateMetric } from "../../utils/metricEvaluator";
 import { Tooltip } from "../modules/Tooltip";
+import { FundamentalsCompareModal } from "./modals/FundamentalsCompareModal";
 
 export const MetricsCard = (props: MetricsCardProps) => {
+  const [isCompareOpen, setIsCompareOpen] = createSignal(false);
   const categories = createMemo<MetricCategory[]>(() => [
     {
       title: "Valuation",
@@ -163,9 +165,19 @@ export const MetricsCard = (props: MetricsCardProps) => {
   return (
     <div class="premium-card h-full flex flex-col overflow-hidden bg-gradient-to-b from-white to-sage/5 border-forest/10 hover:cursor-default">
       <div class="p-5 border-b border-forest/5 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
-        <div class="flex items-center gap-2">
-          <span class="material-icons text-forest text-xl">assessment</span>
-          <h4 class="font-outfit font-bold text-forest text-lg">Key Metrics</h4>
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="material-icons text-forest text-xl">assessment</span>
+            <h4 class="font-outfit font-bold text-forest text-lg">Key Metrics</h4>
+          </div>
+          
+          <button 
+            onClick={() => setIsCompareOpen(true)}
+            class="flex items-center gap-1 px-2.5 py-1 text-[10px] font-black tracking-wider text-forest bg-forest/5 hover:bg-forest/10 border border-forest/10 rounded-lg transition-all cursor-pointer uppercase shadow-sm"
+          >
+            <span class="material-icons text-xs">compare_arrows</span>
+            <span>Compare</span>
+          </button>
         </div>
       </div>
       
@@ -273,6 +285,12 @@ export const MetricsCard = (props: MetricsCardProps) => {
           )}
         </For>
       </div>
+
+      <FundamentalsCompareModal 
+        isOpen={isCompareOpen()} 
+        onClose={() => setIsCompareOpen(false)} 
+        baseCompany={props.data} 
+      />
     </div>
   );
 };
