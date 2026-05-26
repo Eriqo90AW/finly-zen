@@ -247,7 +247,7 @@ export const MetricsCard = (props: MetricsCardProps) => {
                     );
 
                     return (
-                      <Tooltip class="w-full block rounded-xl" position={metric.tooltipPosition || "top"} content={tooltipContent} overlayBgClass={tooltipOverlayColor()}>
+                      <Tooltip class="w-full block rounded-xl" position={metric.tooltipPosition || "bottom"} content={tooltipContent} overlayBgClass={tooltipOverlayColor()}>
                         <div class={`flex justify-between items-center p-3 rounded-xl border transition-all group cursor-pointer ${rowStyles()}`}>
                           <div class="flex items-center gap-2">
                             <div class="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)]" style={{ "background-color": metric.color }} />
