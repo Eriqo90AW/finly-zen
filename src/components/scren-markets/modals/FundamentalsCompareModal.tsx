@@ -328,7 +328,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
           onClick={props.onClose}
         >
           <div 
-            class="bg-white rounded-3xl py-8 px-10 w-[95vw] max-w-[70rem] h-[85vh] shadow-2xl relative flex flex-col border border-forest/10"
+            class="bg-white rounded-3xl py-8 px-10 w-[95vw] max-w-fit h-[85vh] shadow-2xl relative flex flex-col border border-forest/10"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -352,11 +352,11 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
 
             {/* Table Scrollable Container */}
             <div class="flex-1 overflow-y-auto overflow-x-hidden rounded-2xl border border-forest/10 bg-white custom-scrollbar">
-              <table class="w-full border-collapse text-left table-fixed">
+              <table class="w-[740px] mx-auto border-collapse text-left table-fixed">
                 <thead>
                   <tr class="border-b border-forest/20">
                     {/* Top-Left Cell */}
-                    <th class="sticky top-0 left-0 z-30 bg-sage backdrop-blur-md py-2 px-3 w-[150px] border-r border-b border-forest/10">
+                    <th class="sticky top-0 left-0 z-30 bg-sage backdrop-blur-md py-2 px-3 w-[140px] border-r border-b border-forest/10">
                       <span class="text-[9px] font-black uppercase tracking-[0.12em] text-forest/70">
                         Metric Description
                       </span>
@@ -368,7 +368,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                         const company = () => compareCompanies()[i];
                         
                         return (
-                          <th class="sticky top-0 z-20 bg-sage backdrop-blur-md py-2 px-3 w-[190px] border-r border-b border-forest/10 last:border-r-0">
+                          <th class="sticky top-0 z-20 bg-sage backdrop-blur-md py-2 px-3 w-[150px] border-r border-b border-forest/10 last:border-r-0">
                             <Show when={company()} fallback={
                               <Show when={i === compareCompanies().length} fallback={
                                 // Empty Column Placeholder
@@ -389,14 +389,14 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                       </button>
                                     }>
                                       <div class="relative search-slot-container">
-                                        <SearchIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-earth w-3.5 h-3.5" />
+                                        <SearchIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-earth !w-4 !h-4" />
                                         <input 
                                           type="text"
                                           value={searchQuery()}
                                           onInput={(e) => setSearchQuery(e.currentTarget.value)}
                                           placeholder="Search Ticker..."
                                           autofocus
-                                          class="w-full h-8 bg-page-bg rounded-lg pl-7 pr-6 font-outfit text-[11px] focus:outline-none focus:ring-1 focus:ring-forest/20 transition-all text-forest font-bold uppercase"
+                                          class="w-full h-8 bg-page-bg rounded-lg pl-7 pr-6 font-outfit text-[9px] focus:outline-none focus:ring-1 focus:ring-forest/20 transition-all text-forest font-bold"
                                           onKeyDown={(e) => {
                                             if (e.key === "Escape") {
                                               setSearchActive(false);
@@ -428,7 +428,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                                   >
                                                     <div class="flex flex-col">
                                                       <span class="font-outfit font-bold text-forest text-xs">{ticker.symbol}</span>
-                                                      <span class="text-[9px] text-earth truncate max-w-[100px]">{ticker.name}</span>
+                                                      <span class="text-[9px] text-earth truncate max-w-[70px]">{ticker.name}</span>
                                                     </div>
                                                     <span class="text-[8px] bg-forest/5 text-forest/60 px-1 py-0.5 rounded uppercase font-black">{ticker.exchange}</span>
                                                   </button>
@@ -486,7 +486,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                     {company()?.exchange}
                                   </span>
                                   <Show when={company()?.sector}>
-                                    <span class="bg-fin-blue/5 text-fin-blue text-[8px] px-1.5 py-0.2 rounded font-bold border border-fin-blue/10 uppercase tracking-wide truncate max-w-[95px] leading-none">
+                                    <span class="bg-fin-blue/5 text-fin-blue text-[8px] px-1.5 py-0.2 rounded font-bold border border-fin-blue/10 uppercase tracking-wide truncate max-w-[75px] leading-none">
                                       {company()?.sector}
                                     </span>
                                   </Show>
