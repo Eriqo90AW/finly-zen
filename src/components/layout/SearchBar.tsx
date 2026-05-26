@@ -90,7 +90,7 @@ const SearchBar = () => {
               {(ticker) => (
                 <button
                   onClick={() => handleSelect(ticker.symbol)}
-                  class="w-full flex items-center justify-between px-4 py-3 hover:bg-sage/10 transition-colors border-b border-forest/5 last:border-0 text-left"
+                  class="w-full flex items-center justify-between px-4 py-3 hover:bg-sage/60 transition-colors border-b border-forest/5 last:border-0 text-left cursor-pointer"
                 >
                   <div class="flex flex-col">
                     <span class="font-outfit font-bold text-forest text-sm">{ticker.symbol}</span>

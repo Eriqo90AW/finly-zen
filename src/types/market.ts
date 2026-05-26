@@ -7,3 +7,18 @@ export interface MarketStatus {
   nextTransition: Date;
   timeRemaining: string;
 }
+
+export interface LocalMetric {
+  label: string;
+  value: string;
+  rawValue: number | null | undefined;
+  color: string;
+  tooltipPosition?: "top" | "left" | "right" | "bottom";
+}
+
+export interface MetricCategory {
+  title: string;
+  icon: string;
+  metrics: LocalMetric[];
+}
+

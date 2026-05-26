@@ -78,6 +78,8 @@ export interface TooltipProps {
   content: import("solid-js").JSX.Element;
   children: import("solid-js").JSX.Element;
   class?: string;
+  position?: "top" | "left" | "right" | "bottom";
+  overlayBgClass?: string;
 }
 
 
