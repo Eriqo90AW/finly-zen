@@ -79,7 +79,7 @@ const DividendListCard = (props: DividendListCardProps) => {
           const dd = String(today.getDate()).padStart(2, "0");
           const todayMD = `${mm}-${dd}`;
           const cumMD = d.cum_date.slice(5);
-          if (cumMD < todayMD) return false;
+          if (cumMD <= todayMD) return false;
         }
         const key = getEntryKey(d);
         if (ignoredKeys().has(key)) return false;

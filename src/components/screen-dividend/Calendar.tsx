@@ -2,7 +2,7 @@ import { createSignal, createMemo, For, Show } from "solid-js";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
 import CalendarDayCell from "./CalendarDayCell";
-import { getDividendsForMonth, getDividendsForDate } from "../../data/dividendData";
+import { getDividendsForMonth, getDividendsForDate, getDividendsByStatus } from "../../data/dividendData";
 import type { DividendEntry } from "../../types/dividend";
 
 interface CalendarProps {
@@ -51,6 +51,29 @@ const Calendar = (props: CalendarProps) => {
     return `${y}-${m}-${d}`;
   };
 
+  // Load ignored entries from localStorage (same format as DividendListCard)
+  const ignoredKeys: Set<string> = (() => {
+    const saved = localStorage.getItem("ignored_dividends");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  })();
+
+  const getEntryKey = (d: DividendEntry) => `${d.ticker}|${d.cum_date}|${d.amount}|${d.payment_date}`;
+
+  const projectedDividendsFiltered = createMemo(() => {
+    const today = new Date();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayMD = `${mm}-${dd}`;
+    return getDividendsByStatus("projected").filter((d) => {
+      const cumMD = d.cum_date.slice(5);
+      if (cumMD <= todayMD) return false;
+      const key = getEntryKey(d);
+      if (ignoredKeys.has(key)) return false;
+      return true;
+    });
+  });
+
+
   const calendarDays = createMemo(() => {
     const year = currentYear();
     const month = currentMonth();
@@ -85,7 +108,10 @@ const Calendar = (props: CalendarProps) => {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dateStr = getLocalISODate(date);
-      const dividends = getDividendsForDate(dateStr);
+      const baseDividends = getDividendsForDate(dateStr);
+      const md = dateStr.slice(5);
+      const projectedForDay = projectedDividendsFiltered().filter((d) => d.cum_date.slice(5) === md);
+      const dividends = [...baseDividends, ...projectedForDay];
       days.push({
         day,
         dateStr,
