@@ -12,7 +12,8 @@ const App = (props: ParentProps) => {
   const location = useLocation();
   const shouldHideAddButton = () => 
     location.pathname.startsWith("/stock") || 
-    location.pathname.startsWith("/portfolio");
+    location.pathname.startsWith("/portfolio") ||
+    location.pathname.startsWith("/dividend");
 
   return (
     <div class="relative h-screen">

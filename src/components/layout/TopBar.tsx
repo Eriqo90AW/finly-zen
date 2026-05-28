@@ -28,6 +28,7 @@ const TopBar = () => {
   const params = useParams();
   const isStockPage = () => location.pathname.startsWith("/stock");
   const isPortfolioPage = () => location.pathname.startsWith("/portfolio");
+  const isDividendPage = () => location.pathname.startsWith("/dividend");
 
   const [marketStatus, setMarketStatus] =
     createSignal<MarketStatus>(getMarketStatus());
@@ -103,82 +104,139 @@ const TopBar = () => {
       {/* Left Section: Adaptive Header */}
       <div class="flex items-center gap-6">
         <Show
-          when={!isStockPage()}
+          when={!isStockPage() && !isDividendPage()}
           fallback={
-            <div class="flex items-center gap-4">
-              <button
-                onClick={() => navigate(-1)}
-                class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
-              >
-                <ChevronLeftIcon />
-              </button>
-              <div class="h-8 w-px bg-forest/10 mx-1" />
+            <Show
+              when={isDividendPage()}
+              fallback={
+                <div class="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate(-1)}
+                    class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
+                  >
+                    <ChevronLeftIcon />
+                  </button>
+                  <div class="h-8 w-px bg-forest/10 mx-1" />
 
-              <Show
-                when={currentStockData()}
-                fallback={
-                  <div class="flex items-center gap-2">
-                    <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider uppercase">
-                      {params.ticker}
-                    </span>
-                    <span class="text-xs text-earth font-medium animate-ellipsis">
-                      Loading data
-                    </span>
-                  </div>
-                }
-              >
-                <div class="flex flex-col">
-                  <div class="flex items-center gap-2">
-                    <h2 class="text-xl font-cormorant font-bold text-forest leading-none max-w-[30rem] line-clamp-1">
-                      {currentStockData()?.company_name}
-                    </h2>
-                    <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider">
-                      {currentStockData()?.ticker}
-                    </span>
-                    <span class="bg-sage text-forest text-[10px] px-1.5 py-0.5 rounded font-medium">
-                      {currentStockData()?.exchange}
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-3 mt-1">
-                    <span class="text-sm font-outfit font-bold text-forest">
-                      {formatUSD(
-                        currentStockData()?.valuation.extended_hours_price || 0,
-                      )}
-                    </span>
-                    <span class="text-[10px] text-earth font-medium">
-                      Mkt Cap:{" "}
-                      {formatUSDCompact(
-                        currentStockData()?.valuation.market_cap || 0,
-                      )}
-                    </span>
-                    <span class="text-[9px] text-earth/60 uppercase tracking-widest">
-                      As of:{" "}
-                      {new Date(
-                        currentStockData()?.as_of || "",
-                      ).toLocaleDateString()}
-                    </span>
-
-                    {/* Market Timing Indicator */}
-                    <div class="flex items-center gap-2 px-2 py-0.5 bg-sage/30 rounded-full border border-forest/5">
-                      <div
-                        class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
-                      ></div>
-                      <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
-                        {marketStatus().session}
-                      </span>
-                    </div>
-
-                    <Show when={isStockLoading()}>
-                      <div class="flex items-center gap-1.5">
-                        <span class="text-[9px] text-forest font-bold uppercase tracking-widest animate-ellipsis">
-                          Loading
+                  <Show
+                    when={currentStockData()}
+                    fallback={
+                      <div class="flex items-center gap-2">
+                        <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider uppercase">
+                          {params.ticker}
+                        </span>
+                        <span class="text-xs text-earth font-medium animate-ellipsis">
+                          Loading data
                         </span>
                       </div>
-                    </Show>
+                    }
+                  >
+                    <div class="flex flex-col">
+                      <div class="flex items-center gap-2">
+                        <h2 class="text-xl font-cormorant font-bold text-forest leading-none max-w-[30rem] line-clamp-1">
+                          {currentStockData()?.company_name}
+                        </h2>
+                        <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider">
+                          {currentStockData()?.ticker}
+                        </span>
+                        <span class="bg-sage text-forest text-[10px] px-1.5 py-0.5 rounded font-medium">
+                          {currentStockData()?.exchange}
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-3 mt-1">
+                        <span class="text-sm font-outfit font-bold text-forest">
+                          {formatUSD(
+                            currentStockData()?.valuation.extended_hours_price || 0,
+                          )}
+                        </span>
+                        <span class="text-[10px] text-earth font-medium">
+                          Mkt Cap:{" "}
+                          {formatUSDCompact(
+                            currentStockData()?.valuation.market_cap || 0,
+                          )}
+                        </span>
+                        <span class="text-[9px] text-earth/60 uppercase tracking-widest">
+                          As of:{" "}
+                          {new Date(
+                            currentStockData()?.as_of || "",
+                          ).toLocaleDateString()}
+                        </span>
+
+                        {/* Market Timing Indicator */}
+                        <div class="flex items-center gap-2 px-2 py-0.5 bg-sage/30 rounded-full border border-forest/5">
+                          <div
+                            class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
+                          ></div>
+                          <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
+                            {marketStatus().session}
+                          </span>
+                        </div>
+
+                        <Show when={isStockLoading()}>
+                          <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] text-forest font-bold uppercase tracking-widest animate-ellipsis">
+                              Loading
+                            </span>
+                          </div>
+                        </Show>
+                      </div>
+                    </div>
+                  </Show>
+                </div>
+              }
+            >
+              {/* Dividend Page Mode */}
+              <div class="flex items-center gap-4 flex-nowrap shrink-0">
+                <button
+                  onClick={() => navigate(-1)}
+                  class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer shrink-0"
+                >
+                  <ChevronLeftIcon />
+                </button>
+                <div class="h-8 w-px bg-forest/10 mx-1 shrink-0" />
+
+                <div class="flex flex-col shrink-0 min-w-0">
+                  <h2 class="text-xl font-cormorant font-bold text-forest leading-none whitespace-nowrap">
+                    IDX Dividend Calendar
+                  </h2>
+                  <div class="flex items-center gap-3 mt-1 whitespace-nowrap">
+                    <span class="text-[10px] text-earth font-medium">
+                      Indonesia Stock Exchange
+                    </span>
+                    <div class="w-px h-3 bg-forest/10" />
+                    <span class="text-[10px] text-earth font-medium">
+                      2025 - 2026
+                    </span>
                   </div>
                 </div>
-              </Show>
-            </div>
+
+                {/* WIB Clock */}
+                <div class="flex items-center justify-between px-3 py-2.5 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[11px] font-bold w-[11.6rem] overflow-hidden text-nowrap shrink-0 ml-4">
+                  <div class="flex items-center gap-1.5 truncate">
+                    <span class="material-icons !text-[16.5px] text-forest/50 shrink-0">
+                      schedule
+                    </span>
+                    <span class="truncate">{wibTime()}</span>
+                  </div>
+                  <span class="text-forest/80 uppercase text-[11px] shrink-0">
+                    WIB
+                  </span>
+                </div>
+
+                {/* IDX Market Status */}
+                <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 shrink-0 whitespace-nowrap">
+                  <div
+                    class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
+                  ></div>
+                  <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
+                    IDX: {marketStatus().session}
+                  </span>
+                  <span class="text-[9px] text-forest/60 font-semibold lowercase">
+                    ({marketStatus().timeRemaining} left)
+                  </span>
+                </div>
+              </div>
+            </Show>
           }
         >
           <Show
@@ -390,7 +448,7 @@ const TopBar = () => {
 
       {/* Search & User */}
       <div class="flex items-center gap-6">
-        <Show when={!isPortfolioPage()}>
+        <Show when={!isPortfolioPage() && !isDividendPage()}>
           <SearchBar />
         </Show>
 
