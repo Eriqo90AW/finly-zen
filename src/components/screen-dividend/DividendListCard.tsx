@@ -73,12 +73,14 @@ const DividendListCard = (props: DividendListCardProps) => {
 
     const result = list.filter((d) => {
       if (activeTab() === "projected") {
-        const localToday = new Date();
-        const tzOffset = localToday.getTimezoneOffset() * 60000;
-        const todayStr = new Date(localToday.getTime() - tzOffset).toISOString().split("T")[0];
-
-        if (!showAllProjected() && d.cum_date <= todayStr) return false;
-
+        if (!showAllProjected()) {
+          const today = new Date();
+          const mm = String(today.getMonth() + 1).padStart(2, "0");
+          const dd = String(today.getDate()).padStart(2, "0");
+          const todayMD = `${mm}-${dd}`;
+          const cumMD = d.cum_date.slice(5);
+          if (cumMD < todayMD) return false;
+        }
         const key = getEntryKey(d);
         if (ignoredKeys().has(key)) return false;
       }
@@ -97,6 +99,9 @@ const DividendListCard = (props: DividendListCardProps) => {
 
     if (activeTab() === "upcoming") {
       return [...result].reverse();
+    }
+    if (activeTab() === "projected") {
+      return [...result].sort((a, b) => a.cum_date.slice(5).localeCompare(b.cum_date.slice(5)));
     }
     return result;
   });
