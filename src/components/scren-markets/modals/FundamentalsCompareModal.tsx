@@ -413,7 +413,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                           }}
                                           class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-earth/50 hover:text-forest flex items-center justify-center cursor-pointer"
                                         >
-                                          <span class="material-icons text-base">close</span>
+                                          <span class="material-icons !text-base">close</span>
                                         </button>
                                         
                                         {/* Search Dropdown */}
@@ -469,10 +469,10 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                   <Show when={i > 0}>
                                     <button 
                                       onClick={() => handleRemoveCompany(i)}
-                                      class="p-0.5 rounded-md text-earth/50 hover:text-fin-red hover:bg-rose-50 border border-transparent hover:border-rose-500/10 transition-colors flex items-center justify-center cursor-pointer"
+                                      class="text-earth/50 hover:text-fin-red hover:bg-rose-50 border border-transparent hover:border-rose-500/10 transition-colors flex items-center justify-center cursor-pointer"
                                       title="Remove Ticker"
                                     >
-                                      <span class="material-icons text-sm">delete</span>
+                                      <span class="material-icons !text-[12px]">close</span>
                                     </button>
                                   </Show>
                                 </div>
@@ -546,30 +546,15 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                             
                                             const cellBg = createMemo(() => {
                                               if (formatted === "N/A" || rawValue == null) return "bg-white/40 border-forest/5 hover:border-forest/20";
-                                              if (isWinner()) return "bg-amber-500/[0.03] border-amber-500/20";
                                               
                                               switch (evalResult().signal) {
                                                 case 'good':
-                                                  return "bg-emerald-500/[0.01] border-emerald-500/5 hover:border-emerald-500/20 hover:bg-emerald-500/[0.03]";
+                                                  return "bg-emerald-500/15 border-emerald-500/20";
                                                 case 'bad':
-                                                  return "bg-rose-500/[0.01] border-rose-500/5 hover:border-rose-500/20 hover:bg-rose-500/[0.03]";
+                                                  return "bg-rose-500/15 border-rose-500/20";
                                                 case 'neutral':
                                                 default:
-                                                  return "bg-amber-500/[0.01] border-amber-500/5 hover:border-amber-500/20 hover:bg-amber-500/[0.03]";
-                                              }
-                                            });
-                                            
-                                            const badgeStyles = createMemo(() => {
-                                              if (formatted === "N/A" || rawValue == null) return "bg-neutral-100 text-neutral-500 border-neutral-200/50";
-                                              
-                                              switch (evalResult().signal) {
-                                                case 'good':
-                                                  return "bg-emerald-500/15 text-emerald-700 border-emerald-500/20";
-                                                case 'bad':
-                                                  return "bg-rose-500/15 text-rose-700 border-rose-500/20";
-                                                case 'neutral':
-                                                default:
-                                                  return "bg-amber-500/15 text-amber-700 border-amber-500/20";
+                                                  return "bg-amber-500/15 border-amber-500/20";
                                               }
                                             });
                                             
@@ -604,8 +589,8 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                                   {evalResult().thresholdContext}
                                                 </div>
                                                 <Show when={isWinner()}>
-                                                  <div class="text-[10px] text-amber-300 font-bold border-t border-white/10 pt-1 flex items-center gap-1">
-                                                    <span>👑</span>
+                                                  <div class="text-[10px] text-amber-400 font-bold border-t border-white/10 pt-1 flex items-center gap-1">
+                                                    <span class="material-icons text-[12px]">emoji_events</span>
                                                     <span>This is the best value in this row!</span>
                                                   </div>
                                                 </Show>
@@ -620,17 +605,9 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
                                                       {formatted}
                                                     </span>
                                                     <Show when={isWinner()}>
-                                                      <span class="text-[7px] bg-amber-500/10 text-amber-700 px-1 py-0.2 rounded font-black uppercase tracking-wider flex items-center gap-0.5">
-                                                        👑 BEST
-                                                      </span>
+                                                        <span class="text-amber-400 material-icons !text-[14px]">emoji_events</span>
                                                     </Show>
                                                   </div>
-                                                  
-                                                  <Show when={formatted !== "N/A"}>
-                                                    <span class={`text-[8px] font-bold px-1 py-0.2 rounded-full border mt-0.5 select-none ${badgeStyles()}`}>
-                                                      {evalResult().badgeText}
-                                                    </span>
-                                                  </Show>
                                                 </div>
                                               </Tooltip>
                                             );
