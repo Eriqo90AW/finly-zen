@@ -17,9 +17,9 @@ import {
 } from "../../utils/format";
 import { Show, createSignal, For } from "solid-js";
 import { currentStockData, isStockLoading } from "../../store/stockContext";
-import { getMarketStatus } from "../../utils/marketTime";
+import { getMarketStatus, getIDXMarketStatus } from "../../utils/marketTime";
 import { onCleanup, onMount } from "solid-js";
-import type { MarketStatus } from "../../types";
+import type { MarketStatus, IDXMarketStatus } from "../../types";
 import { getPortfolioColor } from "../../utils/colors";
 
 const TopBar = () => {
@@ -32,6 +32,8 @@ const TopBar = () => {
 
   const [marketStatus, setMarketStatus] =
     createSignal<MarketStatus>(getMarketStatus());
+  const [idxMarketStatus, setIdxMarketStatus] =
+    createSignal<IDXMarketStatus>(getIDXMarketStatus());
 
   // Real-time WIB clock helper
   const getWibDateTime = () => {
@@ -62,6 +64,7 @@ const TopBar = () => {
   onMount(() => {
     timer = setInterval(() => {
       setMarketStatus(getMarketStatus());
+      setIdxMarketStatus(getIDXMarketStatus());
       setWibTime(getWibDateTime());
     }, 1000);
     window.addEventListener("click", handleClickOutside);
@@ -226,13 +229,13 @@ const TopBar = () => {
                 {/* IDX Market Status */}
                 <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 shrink-0 whitespace-nowrap">
                   <div
-                    class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
+                    class={`w-2 h-2 rounded-full ${idxMarketStatus().color} animate-pulse-soft`}
                   ></div>
                   <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
-                    IDX: {marketStatus().session}
+                    IDX: {idxMarketStatus().session}
                   </span>
                   <span class="text-[9px] text-forest/60 font-semibold lowercase">
-                    ({marketStatus().timeRemaining} left)
+                    ({idxMarketStatus().timeRemaining} left)
                   </span>
                 </div>
               </div>
@@ -377,7 +380,7 @@ const TopBar = () => {
               <div class="w-px h-6 mx-2 bg-forest/10" />
 
               {/* Market Session Indicator */}
-              <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 w-[12.8rem]">
+              <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 min-w-[13rem] whitespace-nowrap shrink-0">
                 <div
                   class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
                 ></div>
