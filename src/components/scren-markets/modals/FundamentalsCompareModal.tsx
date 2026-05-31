@@ -328,7 +328,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
           onClick={props.onClose}
         >
           <div 
-            class="bg-white rounded-3xl py-8 px-10 w-[95vw] max-w-fit h-[85vh] shadow-2xl relative flex flex-col border border-forest/10"
+            class="bg-white rounded-3xl py-8 px-10 w-[95vw] max-w-fit max-h-[85vh] shadow-2xl relative flex flex-col border border-forest/10"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -351,7 +351,7 @@ export const FundamentalsCompareModal = (props: FundamentalsCompareModalProps) =
             </div>
 
             {/* Table Scrollable Container */}
-            <div class="flex-1 overflow-y-auto overflow-x-hidden rounded-2xl border border-forest/10 bg-white custom-scrollbar">
+            <div class="min-h-0 overflow-y-auto overflow-x-hidden rounded-2xl border border-forest/10 bg-white custom-scrollbar">
               <table class="w-[740px] mx-auto border-collapse text-left table-fixed">
                 <thead>
                   <tr class="border-b border-forest/20">

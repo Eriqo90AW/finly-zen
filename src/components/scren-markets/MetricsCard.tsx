@@ -202,12 +202,12 @@ export const MetricsCard = (props: MetricsCardProps) => {
                       
                       switch (evalResult().signal) {
                         case 'good':
-                          return "bg-emerald-500/[0.02] border-emerald-500/10 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]";
+                          return "bg-emerald-500/8 border-emerald-500/10 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]";
                         case 'bad':
-                          return "bg-rose-500/[0.02] border-rose-500/10 hover:border-rose-500/30 hover:bg-rose-500/[0.04]";
+                          return "bg-rose-500/8 border-rose-500/10 hover:border-rose-500/30 hover:bg-rose-500/[0.04]";
                         case 'neutral':
                         default:
-                          return "bg-amber-500/[0.02] border-amber-500/10 hover:border-amber-500/30 hover:bg-amber-500/[0.04]";
+                          return "bg-amber-500/8 border-amber-500/10 hover:border-amber-500/30 hover:bg-amber-500/[0.04]";
                       }
                     });
 
