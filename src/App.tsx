@@ -2,6 +2,7 @@ import { ParentProps, Show } from "solid-js";
 import MainLayout from "./components/layout/MainLayout";
 import { state, setState, setupPersistence } from "./store";
 import { setupPortfolioPersistence } from "./store/portfolioStore";
+import { setupPriceAlertPersistence } from "./store/priceAlertStore";
 import AddIcon from "@suid/icons-material/Add";
 import { useLocation } from "@solidjs/router";
 
@@ -9,6 +10,7 @@ const App = (props: ParentProps) => {
   // Initialize persistence inside the root component
   setupPersistence();
   setupPortfolioPersistence();
+  setupPriceAlertPersistence();
   const location = useLocation();
   const shouldHideAddButton = () => 
     location.pathname.startsWith("/stock") || 

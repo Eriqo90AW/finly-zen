@@ -1,12 +1,20 @@
-import { Show } from "solid-js";
+import { Show, createSignal } from "solid-js";
 import { formatPercent, formatUSD, formatUSDCompact } from "../../utils/format";
 import type { StockHeroProps } from "../../types";
+import { priceAlertState } from "../../store/priceAlertStore";
+import { PriceAlertModal } from "./modals/PriceAlertModal";
 
 export const StockHero = (props: StockHeroProps) => {
   const d = () => props.data;
   const status = () => props.marketStatus;
   const diff = () => d().valuation.price_diff_percentage;
   const isPositive = () => diff() >= 0;
+
+  const [isModalOpen, setIsModalOpen] = createSignal(false);
+  const activeAlertsCount = () =>
+    priceAlertState.alerts.filter(
+      (a) => a.ticker === d().ticker.toUpperCase() && !a.triggered
+    ).length;
 
   return (
     <div class="premium-card relative overflow-hidden p-6 bg-gradient-to-br from-white via-sage/5 to-sage/10 border-forest/10 group transition-all duration-500 hover:shadow-lg hover:cursor-default">
@@ -18,6 +26,29 @@ export const StockHero = (props: StockHeroProps) => {
         <div class="flex flex-col gap-3 w-full lg:w-auto">
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-3 flex-wrap">
+              {/* Price Notification Bell */}
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                class="relative p-2 rounded-xl border border-forest/10 bg-gradient-to-l from-forest/10 to-forest/5 hover:from-forest/15 hover:to-forest/10 text-forest/70 hover:text-forest transition-all flex items-center justify-center cursor-pointer group/bell"
+                title="Price Notifications"
+              >
+                <span
+                  class="material-icons text-xl transition-transform"
+                  classList={{
+                    "text-spring animate-bell-ring": activeAlertsCount() > 0,
+                    "group-hover/bell:animate-bell-ring": activeAlertsCount() === 0,
+                  }}
+                >
+                  {activeAlertsCount() > 0 ? "notifications_active" : "notifications"}
+                </span>
+                <Show when={activeAlertsCount() > 0}>
+                  <span class="absolute -top-1 -right-1 bg-spring text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                    {activeAlertsCount()}
+                  </span>
+                </Show>
+              </button>
+
               <h1 class="text-3xl md:text-4xl font-cormorant font-bold text-forest leading-tight tracking-tight line-clamp-1">
                 {d().company_name}
               </h1>
@@ -129,6 +160,12 @@ export const StockHero = (props: StockHeroProps) => {
           </div>
         </div>
       </div>
+
+      <PriceAlertModal
+        isOpen={isModalOpen()}
+        onClose={() => setIsModalOpen(false)}
+        stockData={d()}
+      />
     </div>
   );
 };

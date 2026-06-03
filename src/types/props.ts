@@ -36,6 +36,11 @@ export interface EarningsActualsChartProps {
   data: StockData;
 }
 
+export interface DCFValuationCalculatorProps {
+  data: StockData;
+}
+
+
 export interface HeroCardProps {
   allTransactions: Transaction[];
   monthlyTransactions: Transaction[];

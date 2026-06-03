@@ -234,3 +234,95 @@
   font-family: "Cormorant Garamond", serif;
   font-weight: 900;
 }
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes bellRing {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(14deg);
+  }
+  30% {
+    transform: rotate(-12deg);
+  }
+  45% {
+    transform: rotate(8deg);
+  }
+  60% {
+    transform: rotate(-6deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+.animate-bell-ring {
+  animation: bellRing 0.8s ease-in-out;
+  transform-origin: top center;
+}
+
+/* DCF Range Slider */
+input[type="range"].dcf-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(26, 77, 46, 0.1);
+  border-radius: 9999px;
+  outline: none;
+  transition: background 0.15s ease-in-out;
+}
+
+input[type="range"].dcf-slider:hover {
+  background: rgba(26, 77, 46, 0.15);
+}
+
+input[type="range"].dcf-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-forest);
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(26, 77, 46, 0.2);
+  transition: transform 0.1s ease-in-out, background 0.1s ease-in-out;
+}
+
+input[type="range"].dcf-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: var(--color-mid-green);
+}
+
+input[type="range"].dcf-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-forest);
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(26, 77, 46, 0.2);
+  transition: transform 0.1s ease-in-out, background 0.1s ease-in-out;
+}
+
+input[type="range"].dcf-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  background: var(--color-mid-green);
+}
+

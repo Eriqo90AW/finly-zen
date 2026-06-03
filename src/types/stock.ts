@@ -149,4 +149,5 @@ export interface StockData {
   advanced_ratios: AdvancedRatios;
   segment_data: SegmentData;
   earnings_estimates: EarningsEstimates;
+  fundamentals?: any;
 }

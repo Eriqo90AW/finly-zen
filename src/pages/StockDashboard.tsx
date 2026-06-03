@@ -6,10 +6,13 @@ import { StockHero } from "../components/scren-markets/StockHero";
 import { MetricsCard } from "../components/scren-markets/MetricsCard";
 import { FinancialPerformanceChart } from "../components/scren-markets/FinancialPerformanceChart";
 import { EarningsActualsChart } from "../components/scren-markets/EarningsActualsChart";
+import { DCFValuationCalculator } from "../components/scren-markets/DCFValuationCalculator";
 import { EstimatesTable } from "../components/scren-markets/EstimatesTable";
 import { setCurrentStockData, setIsStockLoading } from "../store/stockContext";
 import { getMarketStatus } from "../utils/marketTime";
-import { MarketStatus } from "../types";
+import { MarketStatus, PriceAlert } from "../types";
+import { checkAlerts } from "../store/priceAlertStore";
+import { PriceAlertToast } from "../components/scren-markets/PriceAlertToast";
 
 
 const REFRESH_INTERVAL_SECONDS = 300;
@@ -80,10 +83,20 @@ const StockDashboard = () => {
     setIsStockLoading(stockData.loading);
   });
 
+  const [activeToasts, setActiveToasts] = createSignal<PriceAlert[]>([]);
+
+  const dismissToast = (id: string) => {
+    setActiveToasts((prev) => prev.filter((a) => a.id !== id));
+  };
+
   createEffect(() => {
     const data = stockData();
     if (data) {
       setCurrentStockData(data);
+      const newlyTriggered = checkAlerts(data.ticker, data.valuation.extended_hours_price);
+      if (newlyTriggered.length > 0) {
+        setActiveToasts((prev) => [...prev, ...newlyTriggered]);
+      }
     }
   });
 
@@ -136,8 +149,12 @@ const StockDashboard = () => {
 
           {/* Detailed Data: Forward Estimates */}
           <EstimatesTable data={stockData()!} />
+
+          {/* DCF Valuation Calculator */}
+          <DCFValuationCalculator data={stockData()!} />
         </div>
       </Show>
+      <PriceAlertToast alerts={activeToasts()} onDismiss={dismissToast} />
     </Show>
   );
 };
