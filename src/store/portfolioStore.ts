@@ -103,6 +103,9 @@ const computePortfolioState = (
         totalShares -= qty;
       }
     });
+    
+    // Round totalShares to 8 decimal places to handle floating-point precision errors (e.g. 3.6 - 1.2 - 2.4 = 1.11e-16)
+    totalShares = Math.round(totalShares * 1e8) / 1e8;
 
     if (totalShares > 0) {
       const assetCurrency = assetTxs[0]?.currency || "USD";

@@ -10,7 +10,7 @@ const Dividend = () => {
 
   const allDividends = getAllDividends();
   const paidCount = getDividendsByStatus("paid").length;
-  const announcedCount = getDividendsByStatus("announced").length;
+  const announcedCount = getDividendsByStatus("upcoming").length;
   const projectedCount = getDividendsByStatus("projected").length;
 
   return (

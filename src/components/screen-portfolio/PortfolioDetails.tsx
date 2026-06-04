@@ -62,6 +62,15 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
 
         <div class="flex gap-4">
           <button
+            onClick={() => navigate(`/portfolio/${props.portfolio!.id}/trades`)}
+            disabled={!props.portfolio}
+            class={`flex items-center gap-2 bg-white text-forest border border-forest/10 px-6 py-3 rounded-2xl font-outfit font-bold shadow-sm hover:bg-spring/5 transition-color duration-100 cursor-pointer w-fit ${!props.portfolio ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            <span class="material-icons text-lg">receipt_long</span>
+            Trade History
+          </button>
+
+          <button
             onClick={() => setShowAddAssetModal(true)}
             disabled={!props.portfolio}
             class={`flex items-center gap-2 bg-forest text-white px-6 py-3 rounded-2xl font-outfit font-bold shadow-xl hover:brightness-90 transition-opacity duration-200 cursor-pointer w-fit ${!props.portfolio ? "opacity-50 cursor-not-allowed" : ""}`}

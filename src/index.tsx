@@ -33,6 +33,7 @@ render(
       <Route path="/stock/:ticker" component={StockDashboard} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/portfolio/:id" component={Portfolio} />
+      <Route path="/portfolio/:id/trades" component={Portfolio} />
       <Route path="/dividend" component={Dividend} />
     </Router>
   ),

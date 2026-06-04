@@ -1,13 +1,15 @@
 import { createMemo, Show, onMount } from "solid-js";
-import { useParams } from "@solidjs/router";
+import { useParams, useLocation } from "@solidjs/router";
 import { portfolioState, loadPortfolios } from "../store/portfolioStore";
 import { PortfolioOverview } from "../components/screen-portfolio/PortfolioOverview";
 import { PortfolioDetails } from "../components/screen-portfolio/PortfolioDetails";
+import { TradeHistory } from "../components/screen-portfolio/TradeHistory";
 import { fetchUsdRate } from "../data/portfolioData";
 import { setUsdExchangeRate } from "../utils/format";
 
 const Portfolio = () => {
   const params = useParams();
+  const location = useLocation();
   const activePortfolio = createMemo(() => {
     if (!params.id) return null;
     return portfolioState.portfolios.find(p => p.id === params.id) || null;
@@ -36,7 +38,14 @@ const Portfolio = () => {
             when={activePortfolio()}
             fallback={<PortfolioOverview />}
           >
-            {(portfolio) => <PortfolioDetails portfolio={portfolio()} />}
+            {(portfolio) => (
+              <Show
+                when={location.pathname.endsWith("/trades")}
+                fallback={<PortfolioDetails portfolio={portfolio()} />}
+              >
+                <TradeHistory portfolio={portfolio()} />
+              </Show>
+            )}
           </Show>
         </Show>
       </Show>

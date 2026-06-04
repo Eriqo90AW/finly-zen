@@ -130,6 +130,22 @@ export async function getPortfolioTransactions(portfolioId: string): Promise<Por
   return data || [];
 }
 
+export async function getPortfolioTransactionsRaw(
+  portfolioId: string
+): Promise<PortfolioTransactionDB[]> {
+  const { data, error } = await supabase
+    .from("portfolio_transactions")
+    .select("*")
+    .eq("portfolio_id", portfolioId)
+    .order("transaction_date", { ascending: false });
+
+  if (error) {
+    console.error(`Error fetching raw transactions:`, error);
+    return [];
+  }
+  return data || [];
+}
+
 export async function addPortfolioTransaction(
   params: Omit<PortfolioTransactionDB, "id" | "created_at" | "updated_at">
 ): Promise<PortfolioTransactionDB> {
