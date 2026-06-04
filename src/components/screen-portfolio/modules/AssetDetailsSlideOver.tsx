@@ -16,6 +16,7 @@ interface AssetDetailsSlideOverProps {
   portfolioTotalValue: number;
   portfolioId: string;
   portfolioNativeCurrency?: 'IDR' | 'USD';
+  onTrade?: (type: "BUY" | "SELL", ticker: string) => void;
 }
 
 export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
@@ -218,6 +219,16 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
 
                 {/* Main Content Area */}
                 <div class="flex-1 overflow-y-auto">
+                  {/* Actions */}
+                  <div class="px-6 py-4 flex gap-3 border-b border-forest/5 bg-white">
+                    <button onClick={() => props.onTrade && props.onTrade("BUY", asset().ticker)} class="flex-1 py-2 bg-spring/10 text-spring hover:bg-spring/20 rounded-xl font-bold font-outfit text-sm transition-colors cursor-pointer border border-spring/20 flex items-center justify-center gap-1.5">
+                      <span class="material-icons text-sm">add</span> Buy More
+                    </button>
+                    <button onClick={() => props.onTrade && props.onTrade("SELL", asset().ticker)} class="flex-1 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold font-outfit text-sm transition-colors cursor-pointer border border-red-100 flex items-center justify-center gap-1.5">
+                      <span class="material-icons text-sm">remove</span> Sell
+                    </button>
+                  </div>
+
                   {/* Asset Summary */}
                   <div class="p-6 grid grid-cols-2 gap-4 border-b border-forest/5 bg-sage/2">
                     <div class="p-4 bg-sage/10 rounded-2xl">

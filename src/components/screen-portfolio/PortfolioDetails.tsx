@@ -24,6 +24,8 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
   );
   const [showAddAssetModal, setShowAddAssetModal] = createSignal(false);
   const [showAddCapitalModal, setShowAddCapitalModal] = createSignal(false);
+  const [tradeType, setTradeType] = createSignal<"BUY" | "SELL" | undefined>(undefined);
+  const [tradeTicker, setTradeTicker] = createSignal<string | undefined>(undefined);
 
   const assetTransactions = createMemo(() => {
     const asset = selectedAsset();
@@ -71,7 +73,11 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
           </button>
 
           <button
-            onClick={() => setShowAddAssetModal(true)}
+            onClick={() => {
+              setTradeType(undefined);
+              setTradeTicker(undefined);
+              setShowAddAssetModal(true);
+            }}
             disabled={!props.portfolio}
             class={`flex items-center gap-2 bg-forest text-white px-6 py-3 rounded-2xl font-outfit font-bold shadow-xl hover:brightness-90 transition-opacity duration-200 cursor-pointer w-fit ${!props.portfolio ? "opacity-50 cursor-not-allowed" : ""}`}
           >
@@ -129,6 +135,11 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         portfolioTotalValue={props.portfolio?.totalValue ?? 0}
         portfolioId={props.portfolio?.id ?? ""}
         portfolioNativeCurrency={props.portfolio?.nativeCurrency}
+        onTrade={(type, ticker) => {
+          setTradeType(type);
+          setTradeTicker(ticker);
+          setShowAddAssetModal(true);
+        }}
         onDeleteAsset={(assetId) => {
           if (!props.portfolio) return;
           if (
@@ -148,6 +159,8 @@ export const PortfolioDetails = (props: PortfolioDetailsProps) => {
         onClose={() => setShowAddAssetModal(false)}
         portfolioId={props.portfolio?.id || ""}
         assets={props.portfolio?.assets || []}
+        initialType={tradeType()}
+        initialTicker={tradeTicker()}
       />
 
       {/* Add Capital Modal */}

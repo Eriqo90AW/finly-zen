@@ -7,7 +7,7 @@ import {
   onCleanup,
 } from "solid-js";
 import { addTransactionToPortfolio } from "../../../store/portfolioStore";
-import { getUsdRate } from "../../../utils/format";
+import { getUsdRate, formatNumericInput } from "../../../utils/format";
 import { searchTickers } from "../../../data/marketData";
 import { debounce } from "../../../utils/debounce";
 import { fetchMultiStockPrices } from "../../../data/portfolioData";
@@ -19,6 +19,8 @@ interface AddAssetModalProps {
   onClose: () => void;
   portfolioId: string;
   assets?: PortfolioAsset[];
+  initialType?: "BUY" | "SELL";
+  initialTicker?: string;
 }
 
 export const AddAssetModal = (props: AddAssetModalProps) => {
@@ -156,11 +158,31 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
   createEffect(() => {
     if (props.isOpen) {
       setPriceCurrency(getUsdRate());
-      setTicker("");
-      setSelectedTicker(null);
       setShares(null);
       setPrice(null);
       setNotes("");
+
+      if (props.initialType) {
+        setType(props.initialType);
+      } else {
+        setType("BUY");
+      }
+
+      if (props.initialTicker) {
+        setTicker(props.initialTicker);
+        setSelectedTicker(props.initialTicker);
+        if (props.initialTicker.toUpperCase().endsWith(".JK")) {
+          setCurrency("IDR");
+          setPriceCurrency(1);
+        } else {
+          setCurrency("USD");
+          setPriceCurrency(getUsdRate());
+        }
+        fetchAndSetPrice(props.initialTicker);
+      } else {
+        setTicker("");
+        setSelectedTicker(null);
+      }
     }
   });
 
@@ -429,7 +451,7 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
-                    Quantity
+                    Quantity (,)
                     <Show when={type() === "SELL" && selectedHeldAsset()}>
                       <span class="text-spring font-bold ml-1 normal-case tracking-normal">
                         · Owned: {Number(selectedHeldAsset()!.totalShares.toFixed(4))}
@@ -454,7 +476,7 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                 </div>
                 <div>
                   <label class="block text-[10px] uppercase tracking-widest text-earth font-bold mb-2">
-                    Price per Unit
+                    Price per Unit (,)
                     <Show when={type() === "SELL" && selectedHeldAsset()}>
                       <span class="text-spring font-bold ml-1 normal-case tracking-normal">
                         · Avg: {formatAveragePrice(selectedHeldAsset()!.averagePrice)}
@@ -532,11 +554,12 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
                         Rp
                       </span>
                       <input
-                        type="number"
-                        value={priceCurrency() ?? ""}
+                        type="text"
+                        inputmode="decimal"
+                        value={formatNumericInput(priceCurrency() ? priceCurrency().toString() : "")}
                         onInput={(e) => {
-                          const val = e.currentTarget.value;
-                          setPriceCurrency(val ? Number(val) : getUsdRate());
+                          const rawValue = e.currentTarget.value.replace(/\D/g, "");
+                          setPriceCurrency(rawValue ? Number(rawValue) : 0);
                         }}
                         placeholder="e.g., 16,300"
                         class="w-full pl-10 pr-4 py-3 rounded-xl border border-forest/10 focus:border-forest/30 focus:ring-0 outline-none font-outfit text-forest"
