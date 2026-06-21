@@ -57,15 +57,16 @@ export const FinancialPerformanceChart = (props: FinancialPerformanceChartProps)
   });
 
   const financialData = createMemo(() => {
+    const segmentData = props.data.segment_data || {} as any;
     return periodType() === "annual"
-      ? props.data.segment_data.annual_financials
-      : props.data.segment_data.quarterly_financials;
+      ? (segmentData.annual_financials || [])
+      : (segmentData.quarterly_financials || []);
   });
 
   const series = createMemo(() => {
     const active = activeMetrics();
     const list: { name: string; type: string; data: number[] }[] = [];
-    const shares = props.data.advanced_ratios.shares_outstanding || 1;
+    const shares = props.data.advanced_ratios?.shares_outstanding || 1;
 
     if (active.has("revenue")) {
       list.push({
@@ -85,7 +86,7 @@ export const FinancialPerformanceChart = (props: FinancialPerformanceChartProps)
       list.push({
         name: "EPS",
         type: active.has("revenue") || active.has("earnings") ? "line" : "bar",
-        data: financialData().map(f => f.earnings / shares)
+        data: financialData().map(f => (f.earnings || 0) / shares)
       });
     }
     return list;

@@ -3,30 +3,71 @@ import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { formatUSD, formatUSDCompact } from "../../utils/format";
 import type { DCFValuationCalculatorProps } from "../../types";
+
+const PRESETS = {
+  conservative: { wacc: 8.5, highGrowth: 10, transitionGrowth: 8.8, terminalGrowth: 3.0 },
+  standard: { wacc: 9.3, highGrowth: 16, transitionGrowth: 13.6, terminalGrowth: 3.5 },
+  aggressive: { wacc: 10.2, highGrowth: 24, transitionGrowth: 20.0, terminalGrowth: 4.0 }
+};
+
+const getMarketCapPresetKey = (marketCap: number): "conservative" | "standard" | "aggressive" => {
+  if (marketCap >= 500_000_000_000) return "conservative";
+  if (marketCap >= 10_000_000_000) return "standard";
+  return "aggressive";
+};
+
 export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
   // Extract base FCF from stock data, prioritizing fundamentals object
   const actualFcf = () => {
-    if (props.data.fundamentals?.financialData?.freeCashflow !== undefined) {
+    if (props.data.fundamentals?.financialData?.freeCashflow !== undefined && props.data.fundamentals?.financialData?.freeCashflow !== null) {
       return props.data.fundamentals.financialData.freeCashflow;
     }
-    return props.data.standardized_financials.free_cash_flow_ttm ?? 0;
+    if (props.data.standardized_financials?.free_cash_flow_ttm !== undefined && props.data.standardized_financials?.free_cash_flow_ttm !== null) {
+      return props.data.standardized_financials.free_cash_flow_ttm;
+    }
+    // Fallback: Use the latest annual earnings (net income) as a baseline if FCF is null/0
+    const annuals = props.data.segment_data?.annual_financials || [];
+    if (annuals.length > 0) {
+      const sorted = [...annuals].sort((a, b) => b.year - a.year);
+      return sorted[0].earnings ?? 0;
+    }
+    return 0;
   };
-  
-  // Input signals
-  const [fcfBase, setFcfBase] = createSignal(actualFcf());
-  const [wacc, setWacc] = createSignal(10);
-  const [highGrowth, setHighGrowth] = createSignal(25);
-  const [transitionGrowth, setTransitionGrowth] = createSignal(12);
-  const [terminalGrowth, setTerminalGrowth] = createSignal(2.5);
 
-  const [denomination, setDenomination] = createSignal<"raw" | "M" | "B">("raw");
-  const [inputText, setInputText] = createSignal("");
+  const detectDenomination = (val: number): "raw" | "M" | "B" => {
+    const absVal = Math.abs(val);
+    if (absVal >= 1_000_000_000) return "B";
+    if (absVal >= 1_000_000) return "M";
+    return "raw";
+  };
 
   const formatBaseToText = (val: number, denom: "raw" | "M" | "B") => {
     if (denom === "B") return (val / 1_000_000_000).toString();
     if (denom === "M") return (val / 1_000_000).toString();
     return val.toString();
   };
+  
+  // Input signals
+  const [fcfBase, setFcfBase] = createSignal(actualFcf());
+
+  const recPresetKey = () => getMarketCapPresetKey(props.data.valuation?.market_cap || props.data.fundamentals?.summaryDetail?.marketCap || 0);
+
+  const getStoredPreset = (): "conservative" | "standard" | "aggressive" => {
+    const ticker = props.data.ticker || "";
+    const stored = ticker ? localStorage.getItem(`dcf_preset_${ticker.toLowerCase()}`) : null;
+    if (stored === "conservative" || stored === "standard" || stored === "aggressive") {
+      return stored;
+    }
+    return recPresetKey();
+  };
+
+  const [wacc, setWacc] = createSignal(PRESETS[getStoredPreset()].wacc);
+  const [highGrowth, setHighGrowth] = createSignal(PRESETS[getStoredPreset()].highGrowth);
+  const [transitionGrowth, setTransitionGrowth] = createSignal(PRESETS[getStoredPreset()].transitionGrowth);
+  const [terminalGrowth, setTerminalGrowth] = createSignal(PRESETS[getStoredPreset()].terminalGrowth);
+
+  const [denomination, setDenomination] = createSignal<"raw" | "M" | "B">(detectDenomination(actualFcf()));
+  const [inputText, setInputText] = createSignal(formatBaseToText(actualFcf(), denomination()));
 
   // Sync inputs on stock changes
   createEffect(() => {
@@ -34,27 +75,23 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
     setFcfBase(base);
 
     // Auto-detect denomination magnitude
-    const absVal = Math.abs(base);
-    let defaultDenom: "raw" | "M" | "B" = "raw";
-    if (absVal >= 1_000_000_000) {
-      defaultDenom = "B";
-    } else if (absVal >= 1_000_000) {
-      defaultDenom = "M";
-    }
+    const defaultDenom = detectDenomination(base);
     setDenomination(defaultDenom);
     setInputText(formatBaseToText(base, defaultDenom));
 
-    // CAPM seed for WACC
-    const beta = props.data.fundamentals?.summaryDetail?.beta || props.data.advanced_ratios.beta || 1.0;
-    const derivedWacc = 4.25 + beta * 5.5;
-    const clampedWacc = Math.max(5.0, Math.min(20.0, derivedWacc));
-    setWacc(Number(clampedWacc.toFixed(2)));
+    const tickerKey = (props.data.ticker || "").toLowerCase();
+    const stored = tickerKey ? localStorage.getItem(`dcf_preset_${tickerKey}`) : null;
+    const presetKey = (stored === "conservative" || stored === "standard" || stored === "aggressive")
+      ? stored
+      : recPresetKey();
 
-    // Reset growth assumptions
-    setHighGrowth(25);
-    setTransitionGrowth(12);
-    setTerminalGrowth(2.5);
+    const preset = PRESETS[presetKey];
+    setWacc(preset.wacc);
+    setHighGrowth(preset.highGrowth);
+    setTransitionGrowth(preset.transitionGrowth);
+    setTerminalGrowth(preset.terminalGrowth);
   });
+
 
   // Sync text field when denomination changes explicitly
   createEffect(() => {
@@ -79,27 +116,35 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
     }
   };
 
+  const applyPreset = (key: "conservative" | "standard" | "aggressive") => {
+    const preset = PRESETS[key];
+    setWacc(preset.wacc);
+    setHighGrowth(preset.highGrowth);
+    setTransitionGrowth(preset.transitionGrowth);
+    setTerminalGrowth(preset.terminalGrowth);
+    const ticker = props.data.ticker;
+    if (ticker) {
+      localStorage.setItem(`dcf_preset_${ticker.toLowerCase()}`, key);
+    }
+  };
+
+  const activePreset = () => {
+    const w = wacc(), h = highGrowth(), tr = transitionGrowth(), te = terminalGrowth();
+    if (w === 8.5 && h === 10 && tr === 8.8 && te === 3.0) return "conservative";
+    if (w === 9.3 && h === 16 && tr === 13.6 && te === 3.5) return "standard";
+    if (w === 10.2 && h === 24 && tr === 20.0 && te === 4.0) return "aggressive";
+    return null;
+  };
+
   const handleReset = () => {
     const base = actualFcf();
     setFcfBase(base);
 
-    const absVal = Math.abs(base);
-    let defaultDenom: "raw" | "M" | "B" = "raw";
-    if (absVal >= 1_000_000_000) {
-      defaultDenom = "B";
-    } else if (absVal >= 1_000_000) {
-      defaultDenom = "M";
-    }
+    const defaultDenom = detectDenomination(base);
     setDenomination(defaultDenom);
     setInputText(formatBaseToText(base, defaultDenom));
 
-    const beta = props.data.fundamentals?.summaryDetail?.beta || props.data.advanced_ratios.beta || 1.0;
-    const derivedWacc = 4.25 + beta * 5.5;
-    const clampedWacc = Math.max(5.0, Math.min(20.0, derivedWacc));
-    setWacc(Number(clampedWacc.toFixed(2)));
-    setHighGrowth(25);
-    setTransitionGrowth(12);
-    setTerminalGrowth(2.5);
+    applyPreset(recPresetKey());
   };
 
   // Perform DCF mathematical modeling
@@ -134,15 +179,15 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
 
     const enterpriseValue = sumPvFcf + pvTerminalValue;
 
-    const debt = props.data.fundamentals?.financialData?.totalDebt ?? props.data.standardized_financials.total_debt ?? 0;
-    const cash = props.data.fundamentals?.financialData?.totalCash ?? props.data.standardized_financials.cash_and_equivalents ?? 0;
+    const debt = props.data.fundamentals?.financialData?.totalDebt ?? props.data.standardized_financials?.total_debt ?? 0;
+    const cash = props.data.fundamentals?.financialData?.totalCash ?? props.data.standardized_financials?.cash_and_equivalents ?? 0;
     const equityValue = enterpriseValue + cash - debt;
 
-    const marketCap = props.data.fundamentals?.summaryDetail?.marketCap || props.data.valuation.market_cap;
-    const currentPrice = props.data.valuation.current_price || 1;
+    const marketCap = props.data.fundamentals?.summaryDetail?.marketCap || props.data.valuation?.market_cap || 0;
+    const currentPrice = props.data.valuation?.current_price || 1;
     const shares = props.data.fundamentals?.summaryDetail?.marketCap
       ? (marketCap / currentPrice)
-      : (props.data.advanced_ratios.shares_outstanding || 1);
+      : (props.data.advanced_ratios?.shares_outstanding || 1);
     const intrinsicValue = Math.max(0, equityValue / shares);
 
     const upsidePercent = ((intrinsicValue - currentPrice) / currentPrice) * 100;
@@ -251,7 +296,7 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
     ];
   });
 
-  const isUndervalued = () => projections().intrinsicValue > props.data.valuation.current_price;
+  const isUndervalued = () => projections().intrinsicValue > (props.data.valuation?.current_price || 0);
   const verdictColor = () => isUndervalued() ? "text-fin-green bg-fin-green/10 border-fin-green/20" : "text-fin-red bg-fin-red/10 border-fin-red/20";
   const verdictText = () => isUndervalued() ? "Undervalued" : "Overvalued";
 
@@ -260,19 +305,39 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
       {/* Left Input Configuration Panel */}
       <div class="w-full lg:w-[35%] flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-forest/10 pb-6 lg:pb-0 lg:pr-6">
         <div>
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-5 border-b border-forest/10 pb-4">
             <div>
               <h4 class="font-outfit font-bold text-forest text-lg">DCF Calculator</h4>
-              <p class="text-xs text-earth/60">Valuation & projection playground</p>
+              <p class="text-[10px] text-earth/60">Valuation & projection playground</p>
             </div>
-            <button
-              onClick={handleReset}
-              class="flex items-center gap-1 px-2.5 py-1 text-[10px] font-black tracking-wider text-forest bg-forest/5 hover:bg-forest/10 border border-forest/10 rounded-lg transition-all cursor-pointer uppercase shadow-sm"
-              title="Reset parameters to defaults"
-            >
-              <span class="material-icons text-xs">restart_alt</span>
-              <span>Reset</span>
-            </button>
+            <div class="flex flex-col gap-1 items-end">
+              <div class="flex items-center bg-forest/5 p-0.5 rounded-md border border-forest/10 text-[8px] font-black shadow-sm">
+                <button 
+                  type="button"
+                  onClick={() => applyPreset("conservative")}
+                  class={`px-2 py-0.5 rounded transition-all cursor-pointer uppercase tracking-wider ${activePreset() === 'conservative' ? 'bg-white text-forest shadow-sm' : 'text-earth/60 hover:text-forest'}`}
+                >
+                  Conservative
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => applyPreset("standard")}
+                  class={`px-2 py-0.5 rounded transition-all cursor-pointer uppercase tracking-wider ${activePreset() === 'standard' ? 'bg-white text-forest shadow-sm' : 'text-earth/60 hover:text-forest'}`}
+                >
+                  Standard
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => applyPreset("aggressive")}
+                  class={`px-2 py-0.5 rounded transition-all cursor-pointer uppercase tracking-wider ${activePreset() === 'aggressive' ? 'bg-white text-forest shadow-sm' : 'text-earth/60 hover:text-forest'}`}
+                >
+                  Aggressive
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5 text-[9px] text-earth/50 font-bold select-none">
+                <span>Recommended: <span class="capitalize text-forest font-black">{recPresetKey()}</span></span>
+              </div>
+            </div>
           </div>
 
           {/* Negative FCF Warning Indicator */}
@@ -340,15 +405,31 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
             <div class="space-y-2">
               <div class="flex justify-between items-center text-xs font-semibold text-forest">
                 <span>Cost of Capital (WACC)</span>
-                <span class="bg-forest/5 text-forest px-2 py-0.5 rounded text-[11px] font-bold">
-                  {wacc().toFixed(2)}%
-                </span>
+                <div class="flex items-center bg-forest/5 hover:bg-forest/10 focus-within:bg-white focus-within:ring-1 focus-within:ring-forest/20 rounded px-1.5 py-0.5 text-[11px] font-bold transition-all border border-transparent focus-within:border-forest/15">
+                  <input
+                    type="number"
+                    value={wacc()}
+                    step="0.01"
+                    min="2"
+                    max="25"
+                    onInput={(e) => {
+                      const val = parseFloat(e.currentTarget.value);
+                      if (!isNaN(val)) setWacc(val);
+                    }}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.currentTarget.value);
+                      setWacc(isNaN(val) ? PRESETS[getStoredPreset()].wacc : Math.max(2, Math.min(25, val)));
+                    }}
+                    class="w-11 bg-transparent text-right border-none outline-none font-bold text-forest p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span class="text-forest/60 select-none ml-0.5">%</span>
+                </div>
               </div>
               <input
                 type="range"
                 min="2"
                 max="25"
-                step="0.1"
+                step="0.01"
                 value={wacc()}
                 onInput={(e) => setWacc(Number(e.currentTarget.value))}
                 class="dcf-slider"
@@ -364,22 +445,38 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
             <div class="space-y-2">
               <div class="flex justify-between items-center text-xs font-semibold text-forest">
                 <span>High Growth (Y1–Y5)</span>
-                <span class="bg-forest/5 text-forest px-2 py-0.5 rounded text-[11px] font-bold">
-                  {highGrowth()}%
-                </span>
+                <div class="flex items-center bg-forest/5 hover:bg-forest/10 focus-within:bg-white focus-within:ring-1 focus-within:ring-forest/20 rounded px-1.5 py-0.5 text-[11px] font-bold transition-all border border-transparent focus-within:border-forest/15">
+                  <input
+                    type="number"
+                    value={highGrowth()}
+                    step="0.1"
+                    min="-10"
+                    max="50"
+                    onInput={(e) => {
+                      const val = parseFloat(e.currentTarget.value);
+                      if (!isNaN(val)) setHighGrowth(val);
+                    }}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.currentTarget.value);
+                      setHighGrowth(isNaN(val) ? PRESETS[getStoredPreset()].highGrowth : Math.max(-10, Math.min(50, val)));
+                    }}
+                    class="w-8 bg-transparent text-right border-none outline-none font-bold text-forest p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span class="text-forest/60 select-none ml-0.5">%</span>
+                </div>
               </div>
               <input
                 type="range"
                 min="-10"
                 max="50"
-                step="1"
+                step="0.1"
                 value={highGrowth()}
                 onInput={(e) => setHighGrowth(Number(e.currentTarget.value))}
                 class="dcf-slider"
               />
               <div class="flex justify-between text-[10px] text-earth/50">
                 <span>-10%</span>
-                <span>Default: 25%</span>
+                <span>Recommended: {PRESETS[recPresetKey()].highGrowth}%</span>
                 <span>50%</span>
               </div>
             </div>
@@ -388,22 +485,38 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
             <div class="space-y-2">
               <div class="flex justify-between items-center text-xs font-semibold text-forest">
                 <span>Transition Growth (Y6–Y10)</span>
-                <span class="bg-forest/5 text-forest px-2 py-0.5 rounded text-[11px] font-bold">
-                  {transitionGrowth()}%
-                </span>
+                <div class="flex items-center bg-forest/5 hover:bg-forest/10 focus-within:bg-white focus-within:ring-1 focus-within:ring-forest/20 rounded px-1.5 py-0.5 text-[11px] font-bold transition-all border border-transparent focus-within:border-forest/15">
+                  <input
+                    type="number"
+                    value={transitionGrowth()}
+                    step="0.1"
+                    min="-10"
+                    max="30"
+                    onInput={(e) => {
+                      const val = parseFloat(e.currentTarget.value);
+                      if (!isNaN(val)) setTransitionGrowth(val);
+                    }}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.currentTarget.value);
+                      setTransitionGrowth(isNaN(val) ? PRESETS[getStoredPreset()].transitionGrowth : Math.max(-10, Math.min(30, val)));
+                    }}
+                    class="w-8 bg-transparent text-right border-none outline-none font-bold text-forest p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span class="text-forest/60 select-none ml-0.5">%</span>
+                </div>
               </div>
               <input
                 type="range"
                 min="-10"
                 max="30"
-                step="1"
+                step="0.1"
                 value={transitionGrowth()}
                 onInput={(e) => setTransitionGrowth(Number(e.currentTarget.value))}
                 class="dcf-slider"
               />
               <div class="flex justify-between text-[10px] text-earth/50">
                 <span>-10%</span>
-                <span>Default: 12%</span>
+                <span>Recommended: {PRESETS[recPresetKey()].transitionGrowth}%</span>
                 <span>30%</span>
               </div>
             </div>
@@ -412,9 +525,25 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
             <div class="space-y-2">
               <div class="flex justify-between items-center text-xs font-semibold text-forest">
                 <span>Terminal Growth Rate</span>
-                <span class="bg-forest/5 text-forest px-2 py-0.5 rounded text-[11px] font-bold">
-                  {terminalGrowth().toFixed(1)}%
-                </span>
+                <div class="flex items-center bg-forest/5 hover:bg-forest/10 focus-within:bg-white focus-within:ring-1 focus-within:ring-forest/20 rounded px-1.5 py-0.5 text-[11px] font-bold transition-all border border-transparent focus-within:border-forest/15">
+                  <input
+                    type="number"
+                    value={terminalGrowth()}
+                    step="0.1"
+                    min="0.5"
+                    max="5"
+                    onInput={(e) => {
+                      const val = parseFloat(e.currentTarget.value);
+                      if (!isNaN(val)) setTerminalGrowth(val);
+                    }}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.currentTarget.value);
+                      setTerminalGrowth(isNaN(val) ? PRESETS[getStoredPreset()].terminalGrowth : Math.max(0.5, Math.min(5, val)));
+                    }}
+                    class="w-8 bg-transparent text-right border-none outline-none font-bold text-forest p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span class="text-forest/60 select-none ml-0.5">%</span>
+                </div>
               </div>
               <input
                 type="range"
@@ -427,7 +556,7 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
               />
               <div class="flex justify-between text-[10px] text-earth/50">
                 <span>0.5%</span>
-                <span>GDP Baseline: 2.5%</span>
+                <span>Recommended: {PRESETS[recPresetKey()].terminalGrowth.toFixed(1)}%</span>
                 <span>5%</span>
               </div>
             </div>
@@ -450,7 +579,7 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
             </div>
             <div class="mt-3 flex items-center justify-between border-t border-forest/5 pt-2 text-[11px]">
               <span class="text-earth">Current Price</span>
-              <span class="font-bold text-forest">{formatUSD(props.data.valuation.current_price)}</span>
+              <span class="font-bold text-forest">{formatUSD(props.data.valuation?.current_price)}</span>
             </div>
           </div>
 

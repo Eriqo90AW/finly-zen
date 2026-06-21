@@ -15,9 +15,14 @@ export const EarningsActualsChart = (props: EarningsActualsChartProps) => {
   });
 
   const epsData = createMemo(() => {
+    const earningsEstimates = props.data.earnings_estimates || {} as any;
+    const epsActuals = earningsEstimates.eps_actuals_vs_estimates || [];
+    const segmentData = props.data.segment_data || {} as any;
+    const annuals = segmentData.annual_financials || [];
+
     if (periodType() === "quarterly") {
-      return props.data.earnings_estimates.eps_actuals_vs_estimates.map(e => ({
-        label: e.quarter,
+      return epsActuals.map((e: any) => ({
+        label: e.quarter || "",
         estimate: e.eps_estimate,
         actual: e.eps_actual,
         surprise: (e.eps_actual ?? 0) - (e.eps_estimate ?? 0),
@@ -27,11 +32,11 @@ export const EarningsActualsChart = (props: EarningsActualsChartProps) => {
       }));
     } else {
       // Annual EPS derived from earnings and shares outstanding
-      const shares = props.data.advanced_ratios.shares_outstanding;
-      return props.data.segment_data.annual_financials.map(f => {
-        const eps = f.earnings / shares;
+      const shares = props.data.advanced_ratios?.shares_outstanding || 1;
+      return annuals.map((f: any) => {
+        const eps = (f.earnings || 0) / shares;
         return {
-          label: f.year.toString(),
+          label: f.year ? f.year.toString() : "",
           estimate: null,
           actual: eps,
           surprise: null,

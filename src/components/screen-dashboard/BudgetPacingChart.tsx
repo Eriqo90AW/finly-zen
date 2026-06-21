@@ -45,7 +45,7 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
         });
 
         const dailyExpense = dayTransactions.reduce((acc, t) => {
-          if (t.type === "expense") return acc + t.amount;
+          if (t.type === "expense" && t.category?.toLowerCase() !== "transfer") return acc + t.amount;
           return acc;
         }, 0);
 

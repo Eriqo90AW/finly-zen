@@ -326,3 +326,16 @@ input[type="range"].dcf-slider::-moz-range-thumb:hover {
   background: var(--color-mid-green);
 }
 
+/* Redesigned TradeHistory Page Animations & Utilities */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+}

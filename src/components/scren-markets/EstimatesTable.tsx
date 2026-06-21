@@ -4,7 +4,7 @@ import type { EstimatesTableProps, Estimate } from "../../types";
 
 
 export const EstimatesTable = (props: EstimatesTableProps) => {
-  const estimates = createMemo(() => props.data.earnings_estimates.by_period);
+  const estimates = createMemo(() => props.data.earnings_estimates?.by_period || {} as any);
   
   const columns = createMemo(() => [
     { label: "Current Quarter", data: estimates().current_quarter, period: "Jun 2026", isCurrent: true, type: "quarter" },
@@ -73,28 +73,28 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
             <Row 
               label="EPS Average" 
               subLabel="Estimate"
-              render={(est) => formatUSD(est.eps_avg, 2)} 
+              render={(est) => est ? formatUSD(est.eps_avg, 2) : "N/A"} 
             />
             <Row 
               label="EPS Growth" 
               subLabel="QoQ and YoY"
               render={(est) => (
-                <span class={est.eps_growth > 0 ? "text-[#10B981]" : "text-[#F43F5E]"}>
-                  {formatPercent(est.eps_growth)}
+                <span class={est && est.eps_growth > 0 ? "text-[#10B981]" : "text-[#F43F5E]"}>
+                  {est ? formatPercent(est.eps_growth) : "N/A"}
                 </span>
               )} 
             />
             <Row 
               label="Revenue Avg" 
               subLabel="Total Sales"
-              render={(est) => formatUSDCompact(est.revenue_avg)} 
+              render={(est) => est ? formatUSDCompact(est.revenue_avg) : "N/A"} 
             />
             <Row 
               label="Revenue Growth" 
               subLabel="QoQ and YoY"
               render={(est) => (
-                <span class={est.revenue_growth > 0 ? "text-[#10B981]" : "text-[#F43F5E]"}>
-                  {formatPercent(est.revenue_growth)}
+                <span class={est && est.revenue_growth > 0 ? "text-[#10B981]" : "text-[#F43F5E]"}>
+                  {est ? formatPercent(est.revenue_growth) : "N/A"}
                 </span>
               )} 
             />
@@ -103,8 +103,8 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
               subLabel="Upgrades"
               render={(est) => (
                 <div class="flex items-center gap-2">
-                  <span class={`px-1.5 py-0.5 rounded text-[10px] font-bold ${(est.eps_revisions_up_7d ?? 0) > 0 ? "bg-[#10B981]/10 text-[#10B981]" : "bg-earth/5 text-earth/40"}`}>
-                    {est.eps_revisions_up_7d ?? 0}↑
+                  <span class={`px-1.5 py-0.5 rounded text-[10px] font-bold ${est && (est.eps_revisions_up_7d ?? 0) > 0 ? "bg-[#10B981]/10 text-[#10B981]" : "bg-earth/5 text-earth/40"}`}>
+                    {est ? (est.eps_revisions_up_7d ?? 0) : 0}↑
                   </span>
                 </div>
               )} 
@@ -114,12 +114,12 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
               subLabel="Up / Down"
               render={(est) => (
                 <div class="flex items-center gap-2">
-                  <span class={`px-1.5 py-0.5 rounded text-[10px] font-bold ${(est.eps_revisions_up_30d ?? 0) > 0 ? "bg-[#10B981]/10 text-[#10B981]" : "bg-earth/5 text-earth/40"}`}>
-                    {est.eps_revisions_up_30d ?? 0}↑
+                  <span class={`px-1.5 py-0.5 rounded text-[10px] font-bold ${est && (est.eps_revisions_up_30d ?? 0) > 0 ? "bg-[#10B981]/10 text-[#10B981]" : "bg-earth/5 text-earth/40"}`}>
+                    {est ? (est.eps_revisions_up_30d ?? 0) : 0}↑
                   </span>
                   <span class="text-earth/20 text-[10px]">/</span>
-                  <span class={`px-1.5 py-0.5 rounded text-[10px] font-bold ${(est.eps_revisions_down_30d ?? 0) > 0 ? "bg-[#F43F5E]/10 text-[#F43F5E]" : "bg-earth/5 text-earth/40"}`}>
-                    {est.eps_revisions_down_30d ?? 0}↓
+                  <span class={`px-1.5 py-0.5 rounded text-[10px] font-bold ${est && (est.eps_revisions_down_30d ?? 0) > 0 ? "bg-[#F43F5E]/10 text-[#F43F5E]" : "bg-earth/5 text-earth/40"}`}>
+                    {est ? (est.eps_revisions_down_30d ?? 0) : 0}↓
                   </span>
                 </div>
               )} 
@@ -129,7 +129,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
               subLabel="Low — High"
               render={(est) => (
                 <span class="text-earth text-xs font-medium">
-                  {formatUSD(est.eps_low, 2)} — {formatUSD(est.eps_high, 2)}
+                  {est ? `${formatUSD(est.eps_low, 2)} — ${formatUSD(est.eps_high, 2)}` : "N/A"}
                 </span>
               )} 
             />
@@ -138,7 +138,7 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
               <For each={columns()}>
                 {(col) => (
                   <td class={`py-3 px-4 text-xs font-bold text-forest ${col.isCurrent ? "bg-earth/6" : "bg-earth/3"}`}>
-                    {col.data.eps_num_analysts} Analysts
+                    {col.data?.eps_num_analysts ?? 0} Analysts
                   </td>
                 )}
               </For>

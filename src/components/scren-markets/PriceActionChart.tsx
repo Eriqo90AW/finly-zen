@@ -6,14 +6,17 @@ import type { PriceActionChartProps } from "../../types";
 
 export const PriceActionChart = (props: PriceActionChartProps) => {
   const chartOptions = createMemo((): ApexOptions => {
-    const splitAction = props.data.corporate_actions.find(
+    const corporateActions = props.data.corporate_actions || [];
+    const priceAction = props.data.price_action || [];
+
+    const splitAction = corporateActions.find(
       (a) => a.type === "split",
     );
 
     // Find the closest index for the split action annotation
     let splitIndex = -1;
     if (splitAction) {
-      splitIndex = props.data.price_action.findIndex(
+      splitIndex = priceAction.findIndex(
         (p) =>
           new Date(p.date).getTime() >= new Date(splitAction.date).getTime(),
       );
@@ -75,7 +78,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
           formatter: (val: string, timestamp: any) => {
             if (!val) return "";
             const d = new Date(val);
-            const data = props.data.price_action;
+            const data = priceAction;
             const index =
               typeof timestamp === "number" && timestamp >= 0
                 ? timestamp
@@ -113,15 +116,24 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
         opposite: true,
         labels: {
           style: { colors: "#5C6B5E", fontSize: "10px" },
-          formatter: (val) => formatUSD(val, 0),
+          formatter: (val) => {
+            // Dynamically choose decimals based on the price range
+            const prices = priceAction.flatMap(p => [p.high, p.low]);
+            if (prices.length === 0) return formatUSD(val, 2);
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const range = maxPrice - minPrice;
+            const decimals = range < 5 ? 2 : range < 50 ? 1 : 0;
+            return formatUSD(val, decimals);
+          },
         },
       },
       annotations: {
         xaxis:
-          splitIndex !== -1
+          splitIndex !== -1 && priceAction[splitIndex]
             ? [
                 {
-                  x: props.data.price_action[splitIndex].date,
+                  x: priceAction[splitIndex].date,
                   borderColor: "var(--color-forest)",
                   strokeDashArray: 4,
                   label: {
@@ -141,7 +153,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
         theme: "dark",
         x: { show: false },
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          const point = props.data.price_action[dataPointIndex];
+          const point = priceAction[dataPointIndex];
           if (!point) return "";
           return `
             <div class="px-4 py-4 bg-[#1C2B20]/90 text-white text-xs font-outfit rounded-xl shadow-2xl flex flex-col gap-2 w-[220px] border border-white/10">
@@ -191,7 +203,7 @@ export const PriceActionChart = (props: PriceActionChartProps) => {
           series={[
             {
               name: "Price",
-              data: props.data.price_action.map((p) => ({
+              data: (props.data.price_action || []).map((p) => ({
                 x: p.date,
                 y: [p.open, p.high, p.low, p.close],
               })),

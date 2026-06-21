@@ -7,14 +7,17 @@ import { PriceAlertModal } from "./modals/PriceAlertModal";
 export const StockHero = (props: StockHeroProps) => {
   const d = () => props.data;
   const status = () => props.marketStatus;
-  const diff = () => d().valuation.price_diff_percentage;
+  const diff = () => d().valuation?.price_diff_percentage ?? 0;
   const isPositive = () => diff() >= 0;
 
   const [isModalOpen, setIsModalOpen] = createSignal(false);
-  const activeAlertsCount = () =>
-    priceAlertState.alerts.filter(
-      (a) => a.ticker === d().ticker.toUpperCase() && !a.triggered
+  const activeAlertsCount = () => {
+    const ticker = d().ticker;
+    if (!ticker) return 0;
+    return priceAlertState.alerts.filter(
+      (a) => a.ticker === ticker.toUpperCase() && !a.triggered
     ).length;
+  };
 
   return (
     <div class="premium-card relative overflow-hidden p-6 bg-gradient-to-br from-white via-sage/5 to-sage/10 border-forest/10 group transition-all duration-500 hover:shadow-lg hover:cursor-default">
@@ -117,7 +120,7 @@ export const StockHero = (props: StockHeroProps) => {
               <div class="flex flex-col items-start min-w-32">
                 <div class="flex items-center gap-3">
                   <span class="text-[38px] font-outfit font-black text-forest leading-none tracking-tighter">
-                    {formatUSD(d().valuation.extended_hours_price)}
+                    {formatUSD(d().valuation?.extended_hours_price ?? d().valuation?.current_price ?? 0)}
                   </span>
                   <div
                     class={`flex h-6 items-center gap-1 px-1.5 py-0.5 rounded-md border ${isPositive() ? "bg-fin-green/10 border-fin-green/10" : "bg-red-500/10 border-red-500/10"}`}
@@ -145,11 +148,11 @@ export const StockHero = (props: StockHeroProps) => {
             </p>
             <div class="flex flex-col items-end">
               <span class="text-xl font-outfit font-bold text-forest leading-none">
-                {formatUSDCompact(d().valuation.market_cap)}
+                {formatUSDCompact(d().valuation?.market_cap ?? 0)}
               </span>
               <span class="text-[9px] text-earth/60 font-bold uppercase tracking-widest mt-1">
                 {(() => {
-                  const cap = d().valuation.market_cap;
+                  const cap = d().valuation?.market_cap ?? 0;
                   if (cap >= 500000000000) return "Large Cap";
                   if (cap >= 10000000000) return "Mid Cap";
                   if (cap >= 1000000000) return "Small Cap";

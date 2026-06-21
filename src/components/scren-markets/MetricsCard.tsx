@@ -7,160 +7,165 @@ import { FundamentalsCompareModal } from "./modals/FundamentalsCompareModal";
 
 export const MetricsCard = (props: MetricsCardProps) => {
   const [isCompareOpen, setIsCompareOpen] = createSignal(false);
-  const categories = createMemo<MetricCategory[]>(() => [
-    {
-      title: "Valuation",
-      icon: "bar_chart",
-      metrics: [
-        { 
-          label: "P/E (TTM)", 
-          value: formatMultiple(props.data.valuation.pe_ttm), 
-          rawValue: props.data.valuation.pe_ttm,
-          color: "var(--color-fin-blue)",
-          tooltipPosition: "bottom" as const
-        },
-        { 
-          label: "P/E (Forward)", 
-          value: formatMultiple(props.data.valuation.pe_forward), 
-          rawValue: props.data.valuation.pe_forward,
-          color: "var(--color-fin-blue)",
-          tooltipPosition: "bottom" as const
-        },
-        { 
-          label: "PEG Ratio", 
-          value: props.data.advanced_ratios.peg_ratio?.toFixed(2) || "N/A", 
-          rawValue: props.data.advanced_ratios.peg_ratio,
-          color: "var(--color-fin-purple)" 
-        },
-        { 
-          label: "P/S (TTM)", 
-          value: formatMultiple(props.data.valuation.price_to_sales_ttm), 
-          rawValue: props.data.valuation.price_to_sales_ttm,
-          color: "var(--color-fin-blue)" 
-        },
-        { 
-          label: "P/B", 
-          value: formatMultiple(props.data.valuation.price_to_book), 
-          rawValue: props.data.valuation.price_to_book,
-          color: "var(--color-fin-blue)" 
-        },
-        { 
-          label: "EV / Revenue", 
-          value: formatMultiple(props.data.advanced_ratios.ev_to_revenue), 
-          rawValue: props.data.advanced_ratios.ev_to_revenue,
-          color: "var(--color-fin-purple)" 
-        },
-        { 
-          label: "EV / EBITDA", 
-          value: formatMultiple(props.data.valuation.ev_to_ebitda), 
-          rawValue: props.data.valuation.ev_to_ebitda,
-          color: "var(--color-fin-purple)" 
-        },
-      ]
-    },
-    {
-      title: "Profitability",
-      icon: "payments",
-      metrics: [
-        { 
-          label: "Gross Margin", 
-          value: formatPercent(props.data.advanced_ratios.gross_margin), 
-          rawValue: props.data.advanced_ratios.gross_margin,
-          color: "var(--color-fin-green)" 
-        },
-        { 
-          label: "Operating Margin", 
-          value: formatPercent(props.data.advanced_ratios.operating_margin), 
-          rawValue: props.data.advanced_ratios.operating_margin,
-          color: "var(--color-fin-green)" 
-        },
-        { 
-          label: "Net Margin", 
-          value: formatPercent(props.data.advanced_ratios.net_margin), 
-          rawValue: props.data.advanced_ratios.net_margin,
-          color: "var(--color-fin-green)" 
-        },
-        { 
-          label: "Profit Margin", 
-          value: formatPercent(props.data.valuation.profit_margin), 
-          rawValue: props.data.valuation.profit_margin,
-          color: "var(--color-fin-green)" 
-        },
-        { 
-          label: "ROE", 
-          value: formatPercent(props.data.advanced_ratios.roe), 
-          rawValue: props.data.advanced_ratios.roe,
-          color: "var(--color-fin-green)" 
-        },
-        { 
-          label: "ROA", 
-          value: formatPercent(props.data.advanced_ratios.roa), 
-          rawValue: props.data.advanced_ratios.roa,
-          color: "var(--color-fin-green)" 
-        },
-      ]
-    },
-    {
-      title: "Health & Risk",
-      icon: "health_and_safety",
-      metrics: [  
-        { 
-          label: "Current Ratio", 
-          value: props.data.advanced_ratios.current_ratio?.toFixed(2) || "N/A", 
-          rawValue: props.data.advanced_ratios.current_ratio,
-          color: "var(--color-fin-amber)" 
-        },
-        { 
-          label: "Debt / Equity", 
-          value: props.data.advanced_ratios.debt_to_equity?.toFixed(2) || "N/A", 
-          rawValue: props.data.advanced_ratios.debt_to_equity,
-          color: (props.data.advanced_ratios.debt_to_equity ?? 0) > 2 ? "var(--color-fin-red)" : "var(--color-fin-amber)" 
-        },
-        { 
-          label: "Beta", 
-          value: props.data.advanced_ratios.beta?.toFixed(2) || "N/A", 
-          rawValue: props.data.advanced_ratios.beta,
-          color: "var(--color-earth)" 
-        },
-        { 
-          label: "Short % of Float", 
-          value: props.data.advanced_ratios.short_percent_of_float != null 
-            ? (props.data.advanced_ratios.short_percent_of_float * 100).toFixed(2) + "%" 
-            : "N/A", 
-          rawValue: props.data.advanced_ratios.short_percent_of_float,
-          color: "var(--color-earth)" 
-        },
-        { 
-          label: "Dividend Yield", 
-          value: props.data.advanced_ratios.dividend_yield != null 
-            ? (props.data.advanced_ratios.dividend_yield * 100).toFixed(2) + "%" 
-            : "N/A", 
-          rawValue: props.data.advanced_ratios.dividend_yield,
-          color: "var(--color-fin-green)" 
-        },
-        { 
-          label: "Dividend Rate", 
-          value: props.data.advanced_ratios.dividend_rate != null 
-            ? formatUSD(props.data.advanced_ratios.dividend_rate) 
-            : "N/A", 
-          rawValue: props.data.advanced_ratios.dividend_rate,
-          color: "var(--color-fin-green)" 
-        },
-      ]
-    },
-    {
-      title: "Market Data",
-      icon: "public",
-      metrics: [
-        { 
-          label: "Shares Float", 
-          value: formatUSDCompact(props.data.advanced_ratios.float_shares).replace("$", ""), 
-          rawValue: props.data.advanced_ratios.float_shares,
-          color: "var(--color-earth)" 
-        },
-      ]
-    },
-  ]);
+  const categories = createMemo<MetricCategory[]>(() => {
+    const valuation = props.data.valuation || {} as any;
+    const advancedRatios = props.data.advanced_ratios || {} as any;
+
+    return [
+      {
+        title: "Valuation",
+        icon: "bar_chart",
+        metrics: [
+          { 
+            label: "P/E (TTM)", 
+            value: valuation.pe_ttm != null ? formatMultiple(valuation.pe_ttm) : "N/A", 
+            rawValue: valuation.pe_ttm,
+            color: "var(--color-fin-blue)",
+            tooltipPosition: "bottom" as const
+          },
+          { 
+            label: "P/E (Forward)", 
+            value: valuation.pe_forward != null ? formatMultiple(valuation.pe_forward) : "N/A", 
+            rawValue: valuation.pe_forward,
+            color: "var(--color-fin-blue)",
+            tooltipPosition: "bottom" as const
+          },
+          { 
+            label: "PEG Ratio", 
+            value: advancedRatios.peg_ratio != null ? advancedRatios.peg_ratio.toFixed(2) : "N/A", 
+            rawValue: advancedRatios.peg_ratio,
+            color: "var(--color-fin-purple)" 
+          },
+          { 
+            label: "P/S (TTM)", 
+            value: valuation.price_to_sales_ttm != null ? formatMultiple(valuation.price_to_sales_ttm) : "N/A", 
+            rawValue: valuation.price_to_sales_ttm,
+            color: "var(--color-fin-blue)" 
+          },
+          { 
+            label: "P/B", 
+            value: valuation.price_to_book != null ? formatMultiple(valuation.price_to_book) : "N/A", 
+            rawValue: valuation.price_to_book,
+            color: "var(--color-fin-blue)" 
+          },
+          { 
+            label: "EV / Revenue", 
+            value: advancedRatios.ev_to_revenue != null ? formatMultiple(advancedRatios.ev_to_revenue) : "N/A", 
+            rawValue: advancedRatios.ev_to_revenue,
+            color: "var(--color-fin-purple)" 
+          },
+          { 
+            label: "EV / EBITDA", 
+            value: valuation.ev_to_ebitda != null ? formatMultiple(valuation.ev_to_ebitda) : "N/A", 
+            rawValue: valuation.ev_to_ebitda,
+            color: "var(--color-fin-purple)" 
+          },
+        ]
+      },
+      {
+        title: "Profitability",
+        icon: "payments",
+        metrics: [
+          { 
+            label: "Gross Margin", 
+            value: advancedRatios.gross_margin != null ? formatPercent(advancedRatios.gross_margin) : "N/A", 
+            rawValue: advancedRatios.gross_margin,
+            color: "var(--color-fin-green)" 
+          },
+          { 
+            label: "Operating Margin", 
+            value: advancedRatios.operating_margin != null ? formatPercent(advancedRatios.operating_margin) : "N/A", 
+            rawValue: advancedRatios.operating_margin,
+            color: "var(--color-fin-green)" 
+          },
+          { 
+            label: "Net Margin", 
+            value: advancedRatios.net_margin != null ? formatPercent(advancedRatios.net_margin) : "N/A", 
+            rawValue: advancedRatios.net_margin,
+            color: "var(--color-fin-green)" 
+          },
+          { 
+            label: "Profit Margin", 
+            value: valuation.profit_margin != null ? formatPercent(valuation.profit_margin) : "N/A", 
+            rawValue: valuation.profit_margin,
+            color: "var(--color-fin-green)" 
+          },
+          { 
+            label: "ROE", 
+            value: advancedRatios.roe != null ? formatPercent(advancedRatios.roe) : "N/A", 
+            rawValue: advancedRatios.roe,
+            color: "var(--color-fin-green)" 
+          },
+          { 
+            label: "ROA", 
+            value: advancedRatios.roa != null ? formatPercent(advancedRatios.roa) : "N/A", 
+            rawValue: advancedRatios.roa,
+            color: "var(--color-fin-green)" 
+          },
+        ]
+      },
+      {
+        title: "Health & Risk",
+        icon: "health_and_safety",
+        metrics: [  
+          { 
+            label: "Current Ratio", 
+            value: advancedRatios.current_ratio != null ? advancedRatios.current_ratio.toFixed(2) : "N/A", 
+            rawValue: advancedRatios.current_ratio,
+            color: "var(--color-fin-amber)" 
+          },
+          { 
+            label: "Debt / Equity", 
+            value: advancedRatios.debt_to_equity != null ? advancedRatios.debt_to_equity.toFixed(2) : "N/A", 
+            rawValue: advancedRatios.debt_to_equity,
+            color: (advancedRatios.debt_to_equity ?? 0) > 2 ? "var(--color-fin-red)" : "var(--color-fin-amber)" 
+          },
+          { 
+            label: "Beta", 
+            value: advancedRatios.beta != null ? advancedRatios.beta.toFixed(2) : "N/A", 
+            rawValue: advancedRatios.beta,
+            color: "var(--color-earth)" 
+          },
+          { 
+            label: "Short % of Float", 
+            value: advancedRatios.short_percent_of_float != null 
+              ? (advancedRatios.short_percent_of_float * 100).toFixed(2) + "%" 
+              : "N/A", 
+            rawValue: advancedRatios.short_percent_of_float,
+            color: "var(--color-earth)" 
+          },
+          { 
+            label: "Dividend Yield", 
+            value: advancedRatios.dividend_yield != null 
+              ? (advancedRatios.dividend_yield * 100).toFixed(2) + "%" 
+              : "N/A", 
+            rawValue: advancedRatios.dividend_yield,
+            color: "var(--color-fin-green)" 
+          },
+          { 
+            label: "Dividend Rate", 
+            value: advancedRatios.dividend_rate != null 
+              ? formatUSD(advancedRatios.dividend_rate) 
+              : "N/A", 
+            rawValue: advancedRatios.dividend_rate,
+            color: "var(--color-fin-green)" 
+          },
+        ]
+      },
+      {
+        title: "Market Data",
+        icon: "public",
+        metrics: [
+          { 
+            label: "Shares Float", 
+            value: advancedRatios.float_shares != null ? formatUSDCompact(advancedRatios.float_shares).replace("$", "") : "N/A", 
+            rawValue: advancedRatios.float_shares,
+            color: "var(--color-earth)" 
+          },
+        ]
+      },
+    ];
+  });
 
   return (
     <div class="premium-card h-full flex flex-col overflow-hidden bg-gradient-to-b from-white to-sage/5 border-forest/10 hover:cursor-default">

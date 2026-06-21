@@ -83,6 +83,18 @@ const StockDashboard = () => {
     setIsStockLoading(stockData.loading);
   });
 
+  const hasFinancialData = () => {
+    const data = stockData();
+    if (!data) return false;
+    const hasAnnuals = data.segment_data?.annual_financials && data.segment_data.annual_financials.length > 0;
+    const hasEstimates = data.earnings_estimates?.by_period && 
+      (data.earnings_estimates.by_period.current_quarter || 
+       data.earnings_estimates.by_period.next_quarter || 
+       data.earnings_estimates.by_period.current_year || 
+       data.earnings_estimates.by_period.next_year);
+    return !!(hasAnnuals || hasEstimates);
+  };
+
   const [activeToasts, setActiveToasts] = createSignal<PriceAlert[]>([]);
 
   const dismissToast = (id: string) => {
@@ -93,7 +105,8 @@ const StockDashboard = () => {
     const data = stockData();
     if (data) {
       setCurrentStockData(data);
-      const newlyTriggered = checkAlerts(data.ticker, data.valuation.extended_hours_price);
+      const price = data.valuation?.extended_hours_price ?? data.valuation?.current_price ?? 0;
+      const newlyTriggered = checkAlerts(data.ticker, price);
       if (newlyTriggered.length > 0) {
         setActiveToasts((prev) => [...prev, ...newlyTriggered]);
       }
@@ -141,17 +154,19 @@ const StockDashboard = () => {
             </div>
           </div>
 
-          {/* Secondary Charts: Revenue/Earnings & EPS Actuals */}
-          <div class="bento-grid !grid-rows-none">
-            <FinancialPerformanceChart data={stockData()!} />
-            <EarningsActualsChart data={stockData()!} />
-          </div>
+          <Show when={hasFinancialData()}>
+            {/* Secondary Charts: Revenue/Earnings & EPS Actuals */}
+            <div class="bento-grid !grid-rows-none">
+              <FinancialPerformanceChart data={stockData()!} />
+              <EarningsActualsChart data={stockData()!} />
+            </div>
 
-          {/* Detailed Data: Forward Estimates */}
-          <EstimatesTable data={stockData()!} />
+            {/* Detailed Data: Forward Estimates */}
+            <EstimatesTable data={stockData()!} />
 
-          {/* DCF Valuation Calculator */}
-          <DCFValuationCalculator data={stockData()!} />
+            {/* DCF Valuation Calculator */}
+            <DCFValuationCalculator data={stockData()!} />
+          </Show>
         </div>
       </Show>
       <PriceAlertToast alerts={activeToasts()} onDismiss={dismissToast} />

@@ -5,6 +5,7 @@ import {
   For,
   Show,
   untrack,
+  createEffect,
 } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { SolidApexCharts } from "solid-apexcharts";
@@ -43,6 +44,34 @@ export const TradeHistory = (props: TradeHistoryProps) => {
   // Sorting state
   const [sortBy, setSortBy] = createSignal<SortKey>("date");
   const [sortOrder, setSortOrder] = createSignal<"asc" | "desc">("desc");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = createSignal(1);
+  const pageSize = 20;
+
+  const tickerLogos = createMemo(() => {
+    const map: Record<string, string> = {};
+    if (props.portfolio?.assets) {
+      props.portfolio.assets.forEach(asset => {
+        if (asset.logoUrl) {
+          map[asset.ticker.toUpperCase()] = asset.logoUrl;
+        }
+      });
+    }
+    return map;
+  });
+
+  const tickerNames = createMemo(() => {
+    const map: Record<string, string> = {};
+    if (props.portfolio?.assets) {
+      props.portfolio.assets.forEach(asset => {
+        if (asset.name) {
+          map[asset.ticker.toUpperCase()] = asset.name;
+        }
+      });
+    }
+    return map;
+  });
 
   onMount(async () => {
     try {
@@ -92,7 +121,6 @@ export const TradeHistory = (props: TradeHistoryProps) => {
     const transactions = rawTransactions();
     const isUSDPortfolio = props.portfolio.nativeCurrency === 'USD';
     
-    // Sort transactions chronologically (ascending date); BUYs first when same date
     const typeOrder: Record<string, number> = { BUY: 0, DEPOSIT: 1, DIVIDEND: 2, SELL: 3, WITHDRAWAL: 4, PENDING: 5 };
     const sortedTxs = [...transactions].sort((a, b) => {
       const dateA = new Date(a.transaction_date).getTime();
@@ -136,7 +164,6 @@ export const TradeHistory = (props: TradeHistoryProps) => {
       const rate = Number(tx.price_currency || 1);
       const txCurrency = tx.currency || "USD";
 
-      // Price in native portfolio currency
       let pricePerShare = price;
       if (isUSDPortfolio) {
         if (txCurrency !== "USD") {
@@ -159,7 +186,6 @@ export const TradeHistory = (props: TradeHistoryProps) => {
         tickerStats[ticker].realizedPnL += (revenue - costBasisOfSold);
         
         stats.currentShares = Math.max(0, stats.currentShares - qty);
-        // Round to handle floating-point precision inaccuracies (e.g. 3.6 - 1.2 - 2.4 = 1.11e-16)
         stats.currentShares = Math.round(stats.currentShares * 1e8) / 1e8;
         
         if (stats.currentShares === 0) {
@@ -179,7 +205,203 @@ export const TradeHistory = (props: TradeHistoryProps) => {
     return tickerStats;
   });
 
-  // Compute gain/loss data sorted descending for the horizontal chart
+  // KPI Calculations
+  const summaryStats = createMemo(() => {
+    const txs = rawTransactions();
+    const isUSD = props.portfolio.nativeCurrency === 'USD';
+    let totalBuy = 0;
+    let totalSell = 0;
+    let totalDiv = 0;
+
+    txs.forEach(tx => {
+      const nativeAmt = getTxAmountInNative(tx, isUSD);
+      if (tx.type === "BUY") {
+        totalBuy += nativeAmt;
+      } else if (tx.type === "SELL") {
+        totalSell += nativeAmt;
+      } else if (tx.type === "DIVIDEND") {
+        totalDiv += nativeAmt;
+      }
+    });
+
+    const pnlMap = computeRealizedPnLMap();
+    const totalPnL = Object.values(pnlMap).reduce((sum, item) => sum + item.realizedPnL, 0);
+
+    return {
+      totalTrades: txs.length,
+      realizedPnL: totalPnL,
+      buyVolume: totalBuy,
+      sellVolume: totalSell,
+      dividendIncome: totalDiv
+    };
+  });
+
+  const isPositivePnL = createMemo(() => summaryStats().realizedPnL >= 0);
+
+  // Cumulative PnL Timeline calculation for Area Chart
+  const cumulativePnLData = createMemo(() => {
+    const transactions = rawTransactions();
+    const isUSDPortfolio = props.portfolio.nativeCurrency === 'USD';
+    
+    const typeOrder: Record<string, number> = { BUY: 0, DEPOSIT: 1, DIVIDEND: 2, SELL: 3, WITHDRAWAL: 4, PENDING: 5 };
+    const sortedTxs = [...transactions].sort((a, b) => {
+      const dateA = new Date(a.transaction_date).getTime();
+      const dateB = new Date(b.transaction_date).getTime();
+      if (dateA !== dateB) return dateA - dateB;
+      return (typeOrder[a.type] ?? 9) - (typeOrder[b.type] ?? 9);
+    });
+
+    const runningStats: Record<string, {
+      averagePrice: number;
+      totalBuyQty: number;
+      totalCost: number;
+      currentShares: number;
+    }> = {};
+
+    let totalPnLAccumulator = 0;
+    const timeline: { date: string; value: number }[] = [];
+
+    sortedTxs.forEach(tx => {
+      const ticker = tx.asset_ticker.toUpperCase();
+      if (!runningStats[ticker]) {
+        runningStats[ticker] = {
+          averagePrice: 0,
+          totalBuyQty: 0,
+          totalCost: 0,
+          currentShares: 0
+        };
+      }
+
+      const stats = runningStats[ticker];
+      const qty = Number(tx.qty);
+      const price = Number(tx.price_per_unit);
+      const rate = Number(tx.price_currency || 1);
+      const txCurrency = tx.currency || "USD";
+
+      let pricePerShare = price;
+      if (isUSDPortfolio) {
+        if (txCurrency !== "USD") {
+          pricePerShare = price / rate;
+        }
+      } else {
+        if (txCurrency === "USD") {
+          pricePerShare = price * rate;
+        }
+      }
+
+      if (tx.type === "BUY") {
+        stats.totalBuyQty += qty;
+        stats.totalCost += qty * pricePerShare;
+        stats.currentShares += qty;
+        stats.averagePrice = stats.totalBuyQty > 0 ? stats.totalCost / stats.totalBuyQty : 0;
+      } else if (tx.type === "SELL") {
+        const costBasisOfSold = qty * stats.averagePrice;
+        const revenue = qty * pricePerShare;
+        totalPnLAccumulator += (revenue - costBasisOfSold);
+        
+        stats.currentShares = Math.max(0, stats.currentShares - qty);
+        stats.currentShares = Math.round(stats.currentShares * 1e8) / 1e8;
+        
+        if (stats.currentShares === 0) {
+          stats.totalBuyQty = 0;
+          stats.totalCost = 0;
+          stats.averagePrice = 0;
+        } else {
+          stats.totalBuyQty = stats.currentShares;
+          stats.totalCost = stats.currentShares * stats.averagePrice;
+        }
+      } else if (tx.type === "DIVIDEND") {
+        totalPnLAccumulator += (qty * pricePerShare);
+      }
+
+      if (tx.type === "SELL" || tx.type === "DIVIDEND") {
+        const dateObj = new Date(tx.transaction_date);
+        const dateStr = dateObj.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+        timeline.push({ date: dateStr, value: totalPnLAccumulator });
+      }
+    });
+
+    const aggregated: Record<string, number> = {};
+    timeline.forEach(point => {
+      aggregated[point.date] = point.value;
+    });
+
+    return Object.entries(aggregated).map(([date, value]) => ({ date, value }));
+  });
+
+  // Monthly Activity Stacked Bar calculations
+  const monthlyActivityData = createMemo(() => {
+    const transactions = rawTransactions();
+    const monthsOrder: string[] = [];
+    const grouped: Record<string, { BUY: number; SELL: number; DIVIDEND: number }> = {};
+
+    const sortedTxs = [...transactions].sort((a, b) => 
+      new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
+    );
+
+    sortedTxs.forEach(tx => {
+      if (tx.type !== "BUY" && tx.type !== "SELL" && tx.type !== "DIVIDEND") return;
+      const date = new Date(tx.transaction_date);
+      const monthStr = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      if (!grouped[monthStr]) {
+        grouped[monthStr] = { BUY: 0, SELL: 0, DIVIDEND: 0 };
+        monthsOrder.push(monthStr);
+      }
+      grouped[monthStr][tx.type]++;
+    });
+
+    return {
+      categories: monthsOrder,
+      series: [
+        { name: "BUY", data: monthsOrder.map(m => grouped[m].BUY) },
+        { name: "SELL", data: monthsOrder.map(m => grouped[m].SELL) },
+        { name: "DIVIDEND", data: monthsOrder.map(m => grouped[m].DIVIDEND) }
+      ]
+    };
+  });
+
+  // Donut Volume Breakdown
+  const volumeBreakdown = createMemo(() => {
+    const transactions = rawTransactions();
+    let buyVol = 0;
+    let sellVol = 0;
+    let divVol = 0;
+
+    transactions.forEach(tx => {
+      const isUSDPortfolio = props.portfolio.nativeCurrency === 'USD';
+      const nativeAmt = getTxAmountInNative(tx, isUSDPortfolio);
+
+      if (tx.type === "BUY") {
+        buyVol += nativeAmt;
+      } else if (tx.type === "SELL") {
+        sellVol += nativeAmt;
+      } else if (tx.type === "DIVIDEND") {
+        divVol += nativeAmt;
+      }
+    });
+
+    const displayBuy = getDisplayAmount(buyVol, props.portfolio.nativeCurrency);
+    const displaySell = getDisplayAmount(sellVol, props.portfolio.nativeCurrency);
+    const displayDiv = getDisplayAmount(divVol, props.portfolio.nativeCurrency);
+
+    return {
+      series: [displayBuy, displaySell, displayDiv],
+      labels: ["Buy Volume", "Sell Volume", "Dividend Income"]
+    };
+  });
+
+  // Top/Worst leaderboard
+  const leadersBoard = createMemo(() => {
+    const pnlMap = computeRealizedPnLMap();
+    const list = Object.values(pnlMap);
+    
+    const gainers = list.filter(item => item.realizedPnL > 0).sort((a, b) => b.realizedPnL - a.realizedPnL).slice(0, 3);
+    const losers = list.filter(item => item.realizedPnL < 0).sort((a, b) => a.realizedPnL - b.realizedPnL).slice(0, 3);
+
+    return { gainers, losers };
+  });
+
+  // Ticker bar chart data
   const chartData = createMemo(() => {
     const pnlMap = computeRealizedPnLMap();
     const list = Object.values(pnlMap);
@@ -196,6 +418,13 @@ export const TradeHistory = (props: TradeHistoryProps) => {
     return chartData().map((item) => (item.realizedPnL >= 0 ? "#52C278" : "#f43f5e"));
   });
 
+  const areaSeries = createMemo(() => [
+    {
+      name: "Cumulative Realized P&L",
+      data: cumulativePnLData().map(d => getDisplayAmount(d.value, props.portfolio.nativeCurrency))
+    }
+  ]);
+
   const barSeries = createMemo(() => [
     {
       name: "Total Realized Gain / Loss",
@@ -203,12 +432,168 @@ export const TradeHistory = (props: TradeHistoryProps) => {
     },
   ]);
 
-  // Adjust chart height dynamically based on number of stock tickers
-  const chartHeight = createMemo(() => {
-    const len = chartCategories().length;
-    if (len === 0) return 200;
-    return Math.max(200, len * 45 + 50);
+  const formatAreaChartValue = (val: number) => {
+    const displayCurrency = currency();
+    const isUSDPortfolio = props.portfolio.nativeCurrency === 'USD';
+    let displayAmount = val;
+
+    if (isUSDPortfolio && displayCurrency === 'IDR') {
+      displayAmount = val * getUsdRate();
+    } else if (!isUSDPortfolio && displayCurrency === 'USD') {
+      displayAmount = val / getUsdRate();
+    }
+
+    if (displayCurrency === 'USD') {
+      return formatUSD(displayAmount, 2);
+    } else {
+      const absAmount = Math.abs(displayAmount);
+      const formatted = new Intl.NumberFormat("id-ID", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(absAmount);
+      return (displayAmount < 0 ? "-" : "") + "Rp" + formatted;
+    }
+  };
+
+  // Chart options configurations
+  const areaOptions = createMemo((): ApexOptions => {
+    const data = cumulativePnLData();
+    const isPositive = data.length > 0 ? data[data.length - 1].value >= 0 : true;
+    const mainColor = isPositive ? "#52C278" : "#f43f5e";
+
+    return {
+      chart: {
+        type: "area",
+        toolbar: { show: false },
+        fontFamily: "Outfit",
+        animations: { enabled: true, speed: 500 }
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: (val) => formatAreaChartValue(Number(val)),
+        style: {
+          fontFamily: "Outfit",
+          fontWeight: 700,
+          fontSize: "10px",
+        }
+      },
+      colors: [mainColor],
+      fill: {
+        type: "gradient",
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.35,
+          opacityTo: 0.02,
+          stops: [0, 95]
+        }
+      },
+      stroke: { curve: "smooth", width: 2.5 },
+      xaxis: {
+        categories: data.map(d => d.date),
+        labels: {
+          style: { colors: "#5C6B5E", fontFamily: "Outfit", fontSize: "10px" }
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false }
+      },
+      yaxis: {
+        labels: {
+          style: { colors: "#5C6B5E", fontFamily: "Outfit", fontSize: "10px" },
+          formatter: (val) => formatAreaChartValue(val)
+        }
+      },
+      grid: { borderColor: "rgba(26, 77, 46, 0.06)", strokeDashArray: 4 },
+      tooltip: {
+        theme: "dark",
+        x: { show: true },
+        y: {
+          formatter: (val) => formatAreaChartValue(val)
+        }
+      }
+    };
   });
+
+  const stackedBarOptions = createMemo((): ApexOptions => ({
+    chart: {
+      type: "bar",
+      stacked: true,
+      toolbar: { show: false },
+      fontFamily: "Outfit",
+      animations: { enabled: true }
+    },
+    colors: ["#52C278", "#f43f5e", "#6366f1"],
+    plotOptions: {
+      bar: { borderRadius: 4, columnWidth: "45%" }
+    },
+    xaxis: {
+      categories: monthlyActivityData().categories,
+      labels: {
+        style: { colors: "#5C6B5E", fontFamily: "Outfit", fontSize: "10px" }
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+    yaxis: {
+      labels: {
+        style: { colors: "#5C6B5E", fontFamily: "Outfit", fontSize: "10px" }
+      }
+    },
+    grid: { borderColor: "rgba(26, 77, 46, 0.06)", strokeDashArray: 4 },
+    legend: {
+      position: "top",
+      horizontalAlign: "right",
+      fontFamily: "Outfit",
+      fontSize: "11px"
+    },
+    tooltip: { theme: "dark" }
+  }));
+
+  const donutOptions = createMemo((): ApexOptions => ({
+    chart: { type: "donut", fontFamily: "Outfit" },
+    colors: ["#52C278", "#f43f5e", "#6366f1"],
+    labels: ["Buy Volume", "Sell Volume", "Dividend Income"],
+    stroke: { show: false },
+    legend: {
+      position: "bottom",
+      fontFamily: "Outfit",
+      fontSize: "10px"
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "70%",
+          labels: {
+            show: true,
+            name: { show: true, fontSize: "11px", fontFamily: "Outfit", color: "#5C6B5E" },
+            value: {
+              show: true,
+              fontSize: "15px",
+              fontFamily: "Outfit",
+              fontWeight: "bold",
+              color: "#1a4d2e",
+              formatter: (val) => formatPortfolioValue(Number(val), currency(), true, props.portfolio.nativeCurrency)
+            },
+            total: {
+              show: true,
+              label: "Flow Vol",
+              fontFamily: "Outfit",
+              color: "#5C6B5E",
+              formatter: (w) => {
+                const sum = w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
+                return formatPortfolioValue(sum, currency(), true, props.portfolio.nativeCurrency);
+              }
+            }
+          }
+        }
+      }
+    },
+    tooltip: {
+      theme: "dark",
+      y: {
+        formatter: (val) => formatPortfolioValue(val, currency(), false, props.portfolio.nativeCurrency)
+      }
+    }
+  }));
 
   const barOptions = createMemo(
     (): ApexOptions => ({
@@ -216,20 +601,15 @@ export const TradeHistory = (props: TradeHistoryProps) => {
         type: "bar",
         toolbar: { show: false },
         fontFamily: "Outfit",
-        animations: {
-          enabled: true,
-          speed: 600,
-        },
+        animations: { enabled: true, speed: 500 },
       },
       plotOptions: {
         bar: {
           horizontal: true,
-          barHeight: "65%",
+          barHeight: "60%",
           distributed: true,
           borderRadius: 4,
-          dataLabels: {
-            position: "top",
-          },
+          dataLabels: { position: "top" },
         },
       },
       dataLabels: {
@@ -280,14 +660,14 @@ export const TradeHistory = (props: TradeHistoryProps) => {
           style: {
             colors: "#1A4D2E",
             fontFamily: "Outfit",
-            fontSize: "12px",
+            fontSize: "11px",
             fontWeight: 700,
           },
         },
       },
       grid: {
         show: true,
-        borderColor: "#f1f5f9",
+        borderColor: "rgba(26, 77, 46, 0.06)",
         strokeDashArray: 4,
         xaxis: { lines: { show: true } },
         yaxis: { lines: { show: false } },
@@ -320,11 +700,16 @@ export const TradeHistory = (props: TradeHistoryProps) => {
     })
   );
 
-  // Filtered and sorted transactions
+  const chartHeight = createMemo(() => {
+    const len = chartCategories().length;
+    if (len === 0) return 200;
+    return Math.max(200, len * 40 + 50);
+  });
+
+  // Filtered, sorted, and paginated transactions
   const processedTransactions = createMemo(() => {
     let list = [...rawTransactions()];
 
-    // 1. Search Query filter
     const query = searchQuery().trim().toLowerCase();
     if (query) {
       list = list.filter((tx) =>
@@ -332,13 +717,11 @@ export const TradeHistory = (props: TradeHistoryProps) => {
       );
     }
 
-    // 2. Type filter
     const type = typeFilter();
     if (type !== "ALL") {
       list = list.filter((tx) => tx.type === type);
     }
 
-    // 3. Sorting
     const key = sortBy();
     const order = sortOrder();
 
@@ -359,7 +742,6 @@ export const TradeHistory = (props: TradeHistoryProps) => {
         valA = Number(a.qty);
         valB = Number(b.qty);
       } else if (key === "price") {
-        // Sort by native unit price
         valA = Number(a.price_per_unit);
         valB = Number(b.price_per_unit);
       } else if (key === "amount") {
@@ -375,6 +757,25 @@ export const TradeHistory = (props: TradeHistoryProps) => {
     return list;
   });
 
+  // Adjust page to 1 when filters reduce available rows
+  createEffect(() => {
+    const total = Math.ceil(processedTransactions().length / pageSize);
+    if (currentPage() > total && total > 0) {
+      setCurrentPage(total);
+    } else if (total === 0) {
+      setCurrentPage(1);
+    }
+  });
+
+  const paginatedTransactions = createMemo(() => {
+    const start = (currentPage() - 1) * pageSize;
+    return processedTransactions().slice(start, start + pageSize);
+  });
+
+  const totalPages = createMemo(() => {
+    return Math.ceil(processedTransactions().length / pageSize) || 1;
+  });
+
   const handleSort = (key: SortKey) => {
     if (sortBy() === key) {
       setSortOrder(sortOrder() === "asc" ? "desc" : "asc");
@@ -388,33 +789,25 @@ export const TradeHistory = (props: TradeHistoryProps) => {
     setExpandedTxId(expandedTxId() === id ? null : id);
   };
 
-  // Helper to format currency values per transaction currency
   const formatTxCurrency = (amount: number, txCurrency: string) => {
     if (txCurrency === "USD") return formatUSD(amount);
     if (txCurrency === "IDR") return formatRupiah(amount);
     return `${amount.toLocaleString()} ${txCurrency}`;
   };
 
-  // Realized stats
-  const totalPnL = createMemo(() => {
-    const pnlMap = computeRealizedPnLMap();
-    return Object.values(pnlMap).reduce((sum, item) => sum + item.realizedPnL, 0);
-  });
-  const isPositivePnL = createMemo(() => totalPnL() >= 0);
-
   return (
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6 p-4 md:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div class="flex justify-between items-center mb-2">
+      <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-2 animate-fade-in-up stagger-1">
         <div class="flex items-center gap-4">
           <button
             onClick={() => navigate(`/portfolio/${props.portfolio.id}`)}
-            class="w-10 h-10 rounded-xl hover:bg-forest/5 flex items-center justify-center text-forest transition-colors duration-200 border border-forest/10 cursor-pointer"
+            class="w-10 h-10 rounded-xl hover:bg-forest/5 flex items-center justify-center text-forest transition-all duration-200 border border-forest/10 cursor-pointer active:scale-95"
           >
             <ChevronLeftIcon />
           </button>
           <div>
-            <h1 class="text-4xl font-cormorant text-forest font-bold tracking-tight mb-1">
+            <h1 class="text-3xl md:text-4xl font-cormorant text-forest font-bold tracking-tight mb-1">
               {props.portfolio.name}
             </h1>
             <p class="text-earth font-outfit tracking-wide uppercase text-[10px] font-bold">
@@ -423,85 +816,394 @@ export const TradeHistory = (props: TradeHistoryProps) => {
           </div>
         </div>
 
-        {/* Quick Summary Pills */}
-        <div class="flex gap-4">
-          <div class="bg-white border border-forest/10 rounded-2xl px-5 py-2.5 flex flex-col font-outfit shadow-sm">
-            <span class="text-[10px] text-earth/50 uppercase font-black tracking-wider leading-none mb-1">Total Trades</span>
-            <span class="text-lg font-bold text-forest leading-tight">
-              {isLoadingTxs() ? "..." : rawTransactions().length}
-            </span>
-          </div>
-
-          <div class="bg-white border border-forest/10 rounded-2xl px-5 py-2.5 flex flex-col font-outfit shadow-sm">
-            <span class="text-[10px] text-earth/50 uppercase font-black tracking-wider leading-none mb-1">Total Realized Return</span>
-            <div class="flex items-center gap-1">
-              <span
-                class={`text-lg font-bold leading-tight ${
-                  isPositivePnL() ? "text-spring" : "text-[#f43f5e]"
-                }`}
-              >
-                {formatPortfolioValue(
-                  totalPnL(),
-                  currency(),
-                  false,
-                  props.portfolio.nativeCurrency
-                )}
-              </span>
-              <span
-                class={`material-icons text-sm ${
-                  isPositivePnL() ? "text-spring" : "text-[#f43f5e]"
-                }`}
-              >
-                {isPositivePnL() ? "trending_up" : "trending_down"}
-              </span>
-            </div>
-          </div>
+        {/* Live Exchange Rate info */}
+        <div class="flex items-center gap-2 bg-sage/20 border border-forest/5 rounded-2xl px-4 py-2 text-xs font-outfit text-forest/70 self-start md:self-auto">
+          <span class="material-icons text-sm">currency_exchange</span>
+          <span>Live USD rate: <b>{formatRupiah(getUsdRate())}</b></span>
         </div>
       </div>
 
-      {/* Horizontal Bar Chart Card */}
-      <div class="premium-card p-6 flex flex-col cursor-default">
-        <div class="border-b border-forest/5 pb-4 mb-4">
-          <h4 class="font-outfit font-bold text-forest text-base">
-            Realized Gain / Loss Per Traded Stock
-          </h4>
-          <p class="text-earth/60 font-outfit text-xs mt-1">
-            Visualizing realized performance (sales and dividends) for each asset ticker, sorted by highest gains.
-          </p>
+      {/* KPI Strip Section */}
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in-up stagger-2">
+        <div class="fin-metric-card p-5 flex flex-col font-outfit relative overflow-hidden border-l-4 border-l-forest">
+          <span class="text-[9px] text-earth/50 uppercase font-black tracking-wider mb-1">Total Trades</span>
+          <span class="text-2xl font-bold text-forest mt-auto flex items-center gap-2">
+            {isLoadingTxs() ? "..." : summaryStats().totalTrades}
+            <span class="material-icons text-forest/20 text-lg">history</span>
+          </span>
         </div>
 
-        <Show
-          when={!isLoadingTxs() && chartData().length > 0}
-          fallback={
-            <div class="flex flex-col items-center justify-center text-earth/40 italic font-outfit py-12">
-              <span class="material-icons text-4xl text-forest/10 mb-2">bar_chart</span>
-              {isLoadingTxs() ? "Loading performance chart..." : "No traded stocks available for this portfolio."}
-            </div>
-          }
-        >
-          <div class="w-full" style={{ "min-height": `${chartHeight()}px` }}>
-            <SolidApexCharts
-              options={barOptions()}
-              series={barSeries()}
-              type="bar"
-              height={chartHeight()}
-            />
+        <div class="fin-metric-card p-5 flex flex-col font-outfit relative overflow-hidden border-l-4 border-l-spring">
+          <span class="text-[9px] text-earth/50 uppercase font-black tracking-wider mb-1">Realized Return</span>
+          <span class={`text-2xl font-bold mt-auto flex items-center gap-1.5 ${isPositivePnL() ? "text-spring" : "text-[#f43f5e]"}`}>
+            {formatPortfolioValue(
+              summaryStats().realizedPnL,
+              currency(),
+              false,
+              props.portfolio.nativeCurrency
+            )}
+            <span class="material-icons text-xs">
+              {isPositivePnL() ? "trending_up" : "trending_down"}
+            </span>
+          </span>
+        </div>
+
+        <div class="fin-metric-card p-5 flex flex-col font-outfit relative overflow-hidden border-l-4 border-l-[#52C278]">
+          <span class="text-[9px] text-earth/50 uppercase font-black tracking-wider mb-1">Capital Invested</span>
+          <span class="text-2xl font-bold text-forest mt-auto flex items-center gap-1.5">
+            {formatPortfolioValue(
+              summaryStats().buyVolume,
+              currency(),
+              true,
+              props.portfolio.nativeCurrency
+            )}
+            <span class="material-icons text-[#52C278]/30 text-lg">shopping_cart</span>
+          </span>
+        </div>
+
+        <div class="fin-metric-card p-5 flex flex-col font-outfit relative overflow-hidden border-l-4 border-l-[#f43f5e]">
+          <span class="text-[9px] text-earth/50 uppercase font-black tracking-wider mb-1">Capital Released</span>
+          <span class="text-2xl font-bold text-forest mt-auto flex items-center gap-1.5">
+            {formatPortfolioValue(
+              summaryStats().sellVolume,
+              currency(),
+              true,
+              props.portfolio.nativeCurrency
+            )}
+            <span class="material-icons text-[#f43f5e]/30 text-lg">sell</span>
+          </span>
+        </div>
+
+        <div class="fin-metric-card p-5 flex flex-col font-outfit relative overflow-hidden border-l-4 border-l-[#6366f1] col-span-2 md:col-span-1">
+          <span class="text-[9px] text-earth/50 uppercase font-black tracking-wider mb-1">Dividends Earned</span>
+          <span class="text-2xl font-bold text-forest mt-auto flex items-center gap-1.5">
+            {formatPortfolioValue(
+              summaryStats().dividendIncome,
+              currency(),
+              true,
+              props.portfolio.nativeCurrency
+            )}
+            <span class="material-icons text-[#6366f1]/30 text-lg">payments</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Bento Chart Analytics Grid */}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up stagger-3">
+        {/* Chart A: Cumulative Realized PnL */}
+        <div class="premium-card p-5 flex flex-col">
+          <div class="border-b border-forest/5 pb-3 mb-3">
+            <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-2">
+              <span class="material-icons text-sm text-forest/60">show_chart</span>
+              Cumulative Performance
+            </h4>
+            <p class="text-earth/60 font-outfit text-[11px] mt-0.5">
+              Running track of realized gains/losses across all historical selling and dividend events.
+            </p>
           </div>
-        </Show>
+          <Show
+            when={!isLoadingTxs() && cumulativePnLData().length > 0}
+            fallback={
+              <div class="flex flex-col items-center justify-center text-earth/40 italic font-outfit py-16">
+                <span class="material-icons text-3xl text-forest/10 mb-2">trending_up</span>
+                {isLoadingTxs() ? "Processing timeline..." : "No cumulative data points available."}
+              </div>
+            }
+          >
+            <div class="w-full h-[220px]">
+              <SolidApexCharts
+                options={areaOptions()}
+                series={areaSeries()}
+                type="area"
+                height={220}
+              />
+            </div>
+          </Show>
+        </div>
+
+        {/* Chart B: Monthly Trade Activity */}
+        <div class="premium-card p-5 flex flex-col">
+          <div class="border-b border-forest/5 pb-3 mb-3">
+            <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-2">
+              <span class="material-icons text-sm text-forest/60">calendar_month</span>
+              Monthly Activity Patterns
+            </h4>
+            <p class="text-earth/60 font-outfit text-[11px] mt-0.5">
+              Breakdown of trade frequencies (BUY, SELL, DIVIDEND) grouped by month.
+            </p>
+          </div>
+          <Show
+            when={!isLoadingTxs() && monthlyActivityData().categories.length > 0}
+            fallback={
+              <div class="flex flex-col items-center justify-center text-earth/40 italic font-outfit py-16">
+                <span class="material-icons text-3xl text-forest/10 mb-2">bar_chart</span>
+                {isLoadingTxs() ? "Grouping months..." : "No monthly data points available."}
+              </div>
+            }
+          >
+            <div class="w-full h-[220px]">
+              <SolidApexCharts
+                options={stackedBarOptions()}
+                series={monthlyActivityData().series}
+                type="bar"
+                height={220}
+              />
+            </div>
+          </Show>
+        </div>
+
+        {/* Chart C: Volume Breakdown Donut */}
+        <div class="premium-card p-5 flex flex-col">
+          <div class="border-b border-forest/5 pb-3 mb-3">
+            <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-2">
+              <span class="material-icons text-sm text-forest/60">pie_chart</span>
+              Flow Volume Breakdown
+            </h4>
+            <p class="text-earth/60 font-outfit text-[11px] mt-0.5">
+              Capital distributions allocated toward asset buys vs returns from sales and dividends.
+            </p>
+          </div>
+          <Show
+            when={!isLoadingTxs() && volumeBreakdown().series.reduce((a, b) => a + b, 0) > 0}
+            fallback={
+              <div class="flex flex-col items-center justify-center text-earth/40 italic font-outfit py-16">
+                <span class="material-icons text-3xl text-forest/10 mb-2">donut_large</span>
+                {isLoadingTxs() ? "Sizing breakdown..." : "No volume flow record."}
+              </div>
+            }
+          >
+            <div class="w-full h-[220px] flex items-center justify-center">
+              <SolidApexCharts
+                options={donutOptions()}
+                series={volumeBreakdown().series}
+                type="donut"
+                height={210}
+              />
+            </div>
+          </Show>
+        </div>
+
+        {/* Chart D: Ticker PnL Bar Chart */}
+        <div class="premium-card p-5 flex flex-col">
+          <div class="border-b border-forest/5 pb-3 mb-3">
+            <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-2">
+              <span class="material-icons text-sm text-forest/60">equalizer</span>
+              Realized PnL per Traded Ticker
+            </h4>
+            <p class="text-earth/60 font-outfit text-[11px] mt-0.5">
+              Net gains and losses realized on each individual asset ticker.
+            </p>
+          </div>
+          <Show
+            when={!isLoadingTxs() && chartData().length > 0}
+            fallback={
+              <div class="flex flex-col items-center justify-center text-earth/40 italic font-outfit py-16">
+                <span class="material-icons text-3xl text-forest/10 mb-2">view_week</span>
+                {isLoadingTxs() ? "Loading PnL chart..." : "No ticker trades available."}
+              </div>
+            }
+          >
+            <div class="w-full overflow-y-auto max-h-[220px]">
+              <div class="w-full" style={{ "min-height": `${chartHeight()}px` }}>
+                <SolidApexCharts
+                  options={barOptions()}
+                  series={barSeries()}
+                  type="bar"
+                  height={chartHeight()}
+                />
+              </div>
+            </div>
+          </Show>
+        </div>
+      </div>
+
+      {/* Top & Worst Performers Grid */}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up stagger-4">
+        {/* Top Gainers */}
+        <div class="premium-card p-5 border-l-4 border-l-spring flex flex-col">
+          <div class="border-b border-forest/5 pb-3 mb-4">
+            <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-2">
+              <span class="material-icons text-spring text-base">emoji_events</span>
+              Top Performers
+            </h4>
+            <p class="text-earth/50 text-[10px] font-outfit uppercase tracking-wider font-bold">Highest Realized Gains</p>
+          </div>
+          <div class="flex flex-col gap-3">
+            <For
+              each={leadersBoard().gainers}
+              fallback={
+                <span class="text-earth/40 text-xs italic py-2">No realized gains recorded yet.</span>
+              }
+            >
+              {(item) => {
+                const assetColor = getAssetColor(item.ticker);
+                return (
+                  <div class="flex items-center justify-between p-3 rounded-xl bg-sage/10 border border-forest/5 hover:border-forest/10 transition-all">
+                    <div class="flex items-center gap-2.5">
+                      <Show
+                        when={tickerLogos()[item.ticker.toUpperCase()]}
+                        fallback={
+                          <div
+                            class="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0"
+                            style={{ "background-color": assetColor }}
+                          >
+                            {item.ticker.charAt(0)}
+                          </div>
+                        }
+                      >
+                        {(logoUrl) => {
+                          const [hasError, setHasError] = createSignal(false);
+                          return (
+                            <div
+                              class="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm overflow-hidden shrink-0"
+                              style={{
+                                "background-color": hasError()
+                                  ? assetColor
+                                  : "#ffffff",
+                              }}
+                            >
+                              <Show
+                                when={!hasError()}
+                                fallback={
+                                  <span>{item.ticker.charAt(0)}</span>
+                                }
+                              >
+                                <img
+                                  src={logoUrl()}
+                                  alt={item.ticker}
+                                  class="w-full h-full object-contain p-0.5 bg-white"
+                                  onError={() => setHasError(true)}
+                                />
+                              </Show>
+                            </div>
+                          );
+                        }}
+                      </Show>
+                      <div class="flex flex-col min-w-0">
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/stock/${item.ticker}`);
+                          }}
+                          class="font-outfit font-bold text-forest text-sm leading-tight hover:text-spring transition-colors hover:underline cursor-pointer"
+                        >
+                          {item.ticker}
+                        </span>
+                        <span class="text-[10px] text-earth/60 truncate max-w-[120px]">
+                          {tickerNames()[item.ticker.toUpperCase()] || "Unknown Asset"}
+                        </span>
+                      </div>
+                    </div>
+                    <span class="font-outfit font-black text-sm text-spring">
+                      +{formatPortfolioValue(item.realizedPnL, currency(), false, props.portfolio.nativeCurrency)}
+                    </span>
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+        </div>
+
+        {/* Top Losers */}
+        <div class="premium-card p-5 border-l-4 border-l-[#f43f5e] flex flex-col">
+          <div class="border-b border-forest/5 pb-3 mb-4">
+            <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-2">
+              <span class="material-icons text-[#f43f5e] text-base">trending_down</span>
+              Worst Performers
+            </h4>
+            <p class="text-earth/50 text-[10px] font-outfit uppercase tracking-wider font-bold">Highest Realized Losses</p>
+          </div>
+          <div class="flex flex-col gap-3">
+            <For
+              each={leadersBoard().losers}
+              fallback={
+                <span class="text-earth/40 text-xs italic py-2">No realized losses recorded yet.</span>
+              }
+            >
+              {(item) => {
+                const assetColor = getAssetColor(item.ticker);
+                return (
+                  <div class="flex items-center justify-between p-3 rounded-xl bg-red-500/5 border border-red-500/5 hover:border-red-500/10 transition-all">
+                    <div class="flex items-center gap-2.5">
+                      <Show
+                        when={tickerLogos()[item.ticker.toUpperCase()]}
+                        fallback={
+                          <div
+                            class="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0"
+                            style={{ "background-color": assetColor }}
+                          >
+                            {item.ticker.charAt(0)}
+                          </div>
+                        }
+                      >
+                        {(logoUrl) => {
+                          const [hasError, setHasError] = createSignal(false);
+                          return (
+                            <div
+                              class="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm overflow-hidden shrink-0"
+                              style={{
+                                "background-color": hasError()
+                                  ? assetColor
+                                  : "#ffffff",
+                              }}
+                            >
+                              <Show
+                                when={!hasError()}
+                                fallback={
+                                  <span>{item.ticker.charAt(0)}</span>
+                                }
+                              >
+                                <img
+                                  src={logoUrl()}
+                                  alt={item.ticker}
+                                  class="w-full h-full object-contain p-0.5 bg-white"
+                                  onError={() => setHasError(true)}
+                                />
+                              </Show>
+                            </div>
+                          );
+                        }}
+                      </Show>
+                      <div class="flex flex-col min-w-0">
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/stock/${item.ticker}`);
+                          }}
+                          class="font-outfit font-bold text-forest text-sm leading-tight hover:text-spring transition-colors hover:underline cursor-pointer"
+                        >
+                          {item.ticker}
+                        </span>
+                        <span class="text-[10px] text-earth/60 truncate max-w-[120px]">
+                          {tickerNames()[item.ticker.toUpperCase()] || "Unknown Asset"}
+                        </span>
+                      </div>
+                    </div>
+                    <span class="font-outfit font-black text-sm text-[#f43f5e]">
+                      {formatPortfolioValue(item.realizedPnL, currency(), false, props.portfolio.nativeCurrency)}
+                    </span>
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+        </div>
       </div>
 
       {/* Transactions Table Card */}
-      <div class="premium-card overflow-hidden">
+      <div class="premium-card overflow-hidden animate-fade-in-up stagger-5">
         {/* Table Filters & Toolbar */}
-        <div class="px-8 py-6 border-b border-forest/5 flex flex-col md:flex-row justify-between items-center gap-4 bg-white">
-          <div class="flex flex-col gap-1 w-full md:w-auto">
+        <div class="px-6 py-5 border-b border-forest/5 flex flex-col lg:flex-row justify-between items-center gap-4 bg-white">
+          <div class="flex flex-col gap-1 w-full lg:w-auto">
             <h4 class="font-outfit font-bold text-forest text-lg">Transaction History</h4>
-            <p class="text-earth/50 text-xs font-outfit">Detailed log of all recorded asset purchases and sales.</p>
+            <p class="text-earth/50 text-xs font-outfit">
+              Showing {processedTransactions().length > 0 ? (currentPage() - 1) * pageSize + 1 : 0} - {Math.min(currentPage() * pageSize, processedTransactions().length)} of {processedTransactions().length} records
+            </p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+          <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
             {/* Search Input */}
-            <div class="relative flex items-center bg-sage/20 border border-forest/10 rounded-xl px-3 py-1.5 focus-within:border-forest/30 transition-all duration-200 w-full md:w-56">
+            <div class="relative flex items-center bg-sage/10 border border-forest/10 rounded-xl px-3 py-1.5 focus-within:border-forest/30 transition-all duration-200 w-full md:w-56">
               <span class="material-icons text-earth/40 text-sm mr-2 select-none">search</span>
               <input
                 type="text"
@@ -521,7 +1223,7 @@ export const TradeHistory = (props: TradeHistoryProps) => {
             </div>
 
             {/* Type Selector Pills */}
-            <div class="flex bg-sage/20 p-1 rounded-xl border border-forest/5 shadow-inner">
+            <div class="flex bg-sage/15 p-1 rounded-xl border border-forest/5 shadow-inner">
               <For each={["ALL", "BUY", "SELL", "DIVIDEND"]}>
                 {(type) => {
                   const isActive = () => typeFilter() === type;
@@ -544,104 +1246,93 @@ export const TradeHistory = (props: TradeHistoryProps) => {
         </div>
 
         {/* Table Container */}
-        <div class="overflow-x-auto w-full">
-          <div class="min-w-[900px] flex flex-col">
-            {/* Table Headers */}
-            <div class="flex items-center px-8 py-4 border-b border-forest/5 text-[11px] font-bold uppercase tracking-widest text-earth/60 select-none">
-              <div class="w-1 mr-4" /> {/* Asset color bar spacer */}
-              
-              <button
-                onClick={() => handleSort("ticker")}
-                class="flex-[1.5] flex items-center gap-1 hover:text-forest transition-colors cursor-pointer uppercase text-left font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none"
-              >
-                Asset
-                <span class="material-icons text-[14px]">
-                  {sortBy() === "ticker" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
-                </span>
-              </button>
+        <div class="overflow-x-auto w-full relative" style={{ "max-height": "650px" }}>
+          <table class="w-full min-w-[900px] border-collapse">
+            <thead class="sticky-header bg-white/95 border-b border-forest/5 text-[10px] font-bold uppercase tracking-widest text-earth/65 select-none">
+              <tr>
+                <th class="w-1.5 py-4 px-2"></th>
+                <th class="py-4 px-4 text-left font-bold">
+                  <button onClick={() => handleSort("ticker")} class="flex items-center gap-1 hover:text-forest cursor-pointer bg-transparent border-0 p-0 font-bold uppercase tracking-widest">
+                    Asset
+                    <span class="material-icons text-[14px]">
+                      {sortBy() === "ticker" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
+                    </span>
+                  </button>
+                </th>
+                <th class="py-4 px-4 text-left font-bold">
+                  <button onClick={() => handleSort("type")} class="flex items-center gap-1 hover:text-forest cursor-pointer bg-transparent border-0 p-0 font-bold uppercase tracking-widest">
+                    Type
+                    <span class="material-icons text-[14px]">
+                      {sortBy() === "type" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
+                    </span>
+                  </button>
+                </th>
+                <th class="py-4 px-4 text-left font-bold">
+                  <button onClick={() => handleSort("date")} class="flex items-center gap-1 hover:text-forest cursor-pointer bg-transparent border-0 p-0 font-bold uppercase tracking-widest">
+                    Date
+                    <span class="material-icons text-[14px]">
+                      {sortBy() === "date" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
+                    </span>
+                  </button>
+                </th>
+                <th class="py-4 px-4 text-right font-bold">
+                  <button onClick={() => handleSort("qty")} class="flex items-center justify-end gap-1 hover:text-forest cursor-pointer bg-transparent border-0 p-0 font-bold uppercase tracking-widest ml-auto">
+                    Shares
+                    <span class="material-icons text-[14px]">
+                      {sortBy() === "qty" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
+                    </span>
+                  </button>
+                </th>
+                <th class="py-4 px-4 text-right font-bold">
+                  <button onClick={() => handleSort("price")} class="flex items-center justify-end gap-1 hover:text-forest cursor-pointer bg-transparent border-0 p-0 font-bold uppercase tracking-widest ml-auto">
+                    Price/Share
+                    <span class="material-icons text-[14px]">
+                      {sortBy() === "price" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
+                    </span>
+                  </button>
+                </th>
+                <th class="py-4 px-4 text-right font-bold">
+                  <button onClick={() => handleSort("amount")} class="flex items-center justify-end gap-1 hover:text-forest cursor-pointer bg-transparent border-0 p-0 font-bold uppercase tracking-widest ml-auto">
+                    Total
+                    <span class="material-icons text-[14px]">
+                      {sortBy() === "amount" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
+                    </span>
+                  </button>
+                </th>
+                <th class="w-16 py-4 px-2"></th>
+              </tr>
+            </thead>
 
-              <button
-                onClick={() => handleSort("type")}
-                class="flex-1 flex items-center gap-1 hover:text-forest transition-colors cursor-pointer uppercase text-left font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none"
-              >
-                Type
-                <span class="material-icons text-[14px]">
-                  {sortBy() === "type" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
-                </span>
-              </button>
-
-              <button
-                onClick={() => handleSort("date")}
-                class="flex-[2] flex items-center gap-1 hover:text-forest transition-colors cursor-pointer uppercase text-left font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none"
-              >
-                Date
-                <span class="material-icons text-[14px]">
-                  {sortBy() === "date" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
-                </span>
-              </button>
-
-              <button
-                onClick={() => handleSort("qty")}
-                class="flex-1 flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none"
-              >
-                <span class="material-icons text-[14px]">
-                  {sortBy() === "qty" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
-                </span>
-                Shares
-              </button>
-
-              <button
-                onClick={() => handleSort("price")}
-                class="flex-[1.5] flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none"
-              >
-                <span class="material-icons text-[14px]">
-                  {sortBy() === "price" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
-                </span>
-                Price / Share
-              </button>
-
-              <button
-                onClick={() => handleSort("amount")}
-                class="flex-[1.5] flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer uppercase font-bold tracking-widest text-[11px] text-earth/60 bg-transparent border-0 p-0 outline-none"
-              >
-                <span class="material-icons text-[14px]">
-                  {sortBy() === "amount" ? (sortOrder() === "asc" ? "expand_less" : "expand_more") : "unfold_more"}
-                </span>
-                Total
-              </button>
-
-              <div class="w-12" /> {/* Expand icon column spacer */}
-            </div>
-
-            {/* Table Body */}
-            <div class="flex flex-col">
+            <tbody class="divide-y divide-forest/5 bg-white">
               <Show
                 when={!isLoadingTxs()}
                 fallback={
-                  <For each={[1, 2, 3]}>
+                  <For each={[1, 2, 3, 4, 5]}>
                     {() => (
-                      <div class="flex items-center px-8 py-5 border-b border-forest/5 animate-pulse">
-                        <div class="w-1 mr-4 h-8 bg-sage/20 rounded-full" />
-                        <div class="flex-[1.5] h-5 bg-sage/20 rounded w-16" />
-                        <div class="flex-1 h-5 bg-sage/20 rounded w-12" />
-                        <div class="flex-[2] h-5 bg-sage/20 rounded w-28" />
-                        <div class="flex-1 h-5 bg-sage/20 rounded w-10 ml-auto" />
-                        <div class="flex-[1.5] h-5 bg-sage/20 rounded w-20 ml-auto" />
-                        <div class="flex-[1.5] h-5 bg-sage/20 rounded w-24 ml-auto" />
-                        <div class="w-12" />
-                      </div>
+                      <tr class="animate-pulse">
+                        <td class="w-1.5 py-5 px-2"><div class="w-1 h-6 bg-sage/20 rounded-full" /></td>
+                        <td class="py-5 px-4"><div class="h-4.5 bg-sage/20 rounded w-16" /></td>
+                        <td class="py-5 px-4"><div class="h-4.5 bg-sage/20 rounded w-12" /></td>
+                        <td class="py-5 px-4"><div class="h-4.5 bg-sage/20 rounded w-28" /></td>
+                        <td class="py-5 px-4"><div class="h-4.5 bg-sage/20 rounded w-10 ml-auto" /></td>
+                        <td class="py-5 px-4"><div class="h-4.5 bg-sage/20 rounded w-20 ml-auto" /></td>
+                        <td class="py-5 px-4"><div class="h-4.5 bg-sage/20 rounded w-24 ml-auto" /></td>
+                        <td class="w-16"></td>
+                      </tr>
                     )}
                   </For>
                 }
               >
                 <For
-                  each={processedTransactions()}
+                  each={paginatedTransactions()}
                   fallback={
-                    <div class="px-8 py-16 text-center text-earth/40 italic font-outfit">
-                      {rawTransactions().length === 0
-                        ? "No transactions recorded for this portfolio."
-                        : "No transactions match your search filter."}
-                    </div>
+                    <tr>
+                      <td colspan="8" class="px-8 py-16 text-center text-earth/40 italic font-outfit bg-white">
+                        {rawTransactions().length === 0
+                          ? "No transactions recorded for this portfolio."
+                          : "No transactions match your search filter."}
+                      </td>
+                    </tr>
                   }
                 >
                   {(tx) => {
@@ -650,29 +1341,82 @@ export const TradeHistory = (props: TradeHistoryProps) => {
                     const displayAmt = getTxAmountInNative(tx, props.portfolio.nativeCurrency === "USD");
 
                     return (
-                      <div class="flex flex-col border-b border-forest/5 bg-white">
+                      <>
                         {/* Transaction summary row */}
-                        <div
+                        <tr
                           onClick={() => toggleRowExpand(tx.id)}
-                          class="group flex items-center px-8 py-4.5 hover:bg-earth/5 transition-colors duration-150 cursor-pointer relative"
+                          class="group hover:bg-earth/5 transition-all duration-150 cursor-pointer relative"
                         >
-                          {/* Color bar */}
-                          <div
-                            class="absolute left-0 top-0 bottom-0 w-1 transition-transform duration-200 group-hover:scale-x-[1.5] origin-left"
-                            style={{ "background-color": assetColor }}
-                          />
+                          <td class="w-1.5 py-4 px-2 relative">
+                            <div
+                              class="absolute left-0 top-0 bottom-0 w-1 transition-transform duration-200 group-hover:scale-x-[1.5] origin-left"
+                              style={{ "background-color": assetColor }}
+                            />
+                          </td>
 
-                          {/* Ticker badge */}
-                          <div class="flex-[1.5] pr-4 flex items-center min-w-0">
-                            <span class="font-outfit font-black text-forest text-sm bg-sage/25 px-2.5 py-1.5 rounded-lg border border-forest/5 tracking-wide">
-                              {tx.asset_ticker}
-                            </span>
-                          </div>
+                          {/* Ticker Column with Logo & Company Name */}
+                          <td class="py-4 px-4">
+                            <div class="flex items-center gap-4 min-w-0">
+                              <Show
+                                when={tickerLogos()[tx.asset_ticker.toUpperCase()]}
+                                fallback={
+                                  <div
+                                    class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0"
+                                    style={{ "background-color": assetColor }}
+                                  >
+                                    {tx.asset_ticker.charAt(0)}
+                                  </div>
+                                }
+                              >
+                                {(logoUrl) => {
+                                  const [hasError, setHasError] = createSignal(false);
+                                  return (
+                                    <div
+                                      class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden shrink-0"
+                                      style={{
+                                        "background-color": hasError()
+                                          ? assetColor
+                                          : "#ffffff",
+                                      }}
+                                    >
+                                      <Show
+                                        when={!hasError()}
+                                        fallback={
+                                          <span>{tx.asset_ticker.charAt(0)}</span>
+                                        }
+                                      >
+                                        <img
+                                          src={logoUrl()}
+                                          alt={tx.asset_ticker}
+                                          class="w-full h-full object-contain p-1 bg-white"
+                                          onError={() => setHasError(true)}
+                                        />
+                                      </Show>
+                                    </div>
+                                  );
+                                }}
+                              </Show>
+                              <div class="flex flex-col min-w-0">
+                                <span 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/stock/${tx.asset_ticker}`);
+                                  }}
+                                  class="font-outfit font-bold text-forest text-base leading-tight group-hover:text-spring transition-colors hover:underline cursor-pointer"
+                                >
+                                  {tx.asset_ticker}
+                                </span>
+                                <span class="text-xs text-earth/60 truncate max-w-[180px]">
+                                  {tickerNames()[tx.asset_ticker.toUpperCase()] || "Unknown Asset"}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
 
-                          {/* Type indicator */}
-                          <div class="flex-1 pr-4">
+                          {/* Type Indicator */}
+                          <td class="py-4 px-4">
                             <span
-                              class={`inline-block px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border ${
+                              class={`inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-lg border ${
                                 tx.type === "BUY"
                                   ? "bg-spring/10 text-spring border-spring/20"
                                   : tx.type === "SELL"
@@ -680,103 +1424,136 @@ export const TradeHistory = (props: TradeHistoryProps) => {
                                     : "bg-blue-500/10 text-blue-500 border-blue-500/20"
                               }`}
                             >
+                              <span class="material-icons text-[10px]">
+                                {tx.type === "BUY" ? "arrow_upward" : tx.type === "SELL" ? "arrow_downward" : "payments"}
+                              </span>
                               {tx.type}
                             </span>
-                          </div>
+                          </td>
 
                           {/* Transaction Date */}
-                          <div class="flex-[2] pr-4 text-xs font-outfit text-earth/80">
+                          <td class="py-4 px-4 text-xs font-outfit text-earth/80">
                             {formatDateDetail(tx.transaction_date)}
-                          </div>
+                          </td>
 
                           {/* Shares count */}
-                          <div class="flex-1 pr-4 text-right font-outfit font-bold text-xs text-forest">
+                          <td class="py-4 px-4 text-right font-outfit font-semibold text-xs text-forest">
                             {Number(tx.qty).toLocaleString(undefined, { maximumFractionDigits: 6 })}
-                          </div>
+                          </td>
 
                           {/* Price per unit */}
-                          <div class="flex-[1.5] pr-4 text-right font-outfit font-bold text-xs text-forest">
+                          <td class="py-4 px-4 text-right font-outfit font-semibold text-xs text-forest">
                             {formatTxCurrency(Number(tx.price_per_unit), tx.currency)}
-                          </div>
+                          </td>
 
                           {/* Computed Total Amount */}
-                          <div class="flex-[1.5] pr-4 text-right flex flex-col items-end">
-                            <span class="font-outfit font-black text-xs text-forest">
-                              {formatTxCurrency(Number(tx.qty) * Number(tx.price_per_unit), tx.currency)}
-                            </span>
-                            {/* If transaction currency is different than display/native currency view, show the converted rate */}
-                            <Show when={tx.currency !== currency()}>
-                              <span class="text-[9px] text-earth/40 font-semibold mt-0.5">
-                                ≈ {formatPortfolioValue(
-                                  displayAmt,
-                                  currency(),
-                                  false,
-                                  props.portfolio.nativeCurrency
-                                )}
+                          <td class="py-4 px-4 text-right">
+                            <div class="flex flex-col items-end">
+                              <span class="font-outfit font-black text-xs text-forest">
+                                {formatTxCurrency(Number(tx.qty) * Number(tx.price_per_unit), tx.currency)}
                               </span>
-                            </Show>
-                          </div>
+                              <Show when={tx.currency !== currency()}>
+                                <span class="text-[9px] text-earth/40 font-semibold mt-0.5">
+                                  ≈ {formatPortfolioValue(
+                                    displayAmt,
+                                    currency(),
+                                    false,
+                                    props.portfolio.nativeCurrency
+                                  )}
+                                </span>
+                              </Show>
+                            </div>
+                          </td>
 
                           {/* Expand chevron */}
-                          <div class="w-12 flex justify-center text-earth/40 select-none">
+                          <td class="py-4 px-2 text-center text-earth/40 select-none">
                             <span
-                              class={`material-icons transition-transform duration-200 ${
+                              class={`material-icons transition-transform duration-200 text-lg ${
                                 isExpanded() ? "rotate-180" : ""
                               }`}
                             >
                               expand_more
                             </span>
-                          </div>
-                        </div>
+                          </td>
+                        </tr>
 
                         {/* Collapsible Details Panel */}
                         <Show when={isExpanded()}>
-                          <div class="px-8 py-5 bg-[#F6F8F6] border-t border-forest/5 font-outfit flex flex-col gap-4 text-xs text-forest animate-slide-down">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                              <div class="flex flex-col gap-1.5">
-                                <span class="text-[10px] text-earth/50 font-bold uppercase tracking-wider">Exchange Rate (price_currency)</span>
-                                <span class="font-semibold bg-white border border-forest/10 rounded-xl px-3 py-2 text-forest/80 shadow-sm flex items-center gap-1.5">
-                                  <span class="material-icons text-sm text-earth/40">currency_exchange</span>
-                                  1 {tx.currency} = {Number(tx.price_currency).toLocaleString(undefined, { maximumFractionDigits: 4 })} {props.portfolio.nativeCurrency}
-                                </span>
-                              </div>
+                          <tr>
+                            <td colspan="8" class="p-0 bg-[#F6F8F6] border-t border-b border-forest/5">
+                              <div class="px-8 py-5 font-outfit flex flex-col gap-4 text-xs text-forest animate-slide-down">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                  <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] text-earth/50 font-bold uppercase tracking-wider">Exchange Rate (price_currency)</span>
+                                    <span class="font-semibold bg-white border border-forest/10 rounded-xl px-3 py-2 text-forest/80 shadow-sm flex items-center gap-1.5">
+                                      <span class="material-icons text-sm text-earth/40">currency_exchange</span>
+                                      1 {tx.currency} = {Number(tx.price_currency).toLocaleString(undefined, { maximumFractionDigits: 4 })} {props.portfolio.nativeCurrency}
+                                    </span>
+                                  </div>
 
-                              <div class="flex flex-col gap-1.5">
-                                <span class="text-[10px] text-earth/50 font-bold uppercase tracking-wider">Created Timestamp</span>
-                                <span class="font-semibold bg-white border border-forest/10 rounded-xl px-3 py-2 text-forest/80 shadow-sm flex items-center gap-1.5">
-                                  <span class="material-icons text-sm text-earth/40">add_circle_outline</span>
-                                  {formatDateDetail(tx.created_at)}
-                                </span>
-                              </div>
+                                  <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] text-earth/50 font-bold uppercase tracking-wider">Created Timestamp</span>
+                                    <span class="font-semibold bg-white border border-forest/10 rounded-xl px-3 py-2 text-forest/80 shadow-sm flex items-center gap-1.5">
+                                      <span class="material-icons text-sm text-earth/40">add_circle_outline</span>
+                                      {formatDateDetail(tx.created_at)}
+                                    </span>
+                                  </div>
 
-                              <div class="flex flex-col gap-1.5">
-                                <span class="text-[10px] text-earth/50 font-bold uppercase tracking-wider">Last Updated Timestamp</span>
-                                <span class="font-semibold bg-white border border-forest/10 rounded-xl px-3 py-2 text-forest/80 shadow-sm flex items-center gap-1.5">
-                                  <span class="material-icons text-sm text-earth/40">edit</span>
-                                  {formatDateDetail(tx.updated_at)}
-                                </span>
-                              </div>
-                            </div>
+                                  <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] text-earth/50 font-bold uppercase tracking-wider">Last Updated Timestamp</span>
+                                    <span class="font-semibold bg-white border border-forest/10 rounded-xl px-3 py-2 text-forest/80 shadow-sm flex items-center gap-1.5">
+                                      <span class="material-icons text-sm text-earth/40">edit</span>
+                                      {formatDateDetail(tx.updated_at)}
+                                    </span>
+                                  </div>
+                                </div>
 
-                            <div class="flex flex-col gap-1.5">
-                              <span class="text-[10px] text-earth/50 font-bold uppercase tracking-wider">Transaction Notes</span>
-                              <div class="bg-white border border-forest/10 rounded-xl p-4 text-forest/80 shadow-sm min-h-[60px] flex gap-2.5 items-start">
-                                <span class="material-icons text-base text-earth/35 mt-0.5">description</span>
-                                <p class={`leading-relaxed ${!tx.notes ? "italic text-earth/40" : ""}`}>
-                                  {tx.notes || "No notes recorded for this transaction."}
-                                </p>
+                                <div class="flex flex-col gap-1.5">
+                                  <span class="text-[9px] text-earth/50 font-bold uppercase tracking-wider">Transaction Notes</span>
+                                  <div class="bg-white border border-forest/10 rounded-xl p-4 text-forest/80 shadow-sm min-h-[60px] flex gap-2.5 items-start">
+                                    <span class="material-icons text-base text-earth/35 mt-0.5">description</span>
+                                    <p class={`leading-relaxed ${!tx.notes ? "italic text-earth/40" : ""}`}>
+                                      {tx.notes || "No notes recorded for this transaction."}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
+                            </td>
+                          </tr>
                         </Show>
-                      </div>
+                      </>
                     );
                   }}
                 </For>
               </Show>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Footer */}
+        <Show when={totalPages() > 1}>
+          <div class="px-6 py-4 border-t border-forest/5 flex items-center justify-between bg-white/70 font-outfit text-xs text-earth">
+            <div>
+              Page <b>{currentPage()}</b> of <b>{totalPages()}</b>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                disabled={currentPage() === 1}
+                onClick={() => setCurrentPage(c => Math.max(1, c - 1))}
+                class="px-3 py-1.5 rounded-lg border border-forest/10 text-forest font-bold hover:bg-forest/5 transition-all cursor-pointer disabled:opacity-45 disabled:pointer-events-none active:scale-95"
+              >
+                Previous
+              </button>
+              <button
+                disabled={currentPage() === totalPages()}
+                onClick={() => setCurrentPage(c => Math.min(totalPages(), c + 1))}
+                class="px-3 py-1.5 rounded-lg border border-forest/10 text-forest font-bold hover:bg-forest/5 transition-all cursor-pointer disabled:opacity-45 disabled:pointer-events-none active:scale-95"
+              >
+                Next
+              </button>
             </div>
           </div>
-        </div>
+        </Show>
       </div>
     </div>
   );
