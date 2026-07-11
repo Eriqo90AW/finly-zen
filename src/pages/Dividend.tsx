@@ -1,20 +1,30 @@
-import { createSignal } from "solid-js";
+import { createSignal, createMemo, onMount, Show } from "solid-js";
 import Calendar from "../components/screen-dividend/Calendar";
 import DividendListCard from "../components/screen-dividend/DividendListCard";
-import { getAllDividends, getDividendsByStatus } from "../data/dividendData";
+import { getAllDividends, getDividendsByStatus, refreshDividends, isDividendsRefreshing } from "../data/dividendData";
 
 const Dividend = () => {
   const [selectedYear, setSelectedYear] = createSignal(2026);
   const [selectedDate, setSelectedDate] = createSignal<string | null>(null);
   const [monthView, setMonthView] = createSignal<{ year: number; month: number } | null>(null);
 
-  const allDividends = getAllDividends();
-  const paidCount = getDividendsByStatus("paid").length;
-  const announcedCount = getDividendsByStatus("upcoming").length;
-  const projectedCount = getDividendsByStatus("projected").length;
+  const allDividends = createMemo(() => getAllDividends());
+  const paidCount = createMemo(() => getDividendsByStatus("paid").length);
+  const announcedCount = createMemo(() => getDividendsByStatus("upcoming").length);
+  const projectedCount = createMemo(() => getDividendsByStatus("projected").length);
+
+  onMount(() => {
+    refreshDividends();
+  });
 
   return (
-    <div class="max-w-[1400px] mx-auto h-[calc(100vh-8rem)] animate-fade-in-up">
+    <div class="max-w-[1400px] mx-auto h-[calc(100vh-8rem)] animate-fade-in-up relative">
+      <Show when={isDividendsRefreshing()}>
+        <div class="absolute top-0 right-0 z-50 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sage/40 text-earth text-[10px] font-bold uppercase tracking-wider">
+          <span class="material-icons !text-[12px] animate-spin">sync</span>
+          Syncing
+        </div>
+      </Show>
       <div class="grid grid-cols-3 gap-6 h-[calc(100%)]">
         <div class="col-span-2 h-full min-h-0">
           <Calendar
