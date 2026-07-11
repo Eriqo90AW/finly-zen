@@ -19,7 +19,8 @@ import {
 } from "../data/portfolioData";
 import { supabase } from "../lib/supabase";
 import { formatPercent, formatPortfolioValue, getUsdRate, usdRateReady } from "../utils/format";
-import type { PortfolioAsset } from "../types";
+import { getAssetColor } from "../utils/colors";
+import type { PortfolioAsset, AllocationItem } from "../types";
 import type { ApexOptions } from "apexcharts";
 
 // Import sub-components
@@ -63,6 +64,9 @@ export default function QuickPortfolio() {
     const id = setInterval(() => setNow(Date.now()), 10_000);
     onCleanup(() => clearInterval(id));
   });
+
+  // Asset allocation view toggle
+  const [allocationView, setAllocationView] = createSignal<"category" | "detail">("category");
 
   // Performance chart period
   type PerfPeriod = "1D" | "1W" | "1M" | "1Y" | "ALL";
@@ -270,29 +274,58 @@ export default function QuickPortfolio() {
     return p.assets.some((a: PortfolioAsset) => a.previousClose !== null);
   });
 
-  // Dynamic Conic Allocation percentages
+  // Dynamic Conic Allocation percentages (category view: Stocks, IDX, Crypto, Cash)
   const allocations = createMemo(() => {
     const p = quickPortfolio();
-    if (!p) return { stocks: 0, crypto: 0, etfs: 0, cash: 0 };
+    if (!p) return { stocks: 0, idx: 0, crypto: 0, cash: 0 };
     const total = totalValue() || 1;
 
     let stocksVal = 0;
+    let idxVal = 0;
     let cryptoVal = 0;
-    let etfsVal = 0;
 
     (p.assets || []).forEach((a: any) => {
       const cat = getCategory(a.ticker);
-      if (cat === "Stocks" || cat === "IDX") stocksVal += a.currentValue;
+      if (cat === "IDX") idxVal += a.currentValue;
       else if (cat === "Crypto") cryptoVal += a.currentValue;
-      else if (cat === "ETFs") etfsVal += a.currentValue;
+      else stocksVal += a.currentValue;
     });
 
     return {
       stocks: (stocksVal / total) * 100,
+      idx: (idxVal / total) * 100,
       crypto: (cryptoVal / total) * 100,
-      etfs: (etfsVal / total) * 100,
       cash: (cashValueUSD() / total) * 100,
     };
+  });
+
+  // Per-ticker detail allocation (detail view)
+  const detailAllocations = createMemo((): AllocationItem[] => {
+    const p = quickPortfolio();
+    if (!p) return [];
+    const total = totalValue() || 1;
+    const cash = cashValueUSD();
+    const cashPct = total > 0 ? (cash / total) * 100 : 0;
+
+    const items: AllocationItem[] = (p.assets || []).map((a: any) => ({
+      isCash: false,
+      ticker: getDisplayTicker(a.ticker),
+      name: a.name || a.ticker,
+      value: a.currentValue,
+      percentage: total > 0 ? (a.currentValue / total) * 100 : 0,
+      color: getAssetColor(a.ticker),
+    }));
+
+    items.push({
+      isCash: true,
+      ticker: "Cash",
+      name: "Liquidity",
+      value: cash,
+      percentage: cashPct,
+      color: "#cbd5e1",
+    });
+
+    return items.sort((a, b) => b.percentage - a.percentage);
   });
 
   // Performance chart series
@@ -863,6 +896,9 @@ export default function QuickPortfolio() {
 
           <QuickPortfolioCharts 
             allocations={allocations()}
+            allocationView={allocationView()}
+            setAllocationView={setAllocationView}
+            detailAllocations={detailAllocations()}
             perfKpi={perfKpi()}
             perfPeriod={perfPeriod()}
             setPerfPeriod={setPerfPeriod}
