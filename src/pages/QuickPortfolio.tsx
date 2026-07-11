@@ -29,6 +29,11 @@ import type { PortfolioAsset } from "../types";
 
 const USER_ID = "a4d800bd-e779-4e7b-8982-2cab3d10035b";
 
+const parseLocaleFloat = (valString: string): number => {
+  const sanitized = valString.replace(/,/g, ".");
+  return parseFloat(sanitized);
+};
+
 // Initial Quick Portfolio configuration
 const STARTING_CASH = 0.00;
 
@@ -115,6 +120,37 @@ export default function QuickPortfolio() {
     return formatPortfolioValue(amount, currencyView(), isShort, native);
   };
 
+  const formatPrice = (amount: number) => {
+    const native = quickPortfolio()?.nativeCurrency || "IDR";
+    const display = currencyView();
+    
+    let displayAmount = amount;
+    if (native === 'USD' && display === 'IDR') {
+      displayAmount = amount * getUsdRate();
+    } else if (native === 'IDR' && display === 'USD') {
+      displayAmount = amount / getUsdRate();
+    }
+
+    const hasFraction = displayAmount % 1 !== 0;
+    const decimals = hasFraction ? 8 : (display === 'USD' ? 2 : 0);
+
+    if (display === 'USD') {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: Math.max(2, decimals),
+      }).format(displayAmount);
+    } else {
+      return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: decimals,
+      }).format(displayAmount);
+    }
+  };
+
   const getPortfolioRate = () => {
     const p = quickPortfolio();
     return p ? Number(p.price_currency || 1) : 1;
@@ -180,7 +216,7 @@ export default function QuickPortfolio() {
 
       // If the found portfolio is indeed "Quick Portfolio", ensure it uses IDR base currency
       if (found && found.name === "Quick Portfolio") {
-        if (found.base_currency !== "IDR") {
+        if (found.nativeCurrency !== "IDR") {
           const { error: updateError } = await supabase
             .from("portfolios")
             .update({
@@ -512,8 +548,14 @@ export default function QuickPortfolio() {
     setEditingCell({ ticker, field });
     
     let displayVal = currentVal;
-    if (field === "avgPrice" && currencyView() === "IDR") {
-      displayVal = currentVal * getUsdRate();
+    if (field === "avgPrice") {
+      const asset = quickPortfolio()?.assets.find((a: PortfolioAsset) => a.ticker === ticker);
+      const assetCurrency = asset?.currency || "USD";
+      if (assetCurrency === "USD" && currencyView() === "IDR") {
+        displayVal = currentVal * getUsdRate();
+      } else if (assetCurrency === "IDR" && currencyView() === "USD") {
+        displayVal = currentVal / getUsdRate();
+      }
     }
 
     setEditValue(parseFloat(displayVal.toFixed(8)).toString());
@@ -536,7 +578,7 @@ export default function QuickPortfolio() {
   };
 
   const saveEdit = async (ticker: string, field: "qty" | "avgPrice" | "conversionRate") => {
-    let val = parseFloat(editValue());
+    let val = parseLocaleFloat(editValue());
     if (isNaN(val) || val < 0) {
       cancelEdit();
       return;
@@ -546,8 +588,14 @@ export default function QuickPortfolio() {
       return;
     }
 
-    if (field === "avgPrice" && currencyView() === "IDR") {
-      val = val / getUsdRate();
+    if (field === "avgPrice") {
+      const asset = quickPortfolio()?.assets.find((a: PortfolioAsset) => a.ticker === ticker);
+      const assetCurrency = asset?.currency || "USD";
+      if (assetCurrency === "USD" && currencyView() === "IDR") {
+        val = val / getUsdRate();
+      } else if (assetCurrency === "IDR" && currencyView() === "USD") {
+        val = val * getUsdRate();
+      }
     }
 
     const currentEditing = editingCell();
@@ -566,7 +614,7 @@ export default function QuickPortfolio() {
   };
 
   const saveCashEdit = async () => {
-    let val = parseFloat(editValue());
+    let val = parseLocaleFloat(editValue());
     setIsCashEditing(false);
     if (!isNaN(val)) {
       if (currencyView() === "IDR") {
@@ -600,10 +648,10 @@ export default function QuickPortfolio() {
     if (!draft) return;
 
     const symbol = draft.ticker.trim().toUpperCase();
-    const qty = parseFloat(draft.qty);
-    const price = parseFloat(draft.avgPrice);
+    const qty = parseLocaleFloat(draft.qty);
+    const price = parseLocaleFloat(draft.avgPrice);
     const currency = draft.currency;
-    const conversionRate = parseFloat(draft.conversionRate);
+    const conversionRate = parseLocaleFloat(draft.conversionRate);
 
     if (!symbol) {
       newRowTickerRef?.focus();
@@ -694,8 +742,8 @@ export default function QuickPortfolio() {
         type: "BUY",
         qty,
         price_per_unit: price,
-        price_currency: conversionRate,
-        currency,
+        fx_rate_to_base: conversionRate,
+        settlement_currency: currency,
         notes: "Quick holding added",
         transaction_date: new Date().toISOString(),
         linked_transaction_id: null,
@@ -709,8 +757,8 @@ export default function QuickPortfolio() {
         type: "WITHDRAWAL",
         qty: costUSD,
         price_per_unit: 1,
-        price_currency: conversionRate,
-        currency,
+        fx_rate_to_base: conversionRate,
+        settlement_currency: currency,
         notes: `Cash withdrawal for BUY ${symbol}`,
         transaction_date: new Date().toISOString(),
         linked_transaction_id: assetTx.id,
@@ -791,8 +839,8 @@ export default function QuickPortfolio() {
           type: "BUY",
           qty: newQty,
           price_per_unit: newAvgPrice,
-          price_currency: newConversionRate,
-          currency: asset.currency || "USD",
+          fx_rate_to_base: newConversionRate,
+          settlement_currency: asset.currency || "USD",
           notes: "Consolidated holding edit",
           transaction_date: new Date().toISOString(),
           linked_transaction_id: null,
@@ -806,8 +854,8 @@ export default function QuickPortfolio() {
           type: "WITHDRAWAL",
           qty: newCostUSD,
           price_per_unit: 1,
-          price_currency: newConversionRate,
-          currency: asset.currency || "USD",
+          fx_rate_to_base: newConversionRate,
+          settlement_currency: asset.currency || "USD",
           notes: `Cash withdrawal for consolidated BUY ${ticker}`,
           transaction_date: new Date().toISOString(),
           linked_transaction_id: assetTx.id,
@@ -910,13 +958,14 @@ export default function QuickPortfolio() {
           type: "BUY",
           qty: mergedQty,
           price_per_unit: currency === "USD" ? mergedAvgPriceUSD : mergedAvgPriceUSD * conversionRate,
-          price_currency: currency === "USD" ? conversionRate : 1,
-          currency,
+          fx_rate_to_base: currency === "USD" ? conversionRate : 1,
+          settlement_currency: currency,
           notes: "Merged position addition",
           transaction_date: new Date().toISOString(),
+          linked_transaction_id: null,
         });
 
-        await updatePortfolioCash(p.id, mergedNewCash);
+        await adjustPortfolioCash(p.id, mergedNewCash);
       } else {
         // Upsert Asset metadata first
         await upsertAsset({
@@ -939,16 +988,17 @@ export default function QuickPortfolio() {
           portfolio_id: p.id,
           asset_ticker: symbol,
           type: "BUY",
-          qty,
+          qty: qty,
           price_per_unit: price,
-          price_currency: conversionRate,
-          currency,
+          fx_rate_to_base: conversionRate,
+          settlement_currency: currency,
           notes: "Quick holding added",
           transaction_date: new Date().toISOString(),
+          linked_transaction_id: null,
         });
 
         // Update Cash
-        await updatePortfolioCash(p.id, newCash);
+        await adjustPortfolioCash(p.id, newCash);
       }
 
       // Refresh
@@ -1044,10 +1094,11 @@ export default function QuickPortfolio() {
             type: t.type || "BUY",
             qty: t.shares,
             price_per_unit: t.pricePerShare,
-            price_currency: getPortfolioRate(),
-            currency: "USD",
+            fx_rate_to_base: getPortfolioRate(),
+            settlement_currency: "USD",
             notes: "Imported holding",
             transaction_date: t.date || new Date().toISOString(),
+            linked_transaction_id: null,
           });
         }
 
@@ -1383,7 +1434,7 @@ export default function QuickPortfolio() {
                       <tr class="hover:bg-sage/10 transition-colors group">
                         
                         {/* Asset Column */}
-                        <td class="px-6 py-4 border-r border-transparent group-hover:border-forest/5 transition-colors overflow-hidden">
+                        <td class="px-6 py-4 border-r border-transparent group-hover:border-forest/5 transition-colors overflow-hidden max-w-[200px]">
                           <div class="flex items-center gap-3">
                             <div class="w-7 h-7 rounded-lg bg-sage flex items-center justify-center text-forest overflow-hidden shrink-0">
                               <Show 
@@ -1423,11 +1474,11 @@ export default function QuickPortfolio() {
                             <div class="flex items-center justify-end">
                               <input
                                 ref={qtyInputRef}
-                                type="number"
-                                step="any"
+                                type="text"
+                                inputmode="decimal"
                                 autocomplete="off"
                                 value={editValue()}
-                                onInput={(e) => setEditValue(e.currentTarget.value)}
+                                onInput={(e) => setEditValue(e.currentTarget.value.replace(/[^0-9.,]/g, ""))}
                                 onBlur={() => saveEdit(asset.ticker, "qty")}
                                 onKeyDown={(e) => handleKeyDown(e, asset.ticker, "qty")}
                                 class="w-full bg-transparent border-none text-right font-mono text-near-black font-bold focus:ring-0 focus:outline-none p-0"
@@ -1445,7 +1496,7 @@ export default function QuickPortfolio() {
                               onClick={() => startEdit(asset.ticker, "avgPrice", asset.averagePrice)}
                               class="px-6 py-4 text-right font-mono text-earth hover:bg-forest/5 cursor-pointer border-r border-transparent group-hover:border-forest/5 transition-colors"
                             >
-                              {formatVal(asset.averagePrice)}
+                              {formatPrice(asset.averagePrice)}
                             </td>
                           }
                         >
@@ -1453,11 +1504,11 @@ export default function QuickPortfolio() {
                             <div class="flex items-center justify-end">
                               <input
                                 ref={priceInputRef}
-                                type="number"
-                                step="any"
+                                type="text"
+                                inputmode="decimal"
                                 autocomplete="off"
                                 value={editValue()}
-                                onInput={(e) => setEditValue(e.currentTarget.value)}
+                                onInput={(e) => setEditValue(e.currentTarget.value.replace(/[^0-9.,]/g, ""))}
                                 onBlur={() => saveEdit(asset.ticker, "avgPrice")}
                                 onKeyDown={(e) => handleKeyDown(e, asset.ticker, "avgPrice")}
                                 class="w-full bg-transparent border-none text-right font-mono text-near-black font-bold focus:ring-0 focus:outline-none p-0"
@@ -1488,12 +1539,11 @@ export default function QuickPortfolio() {
                             <div class="flex items-center justify-end">
                               <input
                                 ref={rateInputRef}
-                                type="number"
-                                step="any"
-                                min="1"
+                                type="text"
+                                inputmode="decimal"
                                 autocomplete="off"
                                 value={editValue()}
-                                onInput={(e) => setEditValue(e.currentTarget.value)}
+                                onInput={(e) => setEditValue(e.currentTarget.value.replace(/[^0-9.,]/g, ""))}
                                 onBlur={() => saveEdit(asset.ticker, "conversionRate")}
                                 onKeyDown={(e) => handleKeyDown(e, asset.ticker, "conversionRate")}
                                 class="w-full bg-transparent border-none text-right font-mono text-near-black font-bold focus:ring-0 focus:outline-none p-0"
@@ -1505,7 +1555,7 @@ export default function QuickPortfolio() {
 
                         {/* Current Price Column */}
                         <td class="px-6 py-4 text-right font-mono text-near-black font-bold border-r border-transparent group-hover:border-forest/5 transition-colors">
-                          {formatVal(asset.currentPrice)}
+                          {formatPrice(asset.currentPrice)}
                         </td>
 
                         {/* Total Value Column */}
@@ -1624,14 +1674,13 @@ export default function QuickPortfolio() {
                         <td class="px-6 py-3 text-right border-r border-forest/5">
                           <input
                             ref={newRowQtyRef}
-                            type="number"
-                            step="0.00000001"
-                            min="0"
+                            type="text"
+                            inputmode="decimal"
                             placeholder="0.00"
                             autocomplete="off"
                             disabled={isSubmitting()}
                             value={draft().qty}
-                            onInput={(e) => update({ qty: e.currentTarget.value })}
+                            onInput={(e) => update({ qty: e.currentTarget.value.replace(/[^0-9.,]/g, "") })}
                             onKeyDown={(e) => handleNewRowDraftKeyDown(e, "qty")}
                             class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-24 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
                           />
@@ -1641,14 +1690,13 @@ export default function QuickPortfolio() {
                         <td class="px-6 py-3 text-right border-r border-forest/5">
                           <input
                             ref={newRowPriceRef}
-                            type="number"
-                            step="0.00000001"
-                            min="0"
+                            type="text"
+                            inputmode="decimal"
                             placeholder="0.00"
                             autocomplete="off"
                             disabled={isSubmitting()}
                             value={draft().avgPrice}
-                            onInput={(e) => update({ avgPrice: e.currentTarget.value })}
+                            onInput={(e) => update({ avgPrice: e.currentTarget.value.replace(/[^0-9.,]/g, "") })}
                             onKeyDown={(e) => handleNewRowDraftKeyDown(e, "avgPrice")}
                             class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-24 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
                           />
@@ -1679,14 +1727,13 @@ export default function QuickPortfolio() {
                         <td class="px-6 py-3 text-right border-r border-forest/5">
                           <input
                             ref={newRowRateRef}
-                            type="number"
-                            step="any"
-                            min="1"
+                            type="text"
+                            inputmode="decimal"
                             placeholder={draft().currency === "IDR" ? "1" : getUsdRate().toFixed(2)}
                             autocomplete="off"
                             disabled={isSubmitting() || draft().currency === "IDR"}
                             value={draft().conversionRate}
-                            onInput={(e) => update({ conversionRate: e.currentTarget.value })}
+                            onInput={(e) => update({ conversionRate: e.currentTarget.value.replace(/[^0-9.,]/g, "") })}
                             onKeyDown={(e) => handleNewRowDraftKeyDown(e, "conversionRate")}
                             class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-24 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15 disabled:bg-sage/30 disabled:text-earth/60"
                           />
@@ -1762,11 +1809,11 @@ export default function QuickPortfolio() {
                       <div class="flex items-center justify-end">
                         <input
                           ref={cashInputRef}
-                          type="number"
-                          step="any"
+                          type="text"
+                          inputmode="decimal"
                           autocomplete="off"
                           value={editValue()}
-                          onInput={(e) => setEditValue(e.currentTarget.value)}
+                          onInput={(e) => setEditValue(e.currentTarget.value.replace(/[^0-9.,]/g, ""))}
                           onBlur={saveCashEdit}
                           onKeyDown={handleCashKeyDown}
                           class="w-full bg-transparent border-none text-right font-mono text-near-black font-bold focus:ring-0 focus:outline-none p-0"

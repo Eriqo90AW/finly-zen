@@ -74,14 +74,12 @@ export interface PortfolioTransactionDB {
   type: PortfolioTransactionType;
   qty: number;
   price_per_unit: number;
-  fx_rate_to_base: number;
   settlement_currency: string;
-  price_currency: number;
-  currency: string;
   notes: string | null;
   created_at: string;
   updated_at: string;
   transaction_date: string;
+  fx_rate_to_base: number;
   linked_transaction_id: string | null;
 }
 

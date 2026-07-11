@@ -150,11 +150,7 @@ export async function getPortfolioTransactions(portfolioId: string): Promise<Por
     return [];
   }
 
-  return (data || []).map(tx => ({
-    ...tx,
-    currency: tx.settlement_currency,
-    price_currency: tx.fx_rate_to_base,
-  }));
+  return data || [];
 }
 
 export async function getPortfolioTransactionsRaw(
@@ -170,32 +166,15 @@ export async function getPortfolioTransactionsRaw(
     console.error(`Error fetching raw transactions:`, error);
     return [];
   }
-  return (data || []).map(tx => ({
-    ...tx,
-    currency: tx.settlement_currency,
-    price_currency: tx.fx_rate_to_base,
-  }));
+  return data || [];
 }
 
 export async function addPortfolioTransaction(
   params: Omit<PortfolioTransactionDB, "id" | "created_at" | "updated_at">
 ): Promise<PortfolioTransactionDB> {
-  const dbParams = {
-    portfolio_id: params.portfolio_id,
-    asset_ticker: params.asset_ticker,
-    type: params.type,
-    qty: params.qty,
-    price_per_unit: params.price_per_unit,
-    fx_rate_to_base: params.price_currency,
-    settlement_currency: params.currency,
-    notes: params.notes,
-    transaction_date: params.transaction_date,
-    linked_transaction_id: params.linked_transaction_id,
-  };
-
   const { data, error } = await supabase
     .from("portfolio_transactions")
-    .insert(dbParams)
+    .insert(params)
     .select()
     .single();
 
@@ -203,11 +182,7 @@ export async function addPortfolioTransaction(
     throw new Error(`Failed to add transaction: ${error.message}`);
   }
 
-  return {
-    ...data,
-    currency: data.settlement_currency,
-    price_currency: data.fx_rate_to_base,
-  };
+  return data;
 }
 
 export async function upsertAsset(stockItem: MultiStockItem): Promise<void> {

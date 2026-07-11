@@ -99,7 +99,7 @@ const computePortfolioState = (
     assetTxs.forEach((tx) => {
       const qty = Number(tx.qty);
       const price = Number(tx.price_per_unit);
-      const rate = Number(tx.price_currency);
+      const rate = Number(tx.fx_rate_to_base);
 
       if (tx.type === "BUY") {
         totalShares += qty;
@@ -115,8 +115,8 @@ const computePortfolioState = (
     totalShares = Math.round(totalShares * 1e8) / 1e8;
 
     if (totalShares > 0) {
-      const assetCurrency = assetTxs[0]?.currency || "USD";
-      const assetConversionRate = Number(assetTxs[0]?.price_currency) || 1;
+      const assetCurrency = assetTxs[0]?.settlement_currency || "USD";
+      const assetConversionRate = Number(assetTxs[0]?.fx_rate_to_base) || 1;
       const averagePriceIDR = totalBuyQty > 0 ? totalCostIDR / totalBuyQty : 0;
       const averagePriceNative = totalBuyQty > 0 ? totalCostNative / totalBuyQty : 0;
 
@@ -234,7 +234,7 @@ const computePortfolioState = (
       const ticker = tx.asset_ticker.toUpperCase();
       const qty = Number(tx.qty);
       const type = tx.type;
-      const rate = Number(tx.price_currency || 1);
+      const rate = Number(tx.fx_rate_to_base || 1);
 
       const factor = (type === "DEPOSIT" || type === "BUY") ? 1 : -1;
 
@@ -296,8 +296,8 @@ const computePortfolioState = (
     transactions: txs.map((tx) => {
       const qty = Number(tx.qty);
       const price = Number(tx.price_per_unit);
-      const rate = Number(tx.price_currency || 1);
-      const txCurrency = tx.currency || "USD";
+      const rate = Number(tx.fx_rate_to_base || 1);
+      const txCurrency = tx.settlement_currency || "USD";
 
       let pricePerShare = price;
       if (isUSD) {
@@ -472,8 +472,8 @@ export const addTransactionToPortfolio = async (
       type: txParams.type,
       qty: txParams.qty,
       price_per_unit: txParams.pricePerUnit,
-      price_currency: txParams.priceCurrency,
-      currency: txParams.currency,
+      fx_rate_to_base: txParams.priceCurrency,
+      settlement_currency: txParams.currency,
       notes: txParams.notes || null,
       transaction_date: txParams.transactionDate,
       linked_transaction_id: null,
@@ -489,8 +489,8 @@ export const addTransactionToPortfolio = async (
       type: cashTxType,
       qty: txAmount,
       price_per_unit: 1,
-      price_currency: txParams.priceCurrency,
-      currency: txParams.currency,
+      fx_rate_to_base: txParams.priceCurrency,
+      settlement_currency: txParams.currency,
       notes: `Cash adjustment for ${txParams.type} ${txParams.ticker}`,
       transaction_date: txParams.transactionDate,
       linked_transaction_id: assetTx.id,
@@ -548,8 +548,8 @@ export const addCapitalToPortfolio = async (portfolioId: string, amount: number,
       type: amount >= 0 ? "DEPOSIT" : "WITHDRAWAL",
       qty: Math.abs(amount),
       price_per_unit: 1,
-      price_currency: rate,
-      currency: currency,
+      fx_rate_to_base: rate,
+      settlement_currency: currency,
       notes: isAdjustment ? "Capital Adjustment" : "Capital Deposit/Withdrawal",
       transaction_date: new Date().toISOString(),
       linked_transaction_id: null,
@@ -585,8 +585,8 @@ export const adjustPortfolioCash = async (portfolioId: string, newCash: number) 
       type: delta > 0 ? "DEPOSIT" : "WITHDRAWAL",
       qty: Math.abs(delta),
       price_per_unit: 1,
-      price_currency: rate,
-      currency: currency,
+      fx_rate_to_base: rate,
+      settlement_currency: currency,
       notes: "Manual cash balance adjustment",
       transaction_date: new Date().toISOString(),
       linked_transaction_id: null,

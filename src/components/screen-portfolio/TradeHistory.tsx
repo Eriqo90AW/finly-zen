@@ -89,8 +89,8 @@ export const TradeHistory = (props: TradeHistoryProps) => {
   const getTxAmountInNative = (tx: PortfolioTransactionDB, isUSDPortfolio: boolean) => {
     const qty = Number(tx.qty);
     const price = Number(tx.price_per_unit);
-    const rate = Number(tx.price_currency || 1);
-    const txCurrency = tx.currency || "USD";
+    const rate = Number(tx.fx_rate_to_base || 1);
+    const txCurrency = tx.settlement_currency || "USD";
 
     let pricePerShare = price;
     if (isUSDPortfolio) {
@@ -161,8 +161,8 @@ export const TradeHistory = (props: TradeHistoryProps) => {
       const stats = runningStats[ticker];
       const qty = Number(tx.qty);
       const price = Number(tx.price_per_unit);
-      const rate = Number(tx.price_currency || 1);
-      const txCurrency = tx.currency || "USD";
+      const rate = Number(tx.fx_rate_to_base || 1);
+      const txCurrency = tx.settlement_currency || "USD";
 
       let pricePerShare = price;
       if (isUSDPortfolio) {
@@ -275,8 +275,8 @@ export const TradeHistory = (props: TradeHistoryProps) => {
       const stats = runningStats[ticker];
       const qty = Number(tx.qty);
       const price = Number(tx.price_per_unit);
-      const rate = Number(tx.price_currency || 1);
-      const txCurrency = tx.currency || "USD";
+      const rate = Number(tx.fx_rate_to_base || 1);
+      const txCurrency = tx.settlement_currency || "USD";
 
       let pricePerShare = price;
       if (isUSDPortfolio) {
@@ -1443,16 +1443,16 @@ export const TradeHistory = (props: TradeHistoryProps) => {
 
                           {/* Price per unit */}
                           <td class="py-4 px-4 text-right font-outfit font-semibold text-xs text-forest">
-                            {formatTxCurrency(Number(tx.price_per_unit), tx.currency)}
+                            {formatTxCurrency(Number(tx.price_per_unit), tx.settlement_currency)}
                           </td>
 
                           {/* Computed Total Amount */}
                           <td class="py-4 px-4 text-right">
                             <div class="flex flex-col items-end">
                               <span class="font-outfit font-black text-xs text-forest">
-                                {formatTxCurrency(Number(tx.qty) * Number(tx.price_per_unit), tx.currency)}
+                                {formatTxCurrency(Number(tx.qty) * Number(tx.price_per_unit), tx.settlement_currency)}
                               </span>
-                              <Show when={tx.currency !== currency()}>
+                              <Show when={tx.settlement_currency !== currency()}>
                                 <span class="text-[9px] text-earth/40 font-semibold mt-0.5">
                                   ≈ {formatPortfolioValue(
                                     displayAmt,
@@ -1484,10 +1484,10 @@ export const TradeHistory = (props: TradeHistoryProps) => {
                               <div class="px-8 py-5 font-outfit flex flex-col gap-4 text-xs text-forest animate-slide-down">
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                   <div class="flex flex-col gap-1.5">
-                                    <span class="text-[9px] text-earth/50 font-bold uppercase tracking-wider">Exchange Rate (price_currency)</span>
+                                    <span class="text-[9px] text-earth/50 font-bold uppercase tracking-wider">Exchange Rate (fx_rate_to_base)</span>
                                     <span class="font-semibold bg-white border border-forest/10 rounded-xl px-3 py-2 text-forest/80 shadow-sm flex items-center gap-1.5">
                                       <span class="material-icons text-sm text-earth/40">currency_exchange</span>
-                                      1 {tx.currency} = {Number(tx.price_currency).toLocaleString(undefined, { maximumFractionDigits: 4 })} {props.portfolio.nativeCurrency}
+                                      1 {tx.settlement_currency} = {Number(tx.fx_rate_to_base).toLocaleString(undefined, { maximumFractionDigits: 4 })} {props.portfolio.nativeCurrency}
                                     </span>
                                   </div>
 
