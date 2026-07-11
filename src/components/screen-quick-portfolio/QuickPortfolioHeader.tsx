@@ -11,8 +11,7 @@ export const QuickPortfolioHeader = (props: QuickPortfolioHeaderProps) => {
       </div>
       <div class="flex gap-3 items-center select-none">
         <div class="font-label-sm text-xs text-earth flex items-center gap-1.5 px-1 py-1">
-          <span class="material-icons !text-sm text-forest/40">sync</span>
-          <span>Last updated: {props.lastUpdatedLabel}</span>
+          <span class="italic underline">Last updated: {props.lastUpdatedLabel}</span>
         </div>
       </div>
     </div>

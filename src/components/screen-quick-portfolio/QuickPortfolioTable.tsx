@@ -52,13 +52,15 @@ const parseLocaleFloat = (valString: string): number => {
 
 export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
   // Hide FX rate visibility toggle (Requirement 3)
-  const [hideFxRate, setHideFxRate] = createSignal<boolean>(() => {
-    try {
-      return localStorage.getItem("finly_zen_quick_portfolio_hide_fx_rate") === "true";
-    } catch (e) {
-      return false;
-    }
-  });
+  const [hideFxRate, setHideFxRate] = createSignal<boolean>(
+    (() => {
+      try {
+        return localStorage.getItem("finly_zen_quick_portfolio_hide_fx_rate") === "true";
+      } catch (e) {
+        return false;
+      }
+    })()
+  );
 
   const [previousHideFxRateState, setPreviousHideFxRateState] = createSignal<boolean | null>(null);
 
@@ -72,20 +74,24 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
   };
 
   // Sorting state (Requirement 4)
-  const [sortBy, setSortBy] = createSignal<SortKey>(() => {
-    try {
-      return (localStorage.getItem("finly_zen_quick_portfolio_sort_by") as SortKey) || "value";
-    } catch (e) {
-      return "value";
-    }
-  });
-  const [sortOrder, setSortOrder] = createSignal<"asc" | "desc">(() => {
-    try {
-      return (localStorage.getItem("finly_zen_quick_portfolio_sort_order") as "asc" | "desc") || "desc";
-    } catch (e) {
-      return "desc";
-    }
-  });
+  const [sortBy, setSortBy] = createSignal<SortKey>(
+    (() => {
+      try {
+        return (localStorage.getItem("finly_zen_quick_portfolio_sort_by") as SortKey) || "value";
+      } catch (e) {
+        return "value";
+      }
+    })()
+  );
+  const [sortOrder, setSortOrder] = createSignal<"asc" | "desc">(
+    (() => {
+      try {
+        return (localStorage.getItem("finly_zen_quick_portfolio_sort_order") as "asc" | "desc") || "desc";
+      } catch (e) {
+        return "desc";
+      }
+    })()
+  );
 
   const handleSort = (key: SortKey) => {
     const nextOrder =
