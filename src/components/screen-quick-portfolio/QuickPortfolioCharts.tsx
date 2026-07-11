@@ -206,9 +206,9 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
               {(kpi) => {
                 const positive = () => kpi().isPositive;
                 return (
-                  <div class="flex items-baseline gap-1.5 mt-1.5">
+                  <div class="flex items-center gap-1.5 mt-1.5">
                     <span
-                      class="font-outfit text-xl font-bold tracking-tight"
+                      class="font-outfit text-base font-bold tracking-tight"
                       classList={{
                         "text-forest": positive(),
                         "text-red-600": !positive(),
@@ -224,9 +224,6 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
                       }}
                     >
                       ({props.formatPercent(kpi().pct / 100)})
-                    </span>
-                    <span class="text-[10px] text-earth/60 font-outfit font-semibold uppercase tracking-wider ml-1">
-                      · {props.perfPeriod}
                     </span>
                   </div>
                 );

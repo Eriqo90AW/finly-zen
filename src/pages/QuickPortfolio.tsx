@@ -70,7 +70,7 @@ export default function QuickPortfolio() {
 
   // Performance chart period
   type PerfPeriod = "1D" | "1W" | "1M" | "1Y" | "ALL";
-  const [perfPeriod, setPerfPeriod] = createSignal<PerfPeriod>("1M");
+  const [perfPeriod, setPerfPeriod] = createSignal<PerfPeriod>("1D");
 
   // Auto-categorize ticker
   const getCategory = (ticker: string) => {
