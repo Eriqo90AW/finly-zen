@@ -193,6 +193,8 @@ export async function upsertAsset(stockItem: MultiStockItem): Promise<void> {
   let type: AssetType = "US_STOCK";
   if (ticker.endsWith("-USD")) {
     type = "CRYPTO";
+  } else if (ticker.endsWith(".JK")) {
+    type = "IDX";
   }
 
   const industry = stockItem.fundamentals?.summaryProfile?.industry || null;

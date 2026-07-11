@@ -75,7 +75,8 @@ export const setActivePortfolioId = (id: string | null) => {
 const computePortfolioState = (
   p: PortfolioDB,
   txs: any[],
-  priceMap: Record<string, any>
+  priceMap: Record<string, any>,
+  dbAssetsMap: Record<string, any> = {}
 ): Portfolio => {
   const assets: PortfolioAsset[] = [];
   const tickers = Array.from(
@@ -194,11 +195,13 @@ const computePortfolioState = (
         } catch (e) {}
       }
 
+      const dbAsset = dbAssetsMap[ticker];
+
       assets.push({
         id: ticker,
         ticker,
-        name: priceMap[ticker]?.fundamentals?.price?.shortName || ticker,
-        logoUrl: priceMap[ticker]?.logo_url || undefined,
+        name: dbAsset?.name || priceMap[ticker]?.fundamentals?.price?.shortName || ticker,
+        logoUrl: dbAsset?.logo_url || priceMap[ticker]?.logo_url || undefined,
         currency: assetCurrency,
         conversionRate: assetConversionRate,
         currentValue,
@@ -350,8 +353,21 @@ export const loadPortfolios = async () => {
       priceMap[item.symbol.toUpperCase()] = item;
     });
 
+    // Fetch DB assets to load custom logos and names
+    const { data: dbAssets, error: dbAssetsError } = await supabase
+      .from("assets")
+      .select("ticker, name, logo_url")
+      .in("ticker", tickers);
+
+    const dbAssetsMap: Record<string, any> = {};
+    if (!dbAssetsError && dbAssets) {
+      dbAssets.forEach((a) => {
+        dbAssetsMap[a.ticker.toUpperCase()] = a;
+      });
+    }
+
     const computedPortfolios = rawPortfolios.map((rp) =>
-      computePortfolioState(rp, allTxs[rp.id] || [], priceMap)
+      computePortfolioState(rp, allTxs[rp.id] || [], priceMap, dbAssetsMap)
     );
 
     setPortfolioState("portfolios", reconcile(computedPortfolios));
@@ -384,7 +400,20 @@ export const refreshPortfolio = async (portfolioId: string) => {
       priceMap[item.symbol.toUpperCase()] = item;
     });
 
-    const computed = computePortfolioState(rp, txs, priceMap);
+    // Fetch DB assets to load custom logos and names
+    const { data: dbAssets, error: dbAssetsError } = await supabase
+      .from("assets")
+      .select("ticker, name, logo_url")
+      .in("ticker", tickers);
+
+    const dbAssetsMap: Record<string, any> = {};
+    if (!dbAssetsError && dbAssets) {
+      dbAssets.forEach((a) => {
+        dbAssetsMap[a.ticker.toUpperCase()] = a;
+      });
+    }
+
+    const computed = computePortfolioState(rp, txs, priceMap, dbAssetsMap);
 
     setPortfolioState("portfolios", (prev) => {
       const index = prev.findIndex((p) => p.id === portfolioId);
