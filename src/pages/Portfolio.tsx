@@ -4,8 +4,6 @@ import { portfolioState, loadPortfolios } from "../store/portfolioStore";
 import { PortfolioOverview } from "../components/screen-portfolio/PortfolioOverview";
 import { PortfolioDetails } from "../components/screen-portfolio/PortfolioDetails";
 import { TradeHistory } from "../components/screen-portfolio/TradeHistory";
-import { fetchUsdRate } from "../data/portfolioData";
-import { setUsdExchangeRate } from "../utils/format";
 
 const Portfolio = () => {
   const params = useParams();
@@ -16,11 +14,6 @@ const Portfolio = () => {
   });
 
   onMount(async () => {
-    // 1. Load live USD rate first
-    const rate = await fetchUsdRate();
-    setUsdExchangeRate(rate);
-
-    // 2. Load portfolios & transactions from Supabase
     await loadPortfolios();
   });
 

@@ -8,6 +8,8 @@ import {
   setCurrencyView,
   refreshPortfolio,
   loadPortfolios,
+  quickPortfolioSearch,
+  setQuickPortfolioSearch,
 } from "../../store/portfolioStore";
 import {
   formatUSD,
@@ -27,7 +29,9 @@ const TopBar = () => {
   const navigate = useNavigate();
   const params = useParams();
   const isStockPage = () => location.pathname.startsWith("/stock");
-  const isPortfolioPage = () => location.pathname.startsWith("/portfolio");
+  const isPortfolioPage = () => 
+    location.pathname.startsWith("/portfolio") || 
+    location.pathname === "/quick-portfolio";
   const isDividendPage = () => location.pathname.startsWith("/dividend");
 
   const [marketStatus, setMarketStatus] =
@@ -83,6 +87,7 @@ const TopBar = () => {
   };
 
   const activePortfolioName = () => {
+    if (location.pathname === "/quick-portfolio") return "Quick Portfolio";
     if (!params.id) return "Overview";
     const found = portfolioState.portfolios.find((p) => p.id === params.id);
     return found ? found.name : "Portfolio";
@@ -91,7 +96,12 @@ const TopBar = () => {
   const handleSwitchPortfolio = (id: string) => {
     setIsSwitcherOpen(false);
     if (id) {
-      navigate(`/portfolio/${id}`);
+      const found = portfolioState.portfolios.find(p => p.id === id);
+      if (found && found.name === "Quick Portfolio") {
+        navigate("/quick-portfolio");
+      } else {
+        navigate(`/portfolio/${id}`);
+      }
     } else {
       navigate("/portfolio");
     }
@@ -325,9 +335,9 @@ const TopBar = () => {
                       onClick={() => handleSwitchPortfolio("")}
                       class="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-bold text-left transition-colors cursor-pointer"
                       classList={{
-                        "bg-sage/40 text-forest": !params.id,
+                        "bg-sage/40 text-forest": !params.id && location.pathname === "/portfolio",
                         "text-forest/70 hover:bg-sage/30 hover:text-forest":
-                          !!params.id,
+                          !!params.id || location.pathname === "/quick-portfolio",
                       }}
                     >
                       <span class="material-icons !text-[14px] text-forest/50">
@@ -342,7 +352,12 @@ const TopBar = () => {
                       <For each={portfolioState.portfolios}>
                         {(p) => {
                           const pColor = getPortfolioColor(p.name);
-                          const isActive = () => p.id === params.id;
+                          const isActive = () => {
+                            if (location.pathname === "/quick-portfolio") {
+                              return p.name === "Quick Portfolio";
+                            }
+                            return p.id === params.id;
+                          };
                           return (
                             <button
                               onClick={() => handleSwitchPortfolio(p.id)}
@@ -422,7 +437,10 @@ const TopBar = () => {
               {/* Refresh Button */}
               <button
                 onClick={() => {
-                  if (params.id) {
+                  if (location.pathname === "/quick-portfolio") {
+                    const qp = portfolioState.portfolios.find(p => p.name === "Quick Portfolio");
+                    if (qp) refreshPortfolio(qp.id);
+                  } else if (params.id) {
                     refreshPortfolio(params.id);
                   } else {
                     loadPortfolios();

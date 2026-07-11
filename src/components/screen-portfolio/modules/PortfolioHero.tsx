@@ -184,7 +184,7 @@ export const PortfolioHero = (props: PortfolioHeroProps) => {
               </div>
               <div class="flex items-center gap-1.5">
                 <span class="text-xl font-outfit font-bold text-forest leading-none">
-                  {formatPortfolioValue(props.portfolio!.cash, currency(), false, props.portfolio!.nativeCurrency)}
+                  {formatPortfolioValue(props.portfolio!.cash, currency(), false, props.portfolio!.nativeCurrency, props.portfolio!.price_currency)}
                 </span>
                 <span class="text-[10px] font-[900] text-orange-500 bg-orange-300/30 px-1.5 py-0.5 rounded-md border border-spring/20">
                   {props.portfolio!.totalValue > 0

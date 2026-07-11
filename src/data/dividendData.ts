@@ -47,15 +47,22 @@ function normalizeEntry(item: any): DividendEntry {
   const today = getLocalTodayStr();
 
   let determinedStatus: DividendEntry["status"];
-  if (parsedPaymentDate) {
-    if (parsedPaymentDate > today) {
-      determinedStatus = "upcoming";
-    } else {
-      determinedStatus = "paid";
-    }
-  } else {
+  if (parsedCumDate) {
     if (parsedCumDate >= today) {
       determinedStatus = "upcoming";
+    } else if (parsedPaymentDate) {
+      determinedStatus = "paid";
+    } else {
+      determinedStatus = "projected";
+    }
+  } else {
+    // Fallback if no cum_date exists
+    if (parsedPaymentDate) {
+      if (parsedPaymentDate >= today) {
+        determinedStatus = "upcoming";
+      } else {
+        determinedStatus = "paid";
+      }
     } else {
       determinedStatus = "projected";
     }
@@ -96,7 +103,7 @@ function readCache(): DividendEntry[] | null {
     const saved = localStorage.getItem(CACHE_KEY);
     if (!saved) return null;
     const cache: DividendCache = JSON.parse(saved);
-    return cache.data;
+    return cache.data.map(normalizeEntry);
   } catch {
     return null;
   }

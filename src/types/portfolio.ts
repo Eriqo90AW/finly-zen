@@ -11,6 +11,7 @@ export interface PortfolioTransaction {
   pricePerShare: number;
   totalAmount: number;
   gainLoss?: number;
+  linked_transaction_id?: string | null;
 }
 
 export interface PortfolioAsset {
@@ -18,6 +19,8 @@ export interface PortfolioAsset {
   ticker: string;
   name: string;
   logoUrl?: string;
+  currency: string;
+  conversionRate: number;
   currentValue: number;
   totalGainLoss: number;
   actualAllocation: number; // Percentage 0-100
@@ -27,6 +30,9 @@ export interface PortfolioAsset {
   currentPrice: number;
   preMarketPrice: number | null;
   postMarketPrice: number | null;
+  previousClose: number | null;
+  dayChange: number;
+  dayChangePct: number;
 }
 
 export interface PortfolioHistoryPoint {
@@ -48,6 +54,7 @@ export interface Portfolio {
   history: PortfolioHistoryPoint[];
   price_currency?: number;
   nativeCurrency: 'IDR' | 'USD';
+  updated_at?: string;
 }
 
 // --- DB Row Interfaces ---
@@ -55,9 +62,7 @@ export interface PortfolioDB {
   id: string;
   user_id: string;
   name: string;
-  initial_capital: number;
-  cash: number;
-  price_currency?: number;
+  base_currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -69,12 +74,15 @@ export interface PortfolioTransactionDB {
   type: PortfolioTransactionType;
   qty: number;
   price_per_unit: number;
+  fx_rate_to_base: number;
+  settlement_currency: string;
   price_currency: number;
   currency: string;
   notes: string | null;
   created_at: string;
   updated_at: string;
   transaction_date: string;
+  linked_transaction_id: string | null;
 }
 
 export interface AssetDB {

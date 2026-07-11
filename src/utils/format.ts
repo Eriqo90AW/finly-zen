@@ -132,6 +132,19 @@ const [usdRate, setUsdRate] = createSignal(Number(import.meta.env.VITE_DEFAULT_U
 export const getUsdRate = () => usdRate();
 export const setUsdExchangeRate = (rate: number) => setUsdRate(rate);
 
+let _usdRateReadyResolve: (rate: number) => void;
+let _usdRateReadySet = false;
+export const usdRateReady = new Promise<number>((resolve) => {
+  _usdRateReadyResolve = resolve;
+});
+export const setUsdRateOnce = (rate: number) => {
+  setUsdRate(rate);
+  if (!_usdRateReadySet) {
+    _usdRateReadySet = true;
+    _usdRateReadyResolve(rate);
+  }
+};
+
 export const formatPortfolioValue = (
   amount: number,
   displayCurrency: 'IDR' | 'USD',

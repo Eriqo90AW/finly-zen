@@ -7,6 +7,7 @@ import AssessmentIcon from "@suid/icons-material/AssessmentOutlined";
 import ShowChartIcon from "@suid/icons-material/ShowChartOutlined";
 import PieChartIcon from "@suid/icons-material/PieChartOutlined";
 import PaymentsIcon from "@suid/icons-material/PaymentsOutlined";
+import TableChartIcon from "@suid/icons-material/TableChartOutlined";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -50,6 +51,10 @@ const Sidebar = () => {
         <A href="/stock/AAPL" class={`nav-link ${location.pathname.startsWith("/stock") ? "active" : ""}`}>
           <ShowChartIcon />
           <span class="font-outfit">Markets</span>
+        </A>
+        <A href="/quick-portfolio" class={`nav-link ${isActive("/quick-portfolio") ? "active" : ""}`}>
+          <TableChartIcon />
+          <span class="font-outfit">Quick Portfolio</span>
         </A>
         <A href="/portfolio" class={`nav-link ${isActive("/portfolio") || location.pathname.startsWith("/portfolio") ? "active" : ""}`}>
           <PieChartIcon />

@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { portfolioState, deletePortfolio } from "../../store/portfolioStore";
-import { calculateDisplayGainAndPercentage, formatPortfolioValue } from "../../utils/format";
+import { portfolioState, deletePortfolio, adjustPortfolioCash } from "../../store/portfolioStore";
+import { calculateDisplayGainAndPercentage, formatPortfolioValue, formatNumericInput, formatUSDInput, getUsdRate } from "../../utils/format";
 import AddIcon from "@suid/icons-material/Add";
 import { CreatePortfolioModal } from "./modals/CreatePortfolioModal";
 import { ConfirmDeleteModal } from "./modals/ConfirmDeleteModal";
@@ -16,6 +16,8 @@ export const PortfolioOverview = () => {
     id: string;
     name: string;
   } | null>(null);
+  const [editingCashId, setEditingCashId] = createSignal<string | null>(null);
+  const [cashEditValue, setCashEditValue] = createSignal("");
   const currency = () => portfolioState.currencyView;
 
   return (
@@ -181,11 +183,83 @@ export const PortfolioOverview = () => {
                         {/* Initial / Cash Column */}
                         <div class="flex-1 flex flex-col items-end gap-0.5">
                           <span class="font-outfit font-medium text-forest text-sm">
-                            {formatPortfolioValue(p.initialCapital, currency(), false, p.nativeCurrency, p.price_currency)}
+                            {formatPortfolioValue(
+                              p.assets.reduce((sum, a) => sum + a.averagePrice * a.totalShares, 0) + p.cash,
+                              currency(),
+                              false,
+                              p.nativeCurrency,
+                              p.price_currency
+                            )}
                           </span>
-                          <span class="text-[11px] text-earth/60 font-medium">
-                            Cash: {formatPortfolioValue(p.cash, currency(), false, p.nativeCurrency)}
-                          </span>
+                          <Show
+                            when={editingCashId() === p.id}
+                            fallback={
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingCashId(p.id);
+                                  const isUSD = (p.price_currency ?? 1) > 1;
+                                  setCashEditValue(isUSD ? p.cash.toFixed(2) : Math.round(p.cash).toString());
+                                  setTimeout(() => {
+                                    const input = document.getElementById(`cash-input-${p.id}`) as HTMLInputElement;
+                                    input?.focus();
+                                    input?.select();
+                                  }, 50);
+                                }}
+                                class="text-[11px] text-earth/60 font-medium hover:text-forest hover:underline cursor-pointer transition-colors"
+                              >
+                                Cash: {formatPortfolioValue(p.cash, currency(), false, p.nativeCurrency, p.price_currency)}
+                              </span>
+                            }
+                          >
+                            <div class="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <span class="text-[11px] text-earth/60 font-medium">Cash:</span>
+                              <input
+                                id={`cash-input-${p.id}`}
+                                type="text"
+                                inputmode="decimal"
+                                value={(() => {
+                                  const isUSD = (p.price_currency ?? 1) > 1;
+                                  return isUSD ? formatUSDInput(cashEditValue()) : formatNumericInput(cashEditValue());
+                                })()}
+                                onInput={(e) => {
+                                  let val = e.currentTarget.value;
+                                  const isUSD = (p.price_currency ?? 1) > 1;
+                                  if (isUSD) {
+                                    val = val.replace(/,/g, ".");
+                                    const parts = val.split(".");
+                                    if (parts.length > 1) {
+                                      val = parts[0].replace(/\D/g, "") + "." + parts[1].slice(0, 2).replace(/\D/g, "");
+                                    } else {
+                                      val = val.replace(/\D/g, "");
+                                    }
+                                  } else {
+                                    val = val.replace(/\D/g, "");
+                                  }
+                                  setCashEditValue(val);
+                                }}
+                                onBlur={() => {
+                                  const val = parseFloat(cashEditValue());
+                                  if (!isNaN(val) && val >= 0) {
+                                    adjustPortfolioCash(p.id, val);
+                                  }
+                                  setEditingCashId(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    const val = parseFloat(cashEditValue());
+                                    if (!isNaN(val) && val >= 0) {
+                                      adjustPortfolioCash(p.id, val);
+                                    }
+                                    setEditingCashId(null);
+                                  } else if (e.key === "Escape") {
+                                    setEditingCashId(null);
+                                  }
+                                }}
+                                class="w-24 text-[11px] text-right font-outfit font-medium text-forest bg-transparent border border-forest/20 rounded px-1 py-0.5 focus:outline-none focus:border-forest/40"
+                              />
+                            </div>
+                          </Show>
                         </div>
 
                         {/* Assets Column */}

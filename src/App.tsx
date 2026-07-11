@@ -1,20 +1,28 @@
-import { ParentProps, Show } from "solid-js";
+import { ParentProps, Show, onMount } from "solid-js";
 import MainLayout from "./components/layout/MainLayout";
 import { state, setState, setupPersistence } from "./store";
 import { setupPortfolioPersistence } from "./store/portfolioStore";
 import { setupPriceAlertPersistence } from "./store/priceAlertStore";
+import { fetchUsdRate } from "./data/portfolioData";
+import { setUsdRateOnce } from "./utils/format";
 import AddIcon from "@suid/icons-material/Add";
 import { useLocation } from "@solidjs/router";
 
 const App = (props: ParentProps) => {
-  // Initialize persistence inside the root component
   setupPersistence();
   setupPortfolioPersistence();
   setupPriceAlertPersistence();
   const location = useLocation();
+
+  onMount(async () => {
+    const rate = await fetchUsdRate();
+    setUsdRateOnce(rate);
+  });
+
   const shouldHideAddButton = () => 
     location.pathname.startsWith("/stock") || 
     location.pathname.startsWith("/portfolio") ||
+    location.pathname.startsWith("/quick-portfolio") ||
     location.pathname.startsWith("/dividend");
 
   return (

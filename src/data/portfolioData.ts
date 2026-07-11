@@ -85,20 +85,43 @@ export async function getPortfolios(): Promise<PortfolioDB[]> {
 }
 
 export async function createPortfolioDB(name: string, initialCapital: number, priceCurrency: number): Promise<PortfolioDB> {
+  const isUSD = priceCurrency > 1;
+  const baseCurrency = isUSD ? "USD" : "IDR";
+
   const { data, error } = await supabase
     .from("portfolios")
     .insert({
       user_id: USER_ID,
       name,
-      initial_capital: initialCapital,
-      cash: initialCapital,
-      price_currency: priceCurrency,
+      base_currency: baseCurrency,
     })
     .select()
     .single();
 
   if (error) {
     throw new Error(`Failed to create portfolio in DB: ${error.message}`);
+  }
+
+  // Insert initial deposit transaction into portfolio_transactions
+  if (initialCapital > 0) {
+    const { error: txError } = await supabase
+      .from("portfolio_transactions")
+      .insert({
+        portfolio_id: data.id,
+        asset_ticker: baseCurrency,
+        type: "DEPOSIT",
+        qty: initialCapital,
+        price_per_unit: 1,
+        fx_rate_to_base: priceCurrency,
+        settlement_currency: baseCurrency,
+        notes: "Initial Capital Deposit",
+        transaction_date: new Date().toISOString(),
+        linked_transaction_id: null,
+      });
+
+    if (txError) {
+      console.error("Failed to insert initial deposit transaction:", txError);
+    }
   }
 
   return data;
@@ -127,7 +150,11 @@ export async function getPortfolioTransactions(portfolioId: string): Promise<Por
     return [];
   }
 
-  return data || [];
+  return (data || []).map(tx => ({
+    ...tx,
+    currency: tx.settlement_currency,
+    price_currency: tx.fx_rate_to_base,
+  }));
 }
 
 export async function getPortfolioTransactionsRaw(
@@ -143,15 +170,32 @@ export async function getPortfolioTransactionsRaw(
     console.error(`Error fetching raw transactions:`, error);
     return [];
   }
-  return data || [];
+  return (data || []).map(tx => ({
+    ...tx,
+    currency: tx.settlement_currency,
+    price_currency: tx.fx_rate_to_base,
+  }));
 }
 
 export async function addPortfolioTransaction(
   params: Omit<PortfolioTransactionDB, "id" | "created_at" | "updated_at">
 ): Promise<PortfolioTransactionDB> {
+  const dbParams = {
+    portfolio_id: params.portfolio_id,
+    asset_ticker: params.asset_ticker,
+    type: params.type,
+    qty: params.qty,
+    price_per_unit: params.price_per_unit,
+    fx_rate_to_base: params.price_currency,
+    settlement_currency: params.currency,
+    notes: params.notes,
+    transaction_date: params.transaction_date,
+    linked_transaction_id: params.linked_transaction_id,
+  };
+
   const { data, error } = await supabase
     .from("portfolio_transactions")
-    .insert(params)
+    .insert(dbParams)
     .select()
     .single();
 
@@ -159,7 +203,11 @@ export async function addPortfolioTransaction(
     throw new Error(`Failed to add transaction: ${error.message}`);
   }
 
-  return data;
+  return {
+    ...data,
+    currency: data.settlement_currency,
+    price_currency: data.fx_rate_to_base,
+  };
 }
 
 export async function upsertAsset(stockItem: MultiStockItem): Promise<void> {
@@ -197,14 +245,13 @@ export async function upsertAsset(stockItem: MultiStockItem): Promise<void> {
 }
 
 export async function updatePortfolioCash(id: string, cash: number): Promise<void> {
-  const { error } = await supabase
-    .from("portfolios")
-    .update({ cash })
-    .eq("id", id);
+  // No-op under event-sourced ledger model
+  return Promise.resolve();
+}
 
-  if (error) {
-    throw new Error(`Failed to update portfolio cash: ${error.message}`);
-  }
+export async function setPortfolioCashAndInitial(id: string, cash: number, initialCapital: number): Promise<void> {
+  // No-op under event-sourced ledger model
+  return Promise.resolve();
 }
 
 export async function getAssetThesis(portfolioId: string, ticker: string): Promise<{ id: string; notes: string | null; updated_at: string } | null> {
