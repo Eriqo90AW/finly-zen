@@ -1409,12 +1409,10 @@ export default function QuickPortfolio() {
             <table class="w-full text-left border-collapse whitespace-nowrap">
               <thead class="bg-sage/20 border-b border-forest/5 text-[11px] text-earth">
                 <tr>
-                  <th class="px-6 py-3 font-semibold uppercase tracking-wider w-1/4">Asset</th>
-                  <th class="px-6 py-3 font-semibold uppercase tracking-wider w-1/6">Category</th>
-                  <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-1/6">Quantity</th>
+                  <th class="px-6 py-3 font-semibold uppercase tracking-wider w-1/3">Asset</th>
+                  <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-[110px]">Quantity</th>
                   <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-1/6">Avg Price</th>
-                  <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-[90px]">Currency</th>
-                  <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-[110px]">Rate</th>
+                  <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-[150px]">FX Rate</th>
                   <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-1/6">Current Price</th>
                   <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-1/6">Total Value</th>
                   <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-1/6">Gain</th>
@@ -1434,7 +1432,7 @@ export default function QuickPortfolio() {
                       <tr class="hover:bg-sage/10 transition-colors group">
                         
                         {/* Asset Column */}
-                        <td class="px-6 py-4 border-r border-transparent group-hover:border-forest/5 transition-colors overflow-hidden max-w-[200px]">
+                        <td class="px-6 py-4 border-r border-transparent group-hover:border-forest/5 transition-colors overflow-hidden max-w-[320px]">
                           <div class="flex items-center gap-3">
                             <div class="w-7 h-7 rounded-lg bg-sage flex items-center justify-center text-forest overflow-hidden shrink-0">
                               <Show 
@@ -1446,16 +1444,14 @@ export default function QuickPortfolio() {
                             </div>
                             <div class="min-w-0">
                               <div class="font-bold text-near-black truncate">{asset.name || asset.ticker}</div>
-                              <div class="text-[10px] text-earth uppercase font-semibold">{getDisplayTicker(asset.ticker)}</div>
+                              <div class="flex items-center gap-1.5 mt-0.5">
+                                <span class="text-[10px] text-earth uppercase font-semibold">{getDisplayTicker(asset.ticker)}</span>
+                                <span class="px-1.5 py-0.25 rounded bg-sage/50 text-forest text-[8px] font-bold uppercase tracking-wider">
+                                  {cat}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </td>
-
-                        {/* Category Column */}
-                        <td class="px-6 py-4 border-r border-transparent group-hover:border-forest/5 transition-colors">
-                          <span class="px-2.5 py-0.5 rounded-full bg-sage/50 text-forest text-[10px] font-bold">
-                            {cat}
-                          </span>
                         </td>
 
                         {/* Quantity Column (Editable) */}
@@ -1518,12 +1514,7 @@ export default function QuickPortfolio() {
                           </td>
                         </Show>
 
-                        {/* Currency Column (read-only) */}
-                        <td class="px-6 py-4 text-right font-mono text-earth border-r border-transparent group-hover:border-forest/5 transition-colors">
-                          {asset.currency || "USD"}
-                        </td>
-
-                        {/* Conversion Rate Column (Editable) */}
+                        {/* Conversion Rate & Currency Column (Editable) */}
                         <Show
                           when={isRateEditing()}
                           fallback={
@@ -1531,12 +1522,13 @@ export default function QuickPortfolio() {
                               onClick={() => startEdit(asset.ticker, "conversionRate", asset.conversionRate ?? 1)}
                               class="px-6 py-4 text-right font-mono text-earth hover:bg-forest/5 cursor-pointer border-r border-transparent group-hover:border-forest/5 transition-colors"
                             >
-                              {(asset.conversionRate ?? 1).toFixed(2)}
+                              <span class="font-bold">{(asset.conversionRate ?? 1).toFixed(2)}</span>
+                              <span class="text-[9px] text-earth/50 font-bold ml-1.5 uppercase tracking-wider">{asset.currency || "USD"}</span>
                             </td>
                           }
                         >
                           <td class="px-4 py-3 border-2 border-forest bg-sage/20 relative shadow-inner">
-                            <div class="flex items-center justify-end">
+                            <div class="flex items-center justify-end gap-1.5">
                               <input
                                 ref={rateInputRef}
                                 type="text"
@@ -1546,8 +1538,9 @@ export default function QuickPortfolio() {
                                 onInput={(e) => setEditValue(e.currentTarget.value.replace(/[^0-9.,]/g, ""))}
                                 onBlur={() => saveEdit(asset.ticker, "conversionRate")}
                                 onKeyDown={(e) => handleKeyDown(e, asset.ticker, "conversionRate")}
-                                class="w-full bg-transparent border-none text-right font-mono text-near-black font-bold focus:ring-0 focus:outline-none p-0"
+                                class="w-16 bg-transparent border-none text-right font-mono text-near-black font-bold focus:ring-0 focus:outline-none p-0"
                               />
+                              <span class="text-[9px] text-earth/50 font-bold uppercase tracking-wider shrink-0">{asset.currency || "USD"}</span>
                             </div>
                             <div class="absolute -top-1.5 -right-1.5 bg-forest text-white text-[8px] font-bold px-1 rounded shadow-sm z-10">Edit</div>
                           </td>
@@ -1639,39 +1632,40 @@ export default function QuickPortfolio() {
                     return (
                       <tr class="bg-sage/15 border-y-2 border-dashed border-forest/30">
                         {/* Asset / Ticker */}
-                        <td class="px-6 py-3 border-r border-forest/5">
+                        <td class="px-4 py-2 border-r border-forest/5 max-w-[320px]">
                           <div class="flex items-center gap-3">
                             <div class="w-7 h-7 rounded-lg bg-forest text-white flex items-center justify-center shrink-0">
-                              <span class="material-icons !text-sm">edit</span>
+                              <span class="material-icons !text-sm">
+                                {draft().ticker ? getCategoryIcon(getCategory(draft().ticker)) : "edit"}
+                              </span>
                             </div>
-                            <input
-                              ref={newRowTickerRef}
-                              type="text"
-                              placeholder="TICKER"
-                              autocomplete="off"
-                              autocapitalize="characters"
-                              spellcheck={false}
-                              disabled={isSubmitting()}
-                              value={draft().ticker}
-                              onInput={(e) => update({ ticker: e.currentTarget.value.toUpperCase() })}
-                              onKeyDown={(e) => handleNewRowDraftKeyDown(e, "ticker")}
-                              class="bg-white border border-forest/30 rounded px-2 py-1 font-bold text-near-black text-xs w-24 uppercase focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
-                            />
+                            <div class="min-w-0 flex-1">
+                              <div class="flex items-center gap-1.5">
+                                <input
+                                  ref={newRowTickerRef}
+                                  type="text"
+                                  placeholder="TICKER"
+                                  autocomplete="off"
+                                  autocapitalize="characters"
+                                  spellcheck={false}
+                                  disabled={isSubmitting()}
+                                  value={draft().ticker}
+                                  onInput={(e) => update({ ticker: e.currentTarget.value.toUpperCase() })}
+                                  onKeyDown={(e) => handleNewRowDraftKeyDown(e, "ticker")}
+                                  class="bg-white border border-forest/30 rounded px-2 py-1 font-bold text-near-black text-xs w-20 uppercase focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
+                                />
+                                <Show when={draft().ticker}>
+                                  <span class="px-1.5 py-0.5 rounded bg-sage/50 text-forest text-[8px] font-bold uppercase tracking-wider shrink-0">
+                                    {getCategory(draft().ticker)}
+                                  </span>
+                                </Show>
+                              </div>
+                            </div>
                           </div>
                         </td>
 
-                        {/* Category preview */}
-                        <td class="px-6 py-3 border-r border-forest/5">
-                          <span
-                            class="px-2.5 py-0.5 rounded-full bg-sage/50 text-forest text-[10px] font-bold"
-                            classList={{ "opacity-30": !draft().ticker }}
-                          >
-                            {draft().ticker ? getCategory(draft().ticker) : "—"}
-                          </span>
-                        </td>
-
                         {/* Quantity */}
-                        <td class="px-6 py-3 text-right border-r border-forest/5">
+                        <td class="px-4 py-2 text-right border-r border-forest/5">
                           <input
                             ref={newRowQtyRef}
                             type="text"
@@ -1682,12 +1676,12 @@ export default function QuickPortfolio() {
                             value={draft().qty}
                             onInput={(e) => update({ qty: e.currentTarget.value.replace(/[^0-9.,]/g, "") })}
                             onKeyDown={(e) => handleNewRowDraftKeyDown(e, "qty")}
-                            class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-24 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
+                            class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-20 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
                           />
                         </td>
 
                         {/* Avg Buy Price */}
-                        <td class="px-6 py-3 text-right border-r border-forest/5">
+                        <td class="px-4 py-2 text-right border-r border-forest/5">
                           <input
                             ref={newRowPriceRef}
                             type="text"
@@ -1698,54 +1692,52 @@ export default function QuickPortfolio() {
                             value={draft().avgPrice}
                             onInput={(e) => update({ avgPrice: e.currentTarget.value.replace(/[^0-9.,]/g, "") })}
                             onKeyDown={(e) => handleNewRowDraftKeyDown(e, "avgPrice")}
-                            class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-24 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
+                            class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-20 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
                           />
                         </td>
 
-                        {/* Currency */}
-                        <td class="px-6 py-3 text-right border-r border-forest/5">
-                          <select
-                            ref={newRowCurrencyRef}
-                            disabled={isSubmitting()}
-                            value={draft().currency}
-                            onChange={(e) => {
-                              const c = e.currentTarget.value;
-                              update({
-                                currency: c,
-                                conversionRate: c === "IDR" ? "1" : getUsdRate().toFixed(2),
-                              });
-                            }}
-                            onKeyDown={(e) => handleNewRowDraftKeyDown(e, "currency")}
-                            class="bg-white border border-forest/30 rounded px-1.5 py-1 font-mono text-near-black text-xs w-20 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
-                          >
-                            <option value="USD">USD</option>
-                            <option value="IDR">IDR</option>
-                          </select>
-                        </td>
-
-                        {/* Conversion Rate */}
-                        <td class="px-6 py-3 text-right border-r border-forest/5">
-                          <input
-                            ref={newRowRateRef}
-                            type="text"
-                            inputmode="decimal"
-                            placeholder={draft().currency === "IDR" ? "1" : getUsdRate().toFixed(2)}
-                            autocomplete="off"
-                            disabled={isSubmitting() || draft().currency === "IDR"}
-                            value={draft().conversionRate}
-                            onInput={(e) => update({ conversionRate: e.currentTarget.value.replace(/[^0-9.,]/g, "") })}
-                            onKeyDown={(e) => handleNewRowDraftKeyDown(e, "conversionRate")}
-                            class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-24 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15 disabled:bg-sage/30 disabled:text-earth/60"
-                          />
+                        {/* Currency & Conversion Rate */}
+                        <td class="px-4 py-2 text-right border-r border-forest/5">
+                          <div class="flex items-center justify-end gap-1.5">
+                            <select
+                              ref={newRowCurrencyRef}
+                              disabled={isSubmitting()}
+                              value={draft().currency}
+                              onChange={(e) => {
+                                const c = e.currentTarget.value;
+                                update({
+                                  currency: c,
+                                  conversionRate: c === "IDR" ? "1" : getUsdRate().toFixed(2),
+                                });
+                              }}
+                              onKeyDown={(e) => handleNewRowDraftKeyDown(e, "currency")}
+                              class="bg-white border border-forest/30 rounded px-1 py-0.5 font-mono text-near-black text-xs w-12 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
+                            >
+                              <option value="USD">USD</option>
+                              <option value="IDR">IDR</option>
+                            </select>
+                            <input
+                              ref={newRowRateRef}
+                              type="text"
+                              inputmode="decimal"
+                              placeholder={draft().currency === "IDR" ? "1" : getUsdRate().toFixed(2)}
+                              autocomplete="off"
+                              disabled={isSubmitting() || draft().currency === "IDR"}
+                              value={draft().conversionRate}
+                              onInput={(e) => update({ conversionRate: e.currentTarget.value.replace(/[^0-9.,]/g, "") })}
+                              onKeyDown={(e) => handleNewRowDraftKeyDown(e, "conversionRate")}
+                              class="bg-white border border-forest/30 rounded px-2 py-1 text-right font-mono text-near-black text-xs w-20 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15 disabled:bg-sage/30 disabled:text-earth/60"
+                            />
+                          </div>
                         </td>
 
                         {/* Current Price / Total Value / P/L — placeholders */}
-                        <td class="px-6 py-3 text-right font-mono text-earth/30 border-r border-forest/5">—</td>
-                        <td class="px-6 py-3 text-right font-mono text-earth/30 border-r border-forest/5">—</td>
-                        <td class="px-6 py-3 text-right font-mono text-earth/30 border-r border-forest/5">—</td>
+                        <td class="px-4 py-2 text-right font-mono text-earth/30 border-r border-forest/5">—</td>
+                        <td class="px-4 py-2 text-right font-mono text-earth/30 border-r border-forest/5">—</td>
+                        <td class="px-4 py-2 text-right font-mono text-earth/30 border-r border-forest/5">—</td>
 
                         {/* Save / Cancel */}
-                        <td class="px-6 py-3 text-right">
+                        <td class="px-4 py-2 text-right">
                           <div class="flex items-center justify-end gap-1.5">
                             <Show
                               when={!isSubmitting()}
@@ -1784,7 +1776,7 @@ export default function QuickPortfolio() {
               {/* Total Row */}
               <tfoot class="bg-sage/10 border-t-2 border-forest/10 font-outfit text-xs font-bold text-near-black">
                 <tr>
-                  <td class="px-6 py-4" colspan="2">Cash Balance</td>
+                  <td class="px-6 py-4">Cash Balance</td>
                   <Show
                     when={isCashEditing()}
                     fallback={
@@ -1805,7 +1797,7 @@ export default function QuickPortfolio() {
                       </td>
                     }
                   >
-                    <td class="px-4 py-3 border-2 border-forest bg-sage/20 relative shadow-inner" colspan="6">
+                    <td class="px-4 py-3 border-2 border-forest bg-sage/20 relative shadow-inner" colspan="5">
                       <div class="flex items-center justify-end">
                         <input
                           ref={cashInputRef}
@@ -1827,7 +1819,7 @@ export default function QuickPortfolio() {
                   </td>
                 </tr>
                 <tr class="bg-sage/20 border-t border-forest/10 text-sm">
-                  <td class="px-6 py-4 font-bold" colspan="7">Total Holdings Value</td>
+                  <td class="px-6 py-4 font-bold" colspan="5">Total Holdings Value</td>
                   <td class="px-6 py-4 text-right font-mono font-extrabold">{formatVal(totalValue())}</td>
                   <td class="px-6 py-4 text-right">
                     <div class="flex flex-col items-end">
