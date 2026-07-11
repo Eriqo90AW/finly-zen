@@ -121,10 +121,37 @@ const reactive = createRoot(() => {
     cached && cached.length > 0 ? cached : baseDividends
   );
   const [refreshing, setRefreshing] = createSignal(false);
-  return { allDividends, setAllDividends, refreshing, setRefreshing };
+  const [ignoredKeys, setIgnoredKeys] = createSignal<Set<string>>((() => {
+    try {
+      const saved = localStorage.getItem("ignored_dividends");
+      return saved ? new Set<string>(JSON.parse(saved)) : new Set<string>();
+    } catch {
+      return new Set<string>();
+    }
+  })());
+  return { allDividends, setAllDividends, refreshing, setRefreshing, ignoredKeys, setIgnoredKeys };
 });
 
-const { allDividends, setAllDividends, refreshing, setRefreshing } = reactive;
+const { allDividends, setAllDividends, refreshing, setRefreshing, ignoredKeys, setIgnoredKeys } = reactive;
+
+export { ignoredKeys };
+
+export function ignoreEntry(dividend: DividendEntry): void {
+  const key = `${dividend.ticker}|${dividend.cum_date}|${dividend.amount}|${dividend.payment_date}`;
+  const nextIgnored = new Set<string>(ignoredKeys());
+  nextIgnored.add(key);
+  setIgnoredKeys(nextIgnored);
+  try {
+    localStorage.setItem("ignored_dividends", JSON.stringify(Array.from(nextIgnored)));
+  } catch {}
+}
+
+export function resetIgnored(): void {
+  setIgnoredKeys(new Set<string>());
+  try {
+    localStorage.removeItem("ignored_dividends");
+  } catch {}
+}
 
 // --- Dedup key (matches getEntryKey in DividendListCard.tsx) ---
 
@@ -223,15 +250,17 @@ export function isDividendsRefreshing(): boolean {
 
 // --- Query functions (reactive — callers' createMemos auto-re-run on data change) ---
 
-export function getDividendsForMonth(year: number, month: number): DividendEntry[] {
+export function getDividendsForMonth(year: number, month: number, dateField: 'payment_date' | 'ex_date' | 'cum_date' = 'payment_date'): DividendEntry[] {
   return allDividends().filter((d) => {
-    const date = new Date(d.payment_date);
+    const val = d[dateField];
+    if (!val) return false;
+    const date = new Date(val);
     return date.getFullYear() === year && date.getMonth() === month;
   });
 }
 
-export function getDividendsForDate(dateStr: string): DividendEntry[] {
-  return allDividends().filter((d) => d.payment_date === dateStr);
+export function getDividendsForDate(dateStr: string, dateField: 'payment_date' | 'ex_date' | 'cum_date' = 'payment_date'): DividendEntry[] {
+  return allDividends().filter((d) => d[dateField] === dateStr);
 }
 
 export function getDividendsByStatus(status: DividendEntry["status"]): DividendEntry[] {
@@ -302,3 +331,52 @@ export function getTTMYieldByTicker(): Map<string, number | null> {
   }
   return yields;
 }
+
+// Grouped dividends by selected dateField for O(1) lookup
+export function getDividendsMapByDate(dateField: 'payment_date' | 'ex_date' | 'cum_date' = 'payment_date'): Map<string, DividendEntry[]> {
+  const map = new Map<string, DividendEntry[]>();
+  for (const d of allDividends()) {
+    const val = d[dateField];
+    if (val) {
+      let arr = map.get(val);
+      if (!arr) {
+        arr = [];
+        map.set(val, arr);
+      }
+      arr.push(d);
+    }
+  }
+  return map;
+}
+
+// Projected dividends grouped by MM-DD (month-day) for O(1) lookup in calendar
+// Only return filtered projected dividends (future and not ignored)
+export function getProjectedDividendsMapByMD(dateField: 'payment_date' | 'ex_date' | 'cum_date' = 'payment_date'): Map<string, DividendEntry[]> {
+  const map = new Map<string, DividendEntry[]>();
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const todayMD = `${mm}-${dd}`;
+  const ignored = ignoredKeys();
+
+  for (const d of allDividends()) {
+    if (d.status === "projected") {
+      const val = d[dateField];
+      if (!val) continue;
+      const valMD = val.slice(5);
+      if (valMD <= todayMD) continue;
+      
+      const key = `${d.ticker}|${d.cum_date}|${d.amount}|${d.payment_date}`;
+      if (ignored.has(key)) continue;
+
+      let arr = map.get(valMD);
+      if (!arr) {
+        arr = [];
+        map.set(valMD, arr);
+      }
+      arr.push(d);
+    }
+  }
+  return map;
+}
+

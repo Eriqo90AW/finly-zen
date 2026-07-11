@@ -1,5 +1,5 @@
 import { createSignal, createMemo, For, Show, onCleanup } from "solid-js";
-import { getAllDividends, getDividendsForDate, getDividendsForMonth, getTTMYieldByTicker } from "../../data/dividendData";
+import { getAllDividends, getDividendsForDate, getDividendsForMonth, getTTMYieldByTicker, ignoredKeys, ignoreEntry, resetIgnored } from "../../data/dividendData";
 import type { DividendEntry } from "../../types/dividend";
 import { DividendItemCard } from "./DividendItemCard";
 
@@ -8,6 +8,8 @@ interface DividendListCardProps {
   onClearDate?: () => void;
   monthView?: { year: number; month: number } | null;
   onClearMonthView?: () => void;
+  dateViewType: "payment_date" | "ex_date" | "cum_date";
+  onDateViewTypeChange: (type: "payment_date" | "ex_date" | "cum_date") => void;
 }
 
 type FilterTab = "all" | "paid" | "upcoming" | "projected";
@@ -21,23 +23,21 @@ const MONTHS = [
 const DividendListCard = (props: DividendListCardProps) => {
   const [activeTab, setActiveTab] = createSignal<FilterTab>("all");
 
-  const [ignoredKeys, setIgnoredKeys] = createSignal<Set<string>>(
-    (() => {
-      const saved = localStorage.getItem("ignored_dividends");
-      return saved ? new Set<string>(JSON.parse(saved)) : new Set<string>();
-    })()
-  );
   const [showFilters, setShowFilters] = createSignal(false);
   const [tickerFilter, setTickerFilter] = createSignal("");
   const [minAmountFilter, setMinAmountFilter] = createSignal<number | null>(null);
   const [showAllProjected, setShowAllProjected] = createSignal(false);
   const [sortBy, setSortBy] = createSignal<SortOption>("default");
   const [showSortDropdown, setShowSortDropdown] = createSignal(false);
+  const [showDateDropdown, setShowDateDropdown] = createSignal(false);
 
   const handleClickOutside = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
     if (!target.closest(".sort-dropdown-container")) {
       setShowSortDropdown(false);
+    }
+    if (!target.closest(".date-dropdown-container")) {
+      setShowDateDropdown(false);
     }
   };
 
@@ -48,25 +48,13 @@ const DividendListCard = (props: DividendListCardProps) => {
 
   const getEntryKey = (d: DividendEntry) => `${d.ticker}|${d.cum_date}|${d.amount}|${d.payment_date}`;
 
-  const ignoreEntry = (dividend: DividendEntry) => {
-    const key = getEntryKey(dividend);
-    const nextIgnored = new Set<string>(ignoredKeys());
-    nextIgnored.add(key);
-    setIgnoredKeys(nextIgnored);
-    localStorage.setItem("ignored_dividends", JSON.stringify(Array.from(nextIgnored)));
-  };
-
-  const resetIgnored = () => {
-    setIgnoredKeys(new Set<string>());
-    localStorage.removeItem("ignored_dividends");
-  };
 
   const filteredDividends = createMemo(() => {
     let list: DividendEntry[] = [];
     if (props.monthView) {
-      list = getDividendsForMonth(props.monthView.year, props.monthView.month);
+      list = getDividendsForMonth(props.monthView.year, props.monthView.month, props.dateViewType);
     } else if (props.selectedDate) {
-      list = getDividendsForDate(props.selectedDate);
+      list = getDividendsForDate(props.selectedDate, props.dateViewType);
     } else {
       list = getAllDividends();
     }
@@ -82,8 +70,9 @@ const DividendListCard = (props: DividendListCardProps) => {
           const mm = String(today.getMonth() + 1).padStart(2, "0");
           const dd = String(today.getDate()).padStart(2, "0");
           const todayMD = `${mm}-${dd}`;
-          const cumMD = d.cum_date.slice(5);
-          if (cumMD <= todayMD) return false;
+          const dateVal = d[props.dateViewType] || "";
+          const valMD = dateVal.slice(5);
+          if (valMD && valMD <= todayMD) return false;
         }
         const key = getEntryKey(d);
         if (ignoredKeys().has(key)) return false;
@@ -118,12 +107,24 @@ const DividendListCard = (props: DividendListCardProps) => {
     }
 
     if (activeTab() === "upcoming") {
-      return [...result].sort((a, b) => a.cum_date.localeCompare(b.cum_date));
+      return [...result].sort((a, b) => {
+        const dateA = a[props.dateViewType] || "";
+        const dateB = b[props.dateViewType] || "";
+        return dateA.localeCompare(dateB);
+      });
     }
     if (activeTab() === "projected") {
-      return [...result].sort((a, b) => a.cum_date.slice(5).localeCompare(b.cum_date.slice(5)));
+      return [...result].sort((a, b) => {
+        const dateA = a[props.dateViewType] || "";
+        const dateB = b[props.dateViewType] || "";
+        return dateA.slice(5).localeCompare(dateB.slice(5));
+      });
     }
-    return [...result].sort((a, b) => b.payment_date.localeCompare(a.payment_date));
+    return [...result].sort((a, b) => {
+      const dateA = a[props.dateViewType] || "";
+      const dateB = b[props.dateViewType] || "";
+      return dateB.localeCompare(dateA);
+    });
   });
 
   const tabs: { key: FilterTab; label: string }[] = [
@@ -213,6 +214,85 @@ const DividendListCard = (props: DividendListCardProps) => {
               </div>
             </Show>
           </div>
+          
+          {/* Date View Dropdown */}
+          <div class="relative date-dropdown-container">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDateDropdown(!showDateDropdown());
+              }}
+              class={`text-earth hover:text-forest transition-colors rounded hover:bg-sage/40 cursor-pointer flex items-center gap-1 px-1.5 py-1 ${props.dateViewType !== "payment_date" ? "bg-sage/40 text-forest" : ""}`}
+              title="Choose date view type"
+            >
+              <span class="material-icons !text-[16px]">
+                {props.dateViewType === "cum_date" ? "login" : props.dateViewType === "ex_date" ? "logout" : "payments"}
+              </span>
+              <span class="text-[9px] font-bold uppercase tracking-wider">
+                {props.dateViewType === "cum_date" ? "Income" : props.dateViewType === "ex_date" ? "Exit" : "Payment"}
+              </span>
+              <span class="material-icons !text-[10px] transition-transform duration-200" classList={{ 'rotate-180': showDateDropdown() }}>
+                keyboard_arrow_down
+              </span>
+            </button>
+            
+            <Show when={showDateDropdown()}>
+              <div class="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-premium border border-forest/10 p-1 z-50 animate-slide-down">
+                <button
+                  onClick={() => {
+                    props.onDateViewTypeChange("payment_date");
+                    setShowDateDropdown(false);
+                  }}
+                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                    ${props.dateViewType === "payment_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                  `}
+                >
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-icons !text-[14px]">payments</span>
+                    <span>Payment Day</span>
+                  </div>
+                  <Show when={props.dateViewType === "payment_date"}>
+                    <span class="material-icons !text-[12px]">check</span>
+                  </Show>
+                </button>
+                <button
+                  onClick={() => {
+                    props.onDateViewTypeChange("ex_date");
+                    setShowDateDropdown(false);
+                  }}
+                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                    ${props.dateViewType === "ex_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                  `}
+                >
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-icons !text-[14px]">logout</span>
+                    <span>Exit Day</span>
+                  </div>
+                  <Show when={props.dateViewType === "ex_date"}>
+                    <span class="material-icons !text-[12px]">check</span>
+                  </Show>
+                </button>
+                <button
+                  onClick={() => {
+                    props.onDateViewTypeChange("cum_date");
+                    setShowDateDropdown(false);
+                  }}
+                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                    ${props.dateViewType === "cum_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                  `}
+                >
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-icons !text-[14px]">login</span>
+                    <span>Income Day</span>
+                  </div>
+                  <Show when={props.dateViewType === "cum_date"}>
+                    <span class="material-icons !text-[12px]">check</span>
+                  </Show>
+                </button>
+              </div>
+            </Show>
+          </div>
+
           <button
             onClick={() => setShowFilters(!showFilters())}
             class={`text-earth hover:text-forest transition-colors rounded hover:bg-sage/40 cursor-pointer flex items-center justify-center ${showFilters() ? "bg-sage/40 text-forest" : ""}`}
@@ -312,6 +392,7 @@ const DividendListCard = (props: DividendListCardProps) => {
               ttmYield={ttmYields().get(dividend.ticker) ?? null}
               showIgnore={activeTab() === "projected"}
               onIgnore={() => ignoreEntry(dividend)}
+              dateViewType={props.dateViewType}
             />
           )}
         </For>

@@ -6,6 +6,7 @@ interface DividendItemCardProps {
   ttmYield: number | null;
   showIgnore: boolean;
   onIgnore: () => void;
+  dateViewType: "payment_date" | "ex_date" | "cum_date";
 }
 
 const badgeClasses: Record<string, string> = {
@@ -125,8 +126,16 @@ export const DividendItemCard = (props: DividendItemCardProps) => {
         </div>
 
         {/* Cum-Date */}
-        <div>
-          <span class="text-[9px] font-bold text-earth/50 uppercase tracking-widest block leading-tight">Cum-Date</span>
+        <div class="transition-all duration-300 rounded-xl p-2 -m-2 border border-transparent"
+             classList={{
+               "bg-sage/40 border-forest/10": props.dateViewType === "cum_date"
+             }}>
+          <span class="text-[9px] font-bold text-earth/50 uppercase tracking-widest block leading-tight flex items-center gap-1">
+            Cum-Date
+            <Show when={props.dateViewType === "cum_date"}>
+              <span class="w-1.5 h-1.5 rounded-full bg-forest" />
+            </Show>
+          </span>
           <p class="text-[16px] font-bold text-near-black font-outfit mt-0.5">
             {formatDate(d().cum_date)}
           </p>
@@ -137,16 +146,32 @@ export const DividendItemCard = (props: DividendItemCardProps) => {
 
       <div class="grid grid-cols-2 gap-x-6">
         {/* Ex-Date */}
-        <div>
-          <span class="text-[9px] font-bold text-earth/50 uppercase tracking-widest block leading-tight">Ex-Date</span>
+        <div class="transition-all duration-300 rounded-xl p-2 -m-2 border border-transparent"
+             classList={{
+               "bg-sage/40 border-forest/10": props.dateViewType === "ex_date"
+             }}>
+          <span class="text-[9px] font-bold text-earth/50 uppercase tracking-widest block leading-tight flex items-center gap-1">
+            Ex-Date
+            <Show when={props.dateViewType === "ex_date"}>
+              <span class="w-1.5 h-1.5 rounded-full bg-forest" />
+            </Show>
+          </span>
           <p class="text-xs font-bold text-near-black font-outfit mt-0.5">
             {formatDate(d().ex_date).toUpperCase()}
           </p>
         </div>
 
         {/* Payment Date */}
-        <div>
-          <span class="text-[9px] font-bold text-earth/50 uppercase tracking-widest block leading-tight">Payment</span>
+        <div class="transition-all duration-300 rounded-xl p-2 -m-2 border border-transparent"
+             classList={{
+               "bg-sage/40 border-forest/10": props.dateViewType === "payment_date"
+             }}>
+          <span class="text-[9px] font-bold text-earth/50 uppercase tracking-widest block leading-tight flex items-center gap-1">
+            Payment
+            <Show when={props.dateViewType === "payment_date"}>
+              <span class="w-1.5 h-1.5 rounded-full bg-forest" />
+            </Show>
+          </span>
           <p class="text-xs font-bold text-near-black font-outfit mt-0.5">
             {formatDate(d().payment_date).toUpperCase()}
           </p>

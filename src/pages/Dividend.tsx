@@ -7,6 +7,7 @@ const Dividend = () => {
   const [selectedYear, setSelectedYear] = createSignal(2026);
   const [selectedDate, setSelectedDate] = createSignal<string | null>(null);
   const [monthView, setMonthView] = createSignal<{ year: number; month: number } | null>(null);
+  const [dateViewType, setDateViewType] = createSignal<"payment_date" | "ex_date" | "cum_date">("payment_date");
 
   const allDividends = createMemo(() => getAllDividends());
   const paidCount = createMemo(() => getDividendsByStatus("paid").length);
@@ -30,6 +31,8 @@ const Dividend = () => {
           <Calendar
             year={selectedYear()}
             selectedDate={selectedDate()}
+            dateViewType={dateViewType()}
+            onDateViewTypeChange={setDateViewType}
             onSelectDate={(date) => {
               setSelectedDate(date);
               if (date) {
@@ -49,6 +52,8 @@ const Dividend = () => {
             onClearDate={() => setSelectedDate(null)}
             monthView={monthView()}
             onClearMonthView={() => setMonthView(null)}
+            dateViewType={dateViewType()}
+            onDateViewTypeChange={setDateViewType}
           />
         </div>
       </div>

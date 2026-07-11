@@ -1,8 +1,8 @@
-import { createSignal, createMemo, For, Show } from "solid-js";
+import { createSignal, createMemo, For, Show, onCleanup } from "solid-js";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
 import CalendarDayCell from "./CalendarDayCell";
-import { getDividendsForMonth, getDividendsForDate, getDividendsByStatus } from "../../data/dividendData";
+import { getDividendsMapByDate, getProjectedDividendsMapByMD } from "../../data/dividendData";
 import type { DividendEntry } from "../../types/dividend";
 
 interface CalendarProps {
@@ -10,6 +10,8 @@ interface CalendarProps {
   selectedDate: string | null;
   onSelectDate: (dateStr: string | null) => void;
   onViewMonth?: (year: number, month: number) => void;
+  dateViewType: "payment_date" | "ex_date" | "cum_date";
+  onDateViewTypeChange: (type: "payment_date" | "ex_date" | "cum_date") => void;
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -21,6 +23,17 @@ const MONTHS = [
 const Calendar = (props: CalendarProps) => {
   const [currentYear, setCurrentYear] = createSignal(props.year);
   const [currentMonth, setCurrentMonth] = createSignal(new Date().getMonth());
+  const [showDateDropdown, setShowDateDropdown] = createSignal(false);
+
+  const handleCalendarClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest(".date-dropdown-container")) {
+      setShowDateDropdown(false);
+    }
+  };
+
+  window.addEventListener("click", handleCalendarClickOutside);
+  onCleanup(() => window.removeEventListener("click", handleCalendarClickOutside));
 
   const prevMonth = () => {
     if (currentMonth() === 0) {
@@ -40,9 +53,8 @@ const Calendar = (props: CalendarProps) => {
     }
   };
 
-  const monthDividends = createMemo(() => {
-    return getDividendsForMonth(currentYear(), currentMonth());
-  });
+  const dividendsMap = createMemo(() => getDividendsMapByDate(props.dateViewType));
+  const projectedMap = createMemo(() => getProjectedDividendsMapByMD(props.dateViewType));
 
   const getLocalISODate = (date: Date): string => {
     const y = date.getFullYear();
@@ -50,29 +62,6 @@ const Calendar = (props: CalendarProps) => {
     const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   };
-
-  // Load ignored entries from localStorage (same format as DividendListCard)
-  const ignoredKeys: Set<string> = (() => {
-    const saved = localStorage.getItem("ignored_dividends");
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  })();
-
-  const getEntryKey = (d: DividendEntry) => `${d.ticker}|${d.cum_date}|${d.amount}|${d.payment_date}`;
-
-  const projectedDividendsFiltered = createMemo(() => {
-    const today = new Date();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    const todayMD = `${mm}-${dd}`;
-    return getDividendsByStatus("projected").filter((d) => {
-      const cumMD = d.cum_date.slice(5);
-      if (cumMD <= todayMD) return false;
-      const key = getEntryKey(d);
-      if (ignoredKeys.has(key)) return false;
-      return true;
-    });
-  });
-
 
   const calendarDays = createMemo(() => {
     const year = currentYear();
@@ -91,6 +80,8 @@ const Calendar = (props: CalendarProps) => {
 
     const today = new Date();
     const todayStr = getLocalISODate(today);
+    const divMap = dividendsMap();
+    const projMap = projectedMap();
 
     for (let i = firstDay - 1; i >= 0; i--) {
       const day = daysInPrevMonth - i;
@@ -108,9 +99,9 @@ const Calendar = (props: CalendarProps) => {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dateStr = getLocalISODate(date);
-      const baseDividends = getDividendsForDate(dateStr);
+      const baseDividends = divMap.get(dateStr) || [];
       const md = dateStr.slice(5);
-      const projectedForDay = projectedDividendsFiltered().filter((d) => d.cum_date.slice(5) === md);
+      const projectedForDay = projMap.get(md) || [];
       const dividends = [...baseDividends, ...projectedForDay];
       days.push({
         day,
@@ -140,14 +131,23 @@ const Calendar = (props: CalendarProps) => {
   return (
     <div class="premium-card p-4 bg-white h-full flex flex-col justify-between">
       <div class="flex items-center justify-between mb-6">
-        <button
-          onClick={prevMonth}
-          class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
-        >
-          <ChevronLeftIcon />
-        </button>
+        <div class="flex items-center gap-1.5">
+          <button
+            onClick={prevMonth}
+            class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
+          >
+            <ChevronLeftIcon />
+          </button>
+          <button
+            onClick={nextMonth}
+            class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
+          >
+            <ChevronRightIcon />
+          </button>
+        </div>
+
         <div class="flex flex-col items-center gap-1">
-          <h3 class="text-lg font-cormorant font-bold text-forest">
+          <h3 class="text-lg font-cormorant font-bold text-forest leading-none">
             {MONTHS[currentMonth()]} {currentYear()}
           </h3>
           <Show when={props.onViewMonth}>
@@ -159,12 +159,83 @@ const Calendar = (props: CalendarProps) => {
             </button>
           </Show>
         </div>
-        <button
-          onClick={nextMonth}
-          class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
-        >
-          <ChevronRightIcon />
-        </button>
+
+        <div class="relative date-dropdown-container">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDateDropdown(!showDateDropdown());
+            }}
+            class={`text-earth hover:text-forest transition-colors rounded hover:bg-sage/40 cursor-pointer flex items-center gap-1 px-2.5 py-1.5 border border-forest/5 ${props.dateViewType !== "payment_date" ? "bg-sage/40 text-forest" : ""}`}
+            title="Choose date view type"
+          >
+            <span class="material-icons !text-[16px]">
+              {props.dateViewType === "cum_date" ? "login" : props.dateViewType === "ex_date" ? "logout" : "payments"}
+            </span>
+            <span class="text-[9px] font-bold uppercase tracking-wider">
+              {props.dateViewType === "cum_date" ? "Income Day" : props.dateViewType === "ex_date" ? "Exit Day" : "Payment Day"}
+            </span>
+            <span class="material-icons !text-[10px] transition-transform duration-200" classList={{ 'rotate-180': showDateDropdown() }}>
+              keyboard_arrow_down
+            </span>
+          </button>
+          
+          <Show when={showDateDropdown()}>
+            <div class="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-premium border border-forest/10 p-1 z-50 animate-slide-down">
+              <button
+                onClick={() => {
+                  props.onDateViewTypeChange("payment_date");
+                  setShowDateDropdown(false);
+                }}
+                class={`w-full text-left px-2.5 py-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                  ${props.dateViewType === "payment_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                `}
+              >
+                <div class="flex items-center gap-1.5">
+                  <span class="material-icons !text-[14px]">payments</span>
+                  <span>Payment Day</span>
+                </div>
+                <Show when={props.dateViewType === "payment_date"}>
+                  <span class="material-icons !text-[12px]">check</span>
+                </Show>
+              </button>
+              <button
+                onClick={() => {
+                  props.onDateViewTypeChange("ex_date");
+                  setShowDateDropdown(false);
+                }}
+                class={`w-full text-left px-2.5 py-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                  ${props.dateViewType === "ex_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                `}
+              >
+                <div class="flex items-center gap-1.5">
+                  <span class="material-icons !text-[14px]">logout</span>
+                  <span>Exit Day</span>
+                </div>
+                <Show when={props.dateViewType === "ex_date"}>
+                  <span class="material-icons !text-[12px]">check</span>
+                </Show>
+              </button>
+              <button
+                onClick={() => {
+                  props.onDateViewTypeChange("cum_date");
+                  setShowDateDropdown(false);
+                }}
+                class={`w-full text-left px-2.5 py-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                  ${props.dateViewType === "cum_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                `}
+              >
+                <div class="flex items-center gap-1.5">
+                  <span class="material-icons !text-[14px]">login</span>
+                  <span>Income Day</span>
+                </div>
+                <Show when={props.dateViewType === "cum_date"}>
+                  <span class="material-icons !text-[12px]">check</span>
+                </Show>
+              </button>
+            </div>
+          </Show>
+        </div>
       </div>
 
       <div class="grid grid-cols-7 gap-1 mb-2">
