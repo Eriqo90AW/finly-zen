@@ -199,6 +199,10 @@ const Calendar = (props: CalendarProps) => {
           <span class="text-[10px] text-earth font-medium">Paid</span>
         </div>
         <div class="flex items-center gap-1.5">
+          <div class="w-2 h-2 rounded-full bg-fin-purple" />
+          <span class="text-[10px] text-earth font-medium">Upcoming</span>
+        </div>
+        <div class="flex items-center gap-1.5">
           <div class="w-2 h-2 rounded-full bg-gray-400" />
           <span class="text-[10px] text-earth font-medium">Projected</span>
         </div>

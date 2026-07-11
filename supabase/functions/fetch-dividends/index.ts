@@ -27,6 +27,7 @@ interface RawDividend {
   company_name: string;
   currency: string;
   amount: number;
+  last_price: number | null;
   ex_date: string;   // DD-MMM-YYYY
   cum_date: string;   // ex_date - 1 day
   record_date: string; // ex_date + 1 day
@@ -65,6 +66,8 @@ async function fetchTickerDividends(
   const meta = result.meta || {};
   const company_name = meta.longName || meta.shortName || ticker;
   const currency = meta.currency || "IDR";
+  const last_price: number | null =
+    typeof meta.regularMarketPrice === "number" ? meta.regularMarketPrice : null;
   const dividends: Record<string, YahooDividend> = result.events?.dividends || {};
 
   return Object.values(dividends).map((div) => {
@@ -74,6 +77,7 @@ async function fetchTickerDividends(
       company_name,
       currency,
       amount: div.amount,
+      last_price,
       ex_date: unixToDDMMMYYYY(exTs),
       cum_date: unixToDDMMMYYYY(addDaysToUnix(exTs, -1)),
       record_date: unixToDDMMMYYYY(addDaysToUnix(exTs, 1)),
@@ -134,6 +138,7 @@ function applyFrequency(raw: RawDividend[]): any[] {
       company_name: item.company_name,
       currency: item.currency,
       amount: item.amount,
+      last_price: item.last_price,
       cum_date: item.cum_date,
       ex_date: item.ex_date,
       record_date: item.record_date,

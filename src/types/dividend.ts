@@ -6,6 +6,7 @@ export interface DividendEntry {
   company_name: string;
   currency: string;
   amount: number;
+  last_price: number | null;
   cum_date: string;
   ex_date: string;
   record_date: string;

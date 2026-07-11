@@ -1,6 +1,7 @@
-import { createSignal, createMemo, For, Show } from "solid-js";
-import { getAllDividends, getDividendsForDate, getDividendsForMonth } from "../../data/dividendData";
+import { createSignal, createMemo, For, Show, onCleanup } from "solid-js";
+import { getAllDividends, getDividendsForDate, getDividendsForMonth, getTTMYieldByTicker } from "../../data/dividendData";
 import type { DividendEntry } from "../../types/dividend";
+import { DividendItemCard } from "./DividendItemCard";
 
 interface DividendListCardProps {
   selectedDate: string | null;
@@ -10,18 +11,7 @@ interface DividendListCardProps {
 }
 
 type FilterTab = "all" | "paid" | "upcoming" | "projected";
-
-const statusColors: Record<string, string> = {
-  paid: "bg-fin-green",
-  projected: "bg-gray-400",
-  upcoming: "bg-blue-500",
-};
-
-const statusText: Record<string, string> = {
-  paid: "Paid",
-  projected: "Projected",
-  upcoming: "Upcoming",
-};
+type SortOption = "default" | "yield" | "ttm_yield";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -29,7 +19,7 @@ const MONTHS = [
 ];
 
 const DividendListCard = (props: DividendListCardProps) => {
-  const [activeTab, setActiveTab] = createSignal<FilterTab>("upcoming");
+  const [activeTab, setActiveTab] = createSignal<FilterTab>("all");
 
   const [ignoredKeys, setIgnoredKeys] = createSignal<Set<string>>(
     (() => {
@@ -41,6 +31,20 @@ const DividendListCard = (props: DividendListCardProps) => {
   const [tickerFilter, setTickerFilter] = createSignal("");
   const [minAmountFilter, setMinAmountFilter] = createSignal<number | null>(null);
   const [showAllProjected, setShowAllProjected] = createSignal(false);
+  const [sortBy, setSortBy] = createSignal<SortOption>("default");
+  const [showSortDropdown, setShowSortDropdown] = createSignal(false);
+
+  const handleClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest(".sort-dropdown-container")) {
+      setShowSortDropdown(false);
+    }
+  };
+
+  window.addEventListener("click", handleClickOutside);
+  onCleanup(() => window.removeEventListener("click", handleClickOutside));
+
+  const ttmYields = createMemo(() => getTTMYieldByTicker());
 
   const getEntryKey = (d: DividendEntry) => `${d.ticker}|${d.cum_date}|${d.amount}|${d.payment_date}`;
 
@@ -97,13 +101,29 @@ const DividendListCard = (props: DividendListCardProps) => {
       return true;
     });
 
+    if (sortBy() === "yield") {
+      return [...result].sort((a, b) => {
+        const yieldA = a.last_price != null && a.last_price > 0 ? a.amount / a.last_price : -1;
+        const yieldB = b.last_price != null && b.last_price > 0 ? b.amount / b.last_price : -1;
+        return yieldB - yieldA;
+      });
+    }
+    if (sortBy() === "ttm_yield") {
+      const ttmMap = ttmYields();
+      return [...result].sort((a, b) => {
+        const ttmA = ttmMap.get(a.ticker) ?? -1;
+        const ttmB = ttmMap.get(b.ticker) ?? -1;
+        return ttmB - ttmA;
+      });
+    }
+
     if (activeTab() === "upcoming") {
-      return [...result].reverse();
+      return [...result].sort((a, b) => a.cum_date.localeCompare(b.cum_date));
     }
     if (activeTab() === "projected") {
       return [...result].sort((a, b) => a.cum_date.slice(5).localeCompare(b.cum_date.slice(5)));
     }
-    return result;
+    return [...result].sort((a, b) => b.payment_date.localeCompare(a.payment_date));
   });
 
   const tabs: { key: FilterTab; label: string }[] = [
@@ -128,6 +148,71 @@ const DividendListCard = (props: DividendListCardProps) => {
             : "All Dividends"}
         </h3>
         <div class="flex items-center gap-1.5">
+          <div class="relative sort-dropdown-container">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSortDropdown(!showSortDropdown());
+              }}
+              class={`text-earth hover:text-forest transition-colors rounded hover:bg-sage/40 cursor-pointer flex items-center gap-1 px-1.5 py-1 ${sortBy() !== "default" ? "bg-sage/40 text-forest" : ""}`}
+              title="Sort options"
+            >
+              <span class="material-icons !text-[16px]">sort</span>
+              <span class="text-[9px] font-bold uppercase tracking-wider">
+                {sortBy() === "default" ? "Newest" : sortBy() === "yield" ? "Yield" : "TTM"}
+              </span>
+              <span class="material-icons !text-[10px] transition-transform duration-200" classList={{ 'rotate-180': showSortDropdown() }}>
+                keyboard_arrow_down
+              </span>
+            </button>
+            
+            <Show when={showSortDropdown()}>
+              <div class="absolute right-0 top-full mt-1 w-32 bg-white rounded-xl shadow-premium border border-forest/10 p-1 z-50 animate-slide-down">
+                <button
+                  onClick={() => {
+                    setSortBy("default");
+                    setShowSortDropdown(false);
+                  }}
+                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                    ${sortBy() === "default" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                  `}
+                >
+                  <span>Newest Date</span>
+                  <Show when={sortBy() === "default"}>
+                    <span class="material-icons !text-[12px]">check</span>
+                  </Show>
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy("yield");
+                    setShowSortDropdown(false);
+                  }}
+                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                    ${sortBy() === "yield" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                  `}
+                >
+                  <span>Yield</span>
+                  <Show when={sortBy() === "yield"}>
+                    <span class="material-icons !text-[12px]">check</span>
+                  </Show>
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy("ttm_yield");
+                    setShowSortDropdown(false);
+                  }}
+                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
+                    ${sortBy() === "ttm_yield" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
+                  `}
+                >
+                  <span>TTM Yield</span>
+                  <Show when={sortBy() === "ttm_yield"}>
+                    <span class="material-icons !text-[12px]">check</span>
+                  </Show>
+                </button>
+              </div>
+            </Show>
+          </div>
           <button
             onClick={() => setShowFilters(!showFilters())}
             class={`text-earth hover:text-forest transition-colors rounded hover:bg-sage/40 cursor-pointer flex items-center justify-center ${showFilters() ? "bg-sage/40 text-forest" : ""}`}
@@ -222,77 +307,12 @@ const DividendListCard = (props: DividendListCardProps) => {
           }
         >
           {(dividend) => (
-            <div class="p-3 rounded-xl bg-sage/20 border border-forest/5 hover:bg-sage/40 transition-colors relative group">
-              <div class="flex items-center justify-between mb-1.5">
-                <div class="flex items-center gap-2">
-                  <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider">
-                    {dividend.ticker}
-                  </span>
-                  <span
-                    class={`text-[9px] px-1.5 py-0.5 rounded font-bold text-white ${statusColors[dividend.status]}`}
-                  >
-                    {statusText[dividend.status]}
-                  </span>
-                </div>
-                <div class="flex items-center gap-2 group">
-                  <span class="text-[10px] text-earth font-medium capitalize">
-                    {dividend.frequency}
-                  </span>
-                  <Show when={activeTab() === "projected"}>
-                    <button
-                      onClick={() => ignoreEntry(dividend)}
-                      class="hidden text-earth/30 hover:text-fin-red hover:bg-fin-red/10 rounded p-0.5 cursor-pointer transition-all group-hover:flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100"
-                      title="Ignore entry"
-                    >
-                      <span class="material-icons !text-[13px]">close</span>
-                    </button>
-                  </Show>
-                </div>
-              </div>
-
-              <p class="text-xs font-outfit font-semibold text-forest mb-1 truncate" title={dividend.company_name}>
-                {dividend.company_name}
-              </p>
-
-              <div class="flex flex-wrap gap-x-4 gap-y-2 mt-2">
-                <div>
-                  <span class="text-[9px] text-earth uppercase tracking-wider block leading-tight">Amount</span>
-                  <p class="text-xs font-bold text-forest leading-none">
-                    {dividend.currency} {dividend.amount.toLocaleString()}
-                  </p>
-                </div>
-                <div class="w-px h-6 bg-forest/10" />
-                <div>
-                  <span class="text-[9px] text-earth uppercase tracking-wider block leading-tight">Cum-Date</span>
-                  <p class="text-xs font-bold text-forest leading-none">
-                    {new Date(dividend.cum_date + "T00:00:00").toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-                <div class="w-px h-6 bg-forest/10" />
-                <div>
-                  <span class="text-[9px] text-earth uppercase tracking-wider block leading-tight">Ex-Date</span>
-                  <p class="text-xs font-bold text-forest leading-none">
-                    {new Date(dividend.ex_date + "T00:00:00").toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-                <div class="w-px h-6 bg-forest/10" />
-                <div>
-                  <span class="text-[9px] text-earth uppercase tracking-wider block leading-tight">Payment</span>
-                  <p class="text-xs font-bold text-forest leading-none">
-                    {new Date(dividend.payment_date + "T00:00:00").toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <DividendItemCard
+              dividend={dividend}
+              ttmYield={ttmYields().get(dividend.ticker) ?? null}
+              showIgnore={activeTab() === "projected"}
+              onIgnore={() => ignoreEntry(dividend)}
+            />
           )}
         </For>
       </div>

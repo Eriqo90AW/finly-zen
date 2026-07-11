@@ -14,19 +14,19 @@ interface CalendarDayCellProps {
 const statusColors: Record<string, string> = {
   paid: "bg-fin-green",
   projected: "bg-gray-400",
-  upcoming: "bg-blue-500",
+  upcoming: "bg-fin-purple",
 };
 
 const statusBorders: Record<string, string> = {
   paid: "border-l-3 border-fin-green",
   projected: "border-l-3 border-gray-400",
-  upcoming: "border-l-3 border-blue-500",
+  upcoming: "border-l-3 border-fin-purple",
 };
 
 const statusBackgrounds: Record<string, string> = {
   paid: "bg-fin-green/8 hover:bg-fin-green/15",
   projected: "bg-gray-400/8 hover:bg-gray-400/15",
-  upcoming: "bg-blue-500/8 hover:bg-blue-500/15",
+  upcoming: "bg-fin-purple/8 hover:bg-fin-purple/15",
 };
 
 const formatAmountCompact = (amount: number, currency: string) => {
@@ -99,6 +99,15 @@ const CalendarDayCell = (props: CalendarDayCellProps) => {
         `}
         disabled={!props.isCurrentMonth}
       >
+        {/* Today Ribbon */}
+        <Show when={props.isToday}>
+          <div class="absolute top-0 right-0 w-8 h-8 overflow-hidden pointer-events-none z-10">
+            <div class="bg-forest text-white text-[5.5px] font-extrabold uppercase tracking-widest text-center rotate-45 absolute top-[3.5px] -right-[13.5px] w-12 py-[1px] shadow-sm">
+              Today
+            </div>
+          </div>
+        </Show>
+
         <div class="flex justify-between w-full items-center">
           <span
             class={`text-xs font-outfit font-bold
@@ -111,7 +120,7 @@ const CalendarDayCell = (props: CalendarDayCellProps) => {
           {/* Count Badge */}
           <Show when={hasDividends()}>
             <span
-              class={`text-[8.5px] font-bold px-1.5 py-0.5 rounded-full text-white ${status ? statusColors[status] : ""}`}
+              class={`text-[8.5px] font-bold px-1.5 py-0.5 rounded-full text-white ${status ? statusColors[status] : ""} ${props.isToday ? "mr-3" : ""}`}
             >
               {props.dividends.length}
             </span>

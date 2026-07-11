@@ -47,12 +47,18 @@ function normalizeEntry(item: any): DividendEntry {
   const today = getLocalTodayStr();
 
   let determinedStatus: DividendEntry["status"];
-  if (parsedPaymentDate < "2026-01-01") {
-    determinedStatus = "projected";
-  } else if (parsedCumDate >= today) {
-    determinedStatus = "upcoming";
+  if (parsedPaymentDate) {
+    if (parsedPaymentDate > today) {
+      determinedStatus = "upcoming";
+    } else {
+      determinedStatus = "paid";
+    }
   } else {
-    determinedStatus = "paid";
+    if (parsedCumDate >= today) {
+      determinedStatus = "upcoming";
+    } else {
+      determinedStatus = "projected";
+    }
   }
 
   return {
@@ -60,6 +66,7 @@ function normalizeEntry(item: any): DividendEntry {
     company_name: lookupCompanyName(item.company_name || item.ticker),
     currency: item.currency || "IDR",
     amount: Number(item.amount),
+    last_price: item.last_price != null ? Number(item.last_price) : null,
     cum_date: parsedCumDate,
     ex_date: parseDateToISO(item.ex_date),
     record_date: parseDateToISO(item.record_date),
@@ -135,7 +142,14 @@ function mergeDividends(current: DividendEntry[], fresh: DividendEntry[]): Divid
   for (const d of current) map.set(mergeKey(d), d);
   for (const d of fresh) {
     const key = mergeKey(d);
-    if (!map.has(key)) map.set(key, d);
+    if (!map.has(key)) {
+      map.set(key, d);
+    } else {
+      const existing = map.get(key)!;
+      if (d.last_price != null && existing.last_price == null) {
+        map.set(key, { ...existing, last_price: d.last_price });
+      }
+    }
   }
   return Array.from(map.values());
 }
@@ -244,4 +258,47 @@ export function getCurrentDividends(): DividendEntry[] {
 
 export function getAllDividends(): DividendEntry[] {
   return allDividends();
+}
+
+// --- Last price per ticker (from most recent fresh entry with a price) ---
+
+export function getLastPriceByTicker(): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const d of allDividends()) {
+    if (d.last_price != null && d.last_price > 0) {
+      map.set(d.ticker, d.last_price);
+    }
+  }
+  return map;
+}
+
+// --- TTM yield per ticker (dividends paid in trailing 12 months / last_price * 100) ---
+
+export function getTTMYieldByTicker(): Map<string, number | null> {
+  const today = new Date();
+  const oneYearAgo = new Date(today);
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  const todayStr = getLocalTodayStr();
+  const yearAgoStr = oneYearAgo.toISOString().slice(0, 10);
+
+  // Sum dividends per ticker where ex_date is in the trailing 12 months
+  const ttmSumByTicker = new Map<string, number>();
+  for (const d of allDividends()) {
+    if (d.ex_date >= yearAgoStr && d.ex_date <= todayStr) {
+      ttmSumByTicker.set(d.ticker, (ttmSumByTicker.get(d.ticker) || 0) + d.amount);
+    }
+  }
+
+  const lastPrices = getLastPriceByTicker();
+  const yields = new Map<string, number | null>();
+  for (const [ticker, ttmSum] of ttmSumByTicker) {
+    const price = lastPrices.get(ticker);
+    if (price != null && price > 0) {
+      yields.set(ticker, (ttmSum / price) * 100);
+    } else {
+      yields.set(ticker, null);
+    }
+  }
+  return yields;
 }
