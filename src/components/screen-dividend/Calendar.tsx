@@ -173,7 +173,7 @@ const Calendar = (props: CalendarProps) => {
               {props.dateViewType === "cum_date" ? "login" : props.dateViewType === "ex_date" ? "logout" : "payments"}
             </span>
             <span class="text-[9px] font-bold uppercase tracking-wider">
-              {props.dateViewType === "cum_date" ? "Income Day" : props.dateViewType === "ex_date" ? "Exit Day" : "Payment Day"}
+              {props.dateViewType === "cum_date" ? "Cum Date" : props.dateViewType === "ex_date" ? "Ex Date" : "Payment Date"}
             </span>
             <span class="material-icons !text-[10px] transition-transform duration-200" classList={{ 'rotate-180': showDateDropdown() }}>
               keyboard_arrow_down
@@ -193,7 +193,7 @@ const Calendar = (props: CalendarProps) => {
               >
                 <div class="flex items-center gap-1.5">
                   <span class="material-icons !text-[14px]">payments</span>
-                  <span>Payment Day</span>
+                  <span>Payment Date</span>
                 </div>
                 <Show when={props.dateViewType === "payment_date"}>
                   <span class="material-icons !text-[12px]">check</span>
@@ -210,7 +210,7 @@ const Calendar = (props: CalendarProps) => {
               >
                 <div class="flex items-center gap-1.5">
                   <span class="material-icons !text-[14px]">logout</span>
-                  <span>Exit Day</span>
+                  <span>Ex Date</span>
                 </div>
                 <Show when={props.dateViewType === "ex_date"}>
                   <span class="material-icons !text-[12px]">check</span>
@@ -227,7 +227,7 @@ const Calendar = (props: CalendarProps) => {
               >
                 <div class="flex items-center gap-1.5">
                   <span class="material-icons !text-[14px]">login</span>
-                  <span>Income Day</span>
+                  <span>Cum Date</span>
                 </div>
                 <Show when={props.dateViewType === "cum_date"}>
                   <span class="material-icons !text-[12px]">check</span>

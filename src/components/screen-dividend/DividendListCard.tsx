@@ -29,15 +29,11 @@ const DividendListCard = (props: DividendListCardProps) => {
   const [showAllProjected, setShowAllProjected] = createSignal(false);
   const [sortBy, setSortBy] = createSignal<SortOption>("default");
   const [showSortDropdown, setShowSortDropdown] = createSignal(false);
-  const [showDateDropdown, setShowDateDropdown] = createSignal(false);
 
   const handleClickOutside = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
     if (!target.closest(".sort-dropdown-container")) {
       setShowSortDropdown(false);
-    }
-    if (!target.closest(".date-dropdown-container")) {
-      setShowDateDropdown(false);
     }
   };
 
@@ -208,84 +204,6 @@ const DividendListCard = (props: DividendListCardProps) => {
                 >
                   <span>TTM Yield</span>
                   <Show when={sortBy() === "ttm_yield"}>
-                    <span class="material-icons !text-[12px]">check</span>
-                  </Show>
-                </button>
-              </div>
-            </Show>
-          </div>
-          
-          {/* Date View Dropdown */}
-          <div class="relative date-dropdown-container">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDateDropdown(!showDateDropdown());
-              }}
-              class={`text-earth hover:text-forest transition-colors rounded hover:bg-sage/40 cursor-pointer flex items-center gap-1 px-1.5 py-1 ${props.dateViewType !== "payment_date" ? "bg-sage/40 text-forest" : ""}`}
-              title="Choose date view type"
-            >
-              <span class="material-icons !text-[16px]">
-                {props.dateViewType === "cum_date" ? "login" : props.dateViewType === "ex_date" ? "logout" : "payments"}
-              </span>
-              <span class="text-[9px] font-bold uppercase tracking-wider">
-                {props.dateViewType === "cum_date" ? "Income" : props.dateViewType === "ex_date" ? "Exit" : "Payment"}
-              </span>
-              <span class="material-icons !text-[10px] transition-transform duration-200" classList={{ 'rotate-180': showDateDropdown() }}>
-                keyboard_arrow_down
-              </span>
-            </button>
-            
-            <Show when={showDateDropdown()}>
-              <div class="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-premium border border-forest/10 p-1 z-50 animate-slide-down">
-                <button
-                  onClick={() => {
-                    props.onDateViewTypeChange("payment_date");
-                    setShowDateDropdown(false);
-                  }}
-                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
-                    ${props.dateViewType === "payment_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
-                  `}
-                >
-                  <div class="flex items-center gap-1.5">
-                    <span class="material-icons !text-[14px]">payments</span>
-                    <span>Payment Day</span>
-                  </div>
-                  <Show when={props.dateViewType === "payment_date"}>
-                    <span class="material-icons !text-[12px]">check</span>
-                  </Show>
-                </button>
-                <button
-                  onClick={() => {
-                    props.onDateViewTypeChange("ex_date");
-                    setShowDateDropdown(false);
-                  }}
-                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
-                    ${props.dateViewType === "ex_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
-                  `}
-                >
-                  <div class="flex items-center gap-1.5">
-                    <span class="material-icons !text-[14px]">logout</span>
-                    <span>Exit Day</span>
-                  </div>
-                  <Show when={props.dateViewType === "ex_date"}>
-                    <span class="material-icons !text-[12px]">check</span>
-                  </Show>
-                </button>
-                <button
-                  onClick={() => {
-                    props.onDateViewTypeChange("cum_date");
-                    setShowDateDropdown(false);
-                  }}
-                  class={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center justify-between
-                    ${props.dateViewType === "cum_date" ? "bg-sage text-forest" : "text-earth hover:text-forest hover:bg-sage/30"}
-                  `}
-                >
-                  <div class="flex items-center gap-1.5">
-                    <span class="material-icons !text-[14px]">login</span>
-                    <span>Income Day</span>
-                  </div>
-                  <Show when={props.dateViewType === "cum_date"}>
                     <span class="material-icons !text-[12px]">check</span>
                   </Show>
                 </button>
