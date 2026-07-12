@@ -145,20 +145,22 @@ const computePortfolioState = (
         return regularPriceNative;
       })();
 
+      const marketCurrency = priceMap[ticker]?.fundamentals?.price?.currency || (ticker.toUpperCase().endsWith(".JK") ? "IDR" : "USD");
+
       const livePrice = isUSD
-        ? (assetCurrency === "USD" ? activePriceNative : activePriceNative / getUsdRate())
-        : (assetCurrency === "USD" ? activePriceNative * getUsdRate() : activePriceNative);
+        ? (marketCurrency === "USD" ? activePriceNative : activePriceNative / getUsdRate())
+        : (marketCurrency === "USD" ? activePriceNative * getUsdRate() : activePriceNative);
 
       const prePrice = prePriceNative !== null
         ? (isUSD
-            ? (assetCurrency === "USD" ? prePriceNative : prePriceNative / getUsdRate())
-            : (assetCurrency === "USD" ? prePriceNative * getUsdRate() : prePriceNative))
+            ? (marketCurrency === "USD" ? prePriceNative : prePriceNative / getUsdRate())
+            : (marketCurrency === "USD" ? prePriceNative * getUsdRate() : prePriceNative))
         : null;
 
       const postPrice = postPriceNative !== null
         ? (isUSD
-            ? (assetCurrency === "USD" ? postPriceNative : postPriceNative / getUsdRate())
-            : (assetCurrency === "USD" ? postPriceNative * getUsdRate() : postPriceNative))
+            ? (marketCurrency === "USD" ? postPriceNative : postPriceNative / getUsdRate())
+            : (marketCurrency === "USD" ? postPriceNative * getUsdRate() : postPriceNative))
         : null;
 
       const averagePrice = isUSD
@@ -172,8 +174,8 @@ const computePortfolioState = (
 
       const previousClose = previousCloseNative !== null
         ? (isUSD
-            ? (assetCurrency === "USD" ? previousCloseNative : previousCloseNative / getUsdRate())
-            : (assetCurrency === "USD" ? previousCloseNative * getUsdRate() : previousCloseNative))
+            ? (marketCurrency === "USD" ? previousCloseNative : previousCloseNative / getUsdRate())
+            : (marketCurrency === "USD" ? previousCloseNative * getUsdRate() : previousCloseNative))
         : null;
 
       const dayChange = previousClose !== null ? totalShares * (livePrice - previousClose) : 0;
