@@ -1,5 +1,5 @@
+import { supabase } from "../../../lib/supabase";
 import { MonthlyPerformance, DailySummary, Trade } from "../data/types";
-import { mockMonthlyPerformance, mockDailySummaries } from "../data/mockData";
 
 function generateEmptyMonth(monthStr: string): DailySummary[] {
   const [year, month] = monthStr.split("-").map(Number);
@@ -36,44 +36,141 @@ function generateEmptyPerformance(monthStr: string): MonthlyPerformance {
 
 /**
  * Fetches the performance summary for a specific month.
- * Currently reads from mock data, but is fully ready to be swapped
- * with a Supabase query:
- *   const { data } = await supabase.from('monthly_performance').select('*').eq('month', month).single();
+ * Calculates Win Rate, Profit Factor, Total PnL, Total R, and Current Win Streak
+ * directly from executed trades in Supabase.
  */
 export async function getMonthlyPerformance(month: string): Promise<MonthlyPerformance> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  
-  if (month === "2026-07") return mockMonthlyPerformance;
-  return generateEmptyPerformance(month);
+  const [year, monthNum] = month.split("-").map(Number);
+  const lastDay = new Date(year, monthNum, 0).getDate();
+  const startDate = `${month}-01`;
+  const endDate = `${month}-${String(lastDay).padStart(2, "0")}`;
+
+  const { data, error } = await supabase
+    .from('trading_journal')
+    .select('*')
+    .eq('record_type', 'EXECUTED')
+    .gte('trade_date', startDate)
+    .lte('trade_date', endDate)
+    .order('trade_date', { ascending: true });
+
+  if (error) {
+    console.error("Error fetching monthly performance:", error);
+    return generateEmptyPerformance(month);
+  }
+
+  const performance = generateEmptyPerformance(month);
+  if (!data || data.length === 0) {
+    return performance;
+  }
+
+  let totalPnL = 0;
+  let totalR = 0;
+  let wins = 0;
+  let losses = 0;
+  let grossWins = 0;
+  let grossLosses = 0;
+
+  // Track daily P&L to calculate consecutive winning days (streak)
+  const dailyPnL: { [date: string]: number } = {};
+
+  for (const row of data) {
+    if (row.pos_status === 'CLOSED') {
+      const netPnL = Number(row.net_pnl || 0);
+      totalPnL += netPnL;
+      totalR += Number(row.risk_r || 0);
+
+      if (netPnL > 0) {
+        wins++;
+        grossWins += netPnL;
+      } else if (netPnL < 0) {
+        losses++;
+        grossLosses += Math.abs(netPnL);
+      }
+
+      dailyPnL[row.trade_date] = (dailyPnL[row.trade_date] || 0) + netPnL;
+    }
+  }
+
+  const totalClosedTrades = wins + losses;
+  performance.totalPnL = totalPnL;
+  performance.totalR = totalR;
+  performance.winRate = totalClosedTrades > 0 ? Math.round((wins / totalClosedTrades) * 100) : 0;
+  performance.profitFactor = grossLosses > 0 ? parseFloat((grossWins / grossLosses).toFixed(2)) : (grossWins > 0 ? 99.9 : 0.0);
+
+  // Calculate streak from daily summaries of this month
+  const sortedDates = Object.keys(dailyPnL).sort((a, b) => b.localeCompare(a));
+  let streak = 0;
+  for (const date of sortedDates) {
+    if (dailyPnL[date] > 0) {
+      streak++;
+    } else if (dailyPnL[date] < 0) {
+      break;
+    }
+  }
+  performance.streak = streak;
+
+  return performance;
 }
 
 /**
- * Fetches all daily summaries for a specific month.
- * In a Supabase setup:
- *   const { data } = await supabase.from('daily_summaries').select('*, trades(*)').eq('month', month);
+ * Fetches all daily summaries for a specific month from Supabase.
  */
 export async function getDailySummaries(month: string): Promise<DailySummary[]> {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  
-  if (month === "2026-07") return mockDailySummaries;
-  return generateEmptyMonth(month);
+  const [year, monthNum] = month.split("-").map(Number);
+  const lastDay = new Date(year, monthNum, 0).getDate();
+  const startDate = `${month}-01`;
+  const endDate = `${month}-${String(lastDay).padStart(2, "0")}`;
+
+  const { data, error } = await supabase
+    .from('trading_journal')
+    .select('*')
+    .gte('trade_date', startDate)
+    .lte('trade_date', endDate)
+    .order('trade_date', { ascending: true });
+
+  if (error) {
+    console.error("Error fetching daily summaries:", error);
+    return generateEmptyMonth(month);
+  }
+
+  const summaries = generateEmptyMonth(month);
+
+  if (data) {
+    for (const row of data) {
+      const summary = summaries.find(s => s.date === row.trade_date);
+      if (summary) {
+        // We cast row as Trade since types.ts exports Trade = TradingJournalRow
+        summary.trades.push(row as unknown as Trade);
+        if (row.record_type === 'EXECUTED') {
+          summary.tradesCount++;
+          summary.fees += Number(row.total_fee || 0);
+          summary.grossReturn += Number(row.gross_pnl || 0);
+          summary.netReturn += Number(row.net_pnl || 0);
+        }
+      }
+    }
+  }
+
+  return summaries;
 }
 
 /**
- * Fetches a single daily summary with its detailed trades.
- * In Supabase:
- *   const { data } = await supabase.from('daily_summaries').select('*, trades(*)').eq('date', date).single();
+ * Fetches a single daily summary with its detailed trades from Supabase.
  */
 export async function getDailySummary(date: string): Promise<DailySummary | undefined> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  
-  const summary = mockDailySummaries.find((summary) => summary.date === date);
-  if (summary) return summary;
+  const { data, error } = await supabase
+    .from('trading_journal')
+    .select('*')
+    .eq('trade_date', date)
+    .order('created_at', { ascending: true });
 
-  // If not in mock, return an empty one
+  if (error) {
+    console.error("Error fetching daily summary:", error);
+    return undefined;
+  }
+
   const [year, month, day] = date.split("-").map(Number);
-  return {
+  const summary: DailySummary = {
     date,
     dayNumber: day,
     grossReturn: 0,
@@ -82,76 +179,38 @@ export async function getDailySummary(date: string): Promise<DailySummary | unde
     tradesCount: 0,
     trades: [],
   };
+
+  if (data) {
+    for (const row of data) {
+      summary.trades.push(row as unknown as Trade);
+      if (row.record_type === 'EXECUTED') {
+        summary.tradesCount++;
+        summary.fees += Number(row.total_fee || 0);
+        summary.grossReturn += Number(row.gross_pnl || 0);
+        summary.netReturn += Number(row.net_pnl || 0);
+      }
+    }
+  }
+
+  return summary;
 }
 
 /**
- * Saves a new trade entry and recalculates summaries and monthly stats in-memory.
- * In Supabase:
- *   await supabase.from('trades').insert(trade);
- *   // then trigger database functions to recalculate stats
+ * Saves a new trade entry to Supabase.
  */
-export async function saveTrade(date: string, trade: Trade): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
+export async function saveTrade(date: string, trade: Partial<Trade>): Promise<void> {
+  // Ensure the trade date is correctly set
+  const payload = {
+    ...trade,
+    trade_date: date
+  };
 
-  // Find or create daily summary
-  let summary = mockDailySummaries.find(s => s.date === date);
-  if (!summary) {
-    const dayNumber = parseInt(date.split("-")[2]);
-    summary = {
-      date,
-      dayNumber,
-      grossReturn: 0,
-      netReturn: 0,
-      fees: 0,
-      tradesCount: 0,
-      trades: [],
-    };
-    
-    // Check if weekend
-    const dateObj = new Date(date);
-    const dayOfWeek = dateObj.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      summary.isWeekend = true;
-    }
-    mockDailySummaries.push(summary);
-    mockDailySummaries.sort((a, b) => a.date.localeCompare(b.date));
-  }
+  const { error } = await supabase
+    .from('trading_journal')
+    .insert([payload]);
 
-  // Append trade and recalculate metrics for the day
-  summary.trades.push(trade);
-  summary.tradesCount = summary.trades.length;
-  
-  // Custom formula: flat Rp20.000 fee per trade
-  const tradeFees = 20000;
-  summary.fees += tradeFees;
-  summary.grossReturn += trade.pnl;
-  summary.netReturn = summary.grossReturn - summary.fees;
-  
-  // If it was marked weekend or holiday, clear it since we have active trades
-  delete summary.isWeekend;
-  delete summary.isHoliday;
-
-  // Recalculate monthly performance statistics based on updated array
-  const allActiveSummaries = mockDailySummaries.filter(s => s.tradesCount > 0);
-  const allTrades = allActiveSummaries.flatMap(s => s.trades);
-  
-  const totalPnL = mockDailySummaries.reduce((sum, s) => sum + s.netReturn, 0);
-  const totalR = allTrades.reduce((sum, t) => sum + t.returnR, 0);
-  
-  const winningTrades = allTrades.filter(t => t.pnl > 0);
-  const winRate = allTrades.length > 0 ? Math.round((winningTrades.length / allTrades.length) * 100) : 0;
-  
-  const totalGrossWin = winningTrades.reduce((sum, t) => sum + t.pnl, 0);
-  const losingTrades = allTrades.filter(t => t.pnl < 0);
-  const totalGrossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
-  const profitFactor = totalGrossLoss > 0 ? parseFloat((totalGrossWin / totalGrossLoss).toFixed(2)) : 2.0;
-
-  mockMonthlyPerformance.totalPnL = totalPnL;
-  mockMonthlyPerformance.totalR = totalR;
-  mockMonthlyPerformance.winRate = winRate;
-  mockMonthlyPerformance.profitFactor = profitFactor;
-  
-  if (summary.netReturn > 0) {
-    mockMonthlyPerformance.streak += 1;
+  if (error) {
+    console.error("Error inserting trade:", error);
+    throw new Error(error.message);
   }
 }

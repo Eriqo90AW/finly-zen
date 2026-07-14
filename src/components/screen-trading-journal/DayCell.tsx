@@ -94,8 +94,8 @@ export default function DayCell(props: DayCellProps) {
     bgClass = "bg-white/60 hover:bg-white border-forest/5";
   }
 
-  // Calculate total R-multiple for the day
-  const totalR = day.trades.reduce((sum, t) => sum + t.returnR, 0);
+  // Calculate total R-multiple for the day from executed trades
+  const totalR = day.trades.reduce((sum, t) => sum + (t.record_type === 'EXECUTED' ? (t.risk_r || 0) : 0), 0);
 
   // Position tooltip top-full for first row (dayNumber <= 7) to prevent cutoff at calendar top
   const isFirstRow = () => day.dayNumber > 0 && day.dayNumber <= 7;
@@ -158,19 +158,28 @@ export default function DayCell(props: DayCellProps) {
           </div>
           <div class="space-y-1 max-h-36 overflow-y-auto">
             <For each={day.trades}>
-              {(trade) => (
-                <div class="flex justify-between items-center gap-2">
-                  <span class="text-white/80 truncate">
-                    &bull; {trade.ticker}
-                  </span>
-                  <span class="font-semibold shrink-0" classList={{
-                    "text-emerald-400": trade.pnl >= 0,
-                    "text-rose-400": trade.pnl < 0
-                  }}>
-                    {trade.pnl >= 0 ? "+" : ""}{formatRupiah(trade.pnl)} ({trade.returnR >= 0 ? "+" : ""}{trade.returnR.toFixed(1)}R)
-                  </span>
-                </div>
-              )}
+              {(trade) => {
+                const isSetup = trade.record_type === 'SETUP';
+                const pnlValue = isSetup ? 0 : (trade.net_pnl || 0);
+                const rValue = isSetup ? (trade.planned_rr || 0) : (trade.risk_r || 0);
+                return (
+                  <div class="flex justify-between items-center gap-2">
+                    <span class="text-white/80 truncate text-[10px]">
+                      &bull; {trade.ticker} <span class="text-[8px] text-white/40">({trade.record_type})</span>
+                    </span>
+                    <span class="font-semibold shrink-0 text-[10px]" classList={{
+                      "text-emerald-400": !isSetup && pnlValue >= 0,
+                      "text-rose-400": !isSetup && pnlValue < 0,
+                      "text-blue-400": isSetup
+                    }}>
+                      {isSetup 
+                        ? `${rValue?.toFixed(1) || "0"}R Plan` 
+                        : `${pnlValue >= 0 ? "+" : ""}${formatRupiah(pnlValue)} (${rValue >= 0 ? "+" : ""}${rValue?.toFixed(1) || "0"}R)`
+                      }
+                    </span>
+                  </div>
+                );
+              }}
             </For>
           </div>
           <div class="border-t border-white/10 pt-1.5 mt-1.5 flex justify-between font-bold">

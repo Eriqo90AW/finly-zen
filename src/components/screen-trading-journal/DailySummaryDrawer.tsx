@@ -21,6 +21,10 @@ export default function DailySummaryDrawer(props: DailySummaryDrawerProps) {
   const isOpen = () => !!props.day;
   const activeDay = () => props.day || cachedDay();
 
+  // Separate setups and executions
+  const setups = () => activeDay()?.trades.filter(t => t.record_type === 'SETUP') || [];
+  const executions = () => activeDay()?.trades.filter(t => t.record_type === 'EXECUTED') || [];
+
   return (
     <div
       class="shrink-0 bg-white border border-forest/10 rounded-2xl shadow-premium flex flex-col sticky top-24 self-start max-h-[calc(100vh-120px)] overflow-hidden transition-all duration-450 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -55,8 +59,8 @@ export default function DailySummaryDrawer(props: DailySummaryDrawerProps) {
             </div>
 
             {/* Scrollable Content */}
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-5">
-              {/* Daily Stats Grid */}
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+              {/* Daily Stats Grid (Only for executed stats) */}
               <div class="grid grid-cols-2 gap-3 bg-sage/30 rounded-2xl p-3 border border-forest/5">
                 <div class="space-y-0.5">
                   <span class="text-[8px] font-bold uppercase tracking-wider block text-earth/60">Gross Return</span>
@@ -78,7 +82,7 @@ export default function DailySummaryDrawer(props: DailySummaryDrawerProps) {
                   </span>
                 </div>
                 <div class="space-y-0.5">
-                  <span class="text-[8px] font-bold uppercase tracking-wider block text-earth/60">Total Trades</span>
+                  <span class="text-[8px] font-bold uppercase tracking-wider block text-earth/60">Total Executed</span>
                   <span class="font-outfit text-sm font-bold text-forest">{day().tradesCount}</span>
                 </div>
                 <div class="space-y-0.5">
@@ -89,27 +93,58 @@ export default function DailySummaryDrawer(props: DailySummaryDrawerProps) {
                 </div>
               </div>
 
-              {/* Trades Logs */}
+              {/* 🟦 SECTION 1: SETUPS (PLANS) */}
               <div class="space-y-3">
-                <h4 class="text-[10px] font-bold text-earth uppercase tracking-widest px-1">Trades Log</h4>
-                
+                <div class="flex items-center justify-between px-1">
+                  <h4 class="text-[10px] font-bold text-earth uppercase tracking-widest">
+                    Setups & Plans ({setups().length})
+                  </h4>
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse-soft" />
+                </div>
                 <Show 
-                  when={day().trades.length > 0}
+                  when={setups().length > 0}
                   fallback={
-                    <div class="text-center py-6 text-xs text-earth/50 italic bg-page-bg/30 rounded-2xl border border-dashed border-forest/10">
-                      No trades logged for this day.
+                    <div class="text-center py-4 text-[11px] text-earth/50 italic bg-page-bg/30 rounded-xl border border-dashed border-forest/10">
+                      No plans logged for this day.
                     </div>
                   }
                 >
                   <div class="space-y-3">
-                    <For each={day().trades}>
+                    <For each={setups()}>
                       {(trade, index) => (
-                        <TradeAccordionItem trade={trade} index={index()} />
+                        <SetupAccordionItem trade={trade} index={index()} />
                       )}
                     </For>
                   </div>
                 </Show>
               </div>
+
+              {/* 🟩 SECTION 2: EXECUTIONS (REAL TRADES) */}
+              <div class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                  <h4 class="text-[10px] font-bold text-earth uppercase tracking-widest">
+                    Executions ({executions().length})
+                  </h4>
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-soft" />
+                </div>
+                <Show 
+                  when={executions().length > 0}
+                  fallback={
+                    <div class="text-center py-4 text-[11px] text-earth/50 italic bg-page-bg/30 rounded-xl border border-dashed border-forest/10">
+                      No executions logged for this day.
+                    </div>
+                  }
+                >
+                  <div class="space-y-3">
+                    <For each={executions()}>
+                      {(trade, index) => (
+                        <ExecutionAccordionItem trade={trade} index={index()} />
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </div>
+
             </div>
           </>
         )}
@@ -118,11 +153,131 @@ export default function DailySummaryDrawer(props: DailySummaryDrawerProps) {
   );
 }
 
-// Subcomponent: Accordion for each trade
-function TradeAccordionItem(props: { trade: Trade; index: number }) {
+// Subcomponent: Accordion for SETUP trades
+function SetupAccordionItem(props: { trade: Trade; index: number }) {
+  const [isExpanded, setIsExpanded] = createSignal(false);
+
+  return (
+    <div class="premium-card bg-white overflow-hidden border border-blue-100 hover:border-blue-200 transition-all">
+      {/* Header */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded())}
+        class="w-full p-3 flex justify-between items-center text-left hover:bg-blue-50/10 transition-colors cursor-pointer"
+      >
+        <div class="flex items-center gap-2.5">
+          <span class="px-1.5 py-0.5 rounded bg-blue-50 text-[9px] font-black text-blue-600 border border-blue-100">
+            {props.trade.setup_quality || "A"}
+          </span>
+          <div>
+            <div class="font-outfit font-bold text-forest text-xs">{props.trade.ticker}</div>
+            <div class="text-[9px] font-bold text-earth uppercase tracking-wider">{props.trade.setup_type || "Setup Plan"}</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <span class="text-[9.5px] font-bold text-blue-700 bg-blue-50/80 px-1.5 py-0.5 rounded-md">
+            {props.trade.setup_status}
+          </span>
+          <span class="material-icons text-earth transition-transform duration-300 text-md"
+            classList={{ "rotate-180": isExpanded() }}
+          >
+            expand_more
+          </span>
+        </div>
+      </button>
+
+      {/* Body */}
+      <Show when={isExpanded()}>
+        <div class="p-3 pt-0 border-t border-forest/5 bg-blue-50/5 space-y-3 animate-fade-in-up">
+          {/* Targets Grid */}
+          <div class="grid grid-cols-3 gap-1.5 mt-3">
+            <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">Ideal Entry</span>
+              <span class="font-outfit text-[11px] font-semibold text-forest">
+                {props.trade.entry_zone_ideal ? `Rp${props.trade.entry_zone_ideal}` : "-"}
+              </span>
+            </div>
+            <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">Max Entry</span>
+              <span class="font-outfit text-[11px] font-semibold text-earth">
+                {props.trade.entry_zone_max ? `Rp${props.trade.entry_zone_max}` : "-"}
+              </span>
+            </div>
+            <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">Planned RR</span>
+              <span class="font-outfit text-[11px] font-semibold text-blue-600">
+                {props.trade.planned_rr ? `${props.trade.planned_rr}R` : "-"}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5">
+            <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">Stop Loss</span>
+              <span class="font-outfit text-[11px] font-semibold text-rose-500">
+                {props.trade.stop_loss ? `Rp${props.trade.stop_loss}` : "-"}
+              </span>
+            </div>
+            <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">TP 1</span>
+              <span class="font-outfit text-[11px] font-semibold text-emerald-600">
+                {props.trade.tp1_price ? `Rp${props.trade.tp1_price}` : "-"}
+              </span>
+            </div>
+            <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">TP 2</span>
+              <span class="font-outfit text-[11px] font-semibold text-emerald-600">
+                {props.trade.tp2_price ? `Rp${props.trade.tp2_price}` : "-"}
+              </span>
+            </div>
+          </div>
+
+          {/* Raw Analysis */}
+          <Show when={props.trade.analysis_raw}>
+            <div class="space-y-1">
+              <span class="text-[8px] font-bold text-earth uppercase tracking-widest block">Analysis RAW</span>
+              <div class="bg-white border border-forest/5 rounded-xl p-2 text-[10px] text-earth leading-relaxed font-outfit whitespace-pre-line">
+                {props.trade.analysis_raw}
+              </div>
+            </div>
+          </Show>
+
+          {/* Checklist */}
+          <Show when={props.trade.checklist && props.trade.checklist.length > 0}>
+            <div class="space-y-1">
+              <span class="text-[8px] font-bold text-earth uppercase tracking-widest block">Confluences</span>
+              <div class="flex flex-wrap gap-1">
+                <For each={props.trade.checklist}>
+                  {(item) => (
+                    <span class="px-2 py-0.5 bg-blue-50 border border-blue-100 rounded text-[8px] font-bold uppercase tracking-wider text-blue-700">
+                      {item}
+                    </span>
+                  )}
+                </For>
+              </div>
+            </div>
+          </Show>
+
+          {/* Notes */}
+          <Show when={props.trade.notes}>
+            <div class="space-y-1">
+              <span class="text-[8px] font-bold text-earth uppercase tracking-widest block">Notes</span>
+              <div class="bg-white border border-forest/5 rounded-xl p-2 text-[10px] text-earth leading-relaxed font-outfit">
+                {props.trade.notes}
+              </div>
+            </div>
+          </Show>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
+// Subcomponent: Accordion for EXECUTED trades
+function ExecutionAccordionItem(props: { trade: Trade; index: number }) {
   const [isExpanded, setIsExpanded] = createSignal(props.index === 0);
 
-  const isWin = () => props.trade.pnl >= 0;
+  const isWin = () => (props.trade.net_pnl || 0) >= 0;
 
   return (
     <div class="premium-card bg-white overflow-hidden border border-forest/10 transition-shadow duration-200">
@@ -133,28 +288,41 @@ function TradeAccordionItem(props: { trade: Trade; index: number }) {
       >
         <div class="flex items-center gap-2.5">
           <span 
-            class="w-2 h-2 rounded-full animate-pulse-soft"
+            class="w-2.5 h-2.5 rounded-full animate-pulse-soft"
             classList={{
-              "bg-emerald-500": isWin(),
-              "bg-rose-500": !isWin(),
+              "bg-emerald-500": isWin() && props.trade.pos_status === 'CLOSED',
+              "bg-rose-500": !isWin() && props.trade.pos_status === 'CLOSED',
+              "bg-amber-400": props.trade.pos_status !== 'CLOSED', // open / partial position
             }}
           />
           <div>
-            <div class="font-outfit font-bold text-forest text-xs">{props.trade.ticker}</div>
-            <div class="text-[9px] font-bold text-earth uppercase tracking-wider">{props.trade.setup}</div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-outfit font-bold text-forest text-xs">{props.trade.ticker}</span>
+              <span class="text-[8px] font-black px-1 rounded bg-forest/5 text-forest tracking-wide border border-forest/10 uppercase">
+                {props.trade.direction}
+              </span>
+            </div>
+            <div class="text-[9px] font-bold text-earth uppercase tracking-wider">
+              {props.trade.pos_status} &bull; {props.trade.lots} lot
+            </div>
           </div>
         </div>
         
         <div class="flex items-center gap-1.5">
-          <span 
-            class="font-cormorant font-bold text-sm"
-            classList={{
-              "text-emerald-600": isWin(),
-              "text-rose-500": !isWin(),
-            }}
-          >
-            {props.trade.returnR >= 0 ? "+" : ""}{props.trade.returnR.toFixed(1)}R
-          </span>
+          <div class="text-right">
+            <div 
+              class="font-cormorant font-bold text-sm"
+              classList={{
+                "text-emerald-600": isWin(),
+                "text-rose-500": !isWin(),
+              }}
+            >
+              {props.trade.net_pnl !== null ? `${props.trade.net_pnl >= 0 ? "+" : ""}${formatRupiah(props.trade.net_pnl)}` : "OPEN"}
+            </div>
+            <div class="text-[8.5px] font-medium text-earth/60">
+              {props.trade.risk_r !== null ? `${props.trade.risk_r >= 0 ? "+" : ""}${props.trade.risk_r.toFixed(2)}R` : ""}
+            </div>
+          </div>
           <span class="material-icons text-earth transition-transform duration-300 text-md"
             classList={{ "rotate-180": isExpanded() }}
           >
@@ -166,32 +334,83 @@ function TradeAccordionItem(props: { trade: Trade; index: number }) {
       {/* Accordion Body */}
       <Show when={isExpanded()}>
         <div class="p-3 pt-0 border-t border-forest/5 bg-sage/5 space-y-3 animate-fade-in-up">
-          {/* Targets / Metrics Grid */}
+          {/* Prices Grid */}
           <div class="grid grid-cols-3 gap-1.5 mt-3">
             <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
-              <span class="text-[7px] font-bold uppercase tracking-wider block text-earth/60">Entry</span>
-              <span class="font-outfit text-[11px] font-semibold text-forest">{formatRupiah(props.trade.entry)}</span>
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">Avg Entry</span>
+              <span class="font-outfit text-[11px] font-semibold text-forest">
+                {props.trade.avg_entry_price ? `Rp${Math.round(props.trade.avg_entry_price)}` : "-"}
+              </span>
             </div>
             <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
-              <span class="text-[7px] font-bold uppercase tracking-wider block text-earth/60">Stop</span>
-              <span class="font-outfit text-[11px] font-semibold text-rose-500">{formatRupiah(props.trade.stopLoss)}</span>
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">Avg Exit</span>
+              <span class="font-outfit text-[11px] font-semibold text-forest">
+                {props.trade.avg_exit_price ? `Rp${Math.round(props.trade.avg_exit_price)}` : "-"}
+              </span>
             </div>
             <div class="bg-white p-1.5 rounded-xl border border-forest/5 text-center">
-              <span class="text-[7px] font-bold uppercase tracking-wider block text-earth/60">Target</span>
-              <span class="font-outfit text-[11px] font-semibold text-emerald-600">{formatRupiah(props.trade.takeProfit)}</span>
+              <span class="text-[7.5px] font-bold uppercase tracking-wider block text-earth/60">Stop Loss</span>
+              <span class="font-outfit text-[11px] font-semibold text-rose-500">
+                {props.trade.stop_loss ? `Rp${props.trade.stop_loss}` : "-"}
+              </span>
             </div>
           </div>
 
-          {/* Confluence Checklist */}
-          <Show when={props.trade.checklist.length > 0}>
+          {/* Details (Lots distributions & Meta) */}
+          <div class="grid grid-cols-2 gap-2 text-[10px] font-outfit bg-white p-2.5 rounded-xl border border-forest/5">
+            <div class="flex justify-between">
+              <span class="text-earth/70">Lots remaining:</span>
+              <span class="font-bold text-forest">{props.trade.lots_remaining ?? 0}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-earth/70">Lots closed:</span>
+              <span class="font-bold text-forest">{props.trade.lots_closed ?? 0}</span>
+            </div>
+            <div class="flex justify-between col-span-2 border-t border-forest/5 pt-1 mt-1">
+              <span class="text-earth/70">Transaction Fees:</span>
+              <span class="font-bold text-rose-500">Rp{Math.round(props.trade.total_fee || 0).toLocaleString('id-ID')}</span>
+            </div>
+            <div class="flex justify-between col-span-2">
+              <span class="text-earth/70">Risk Amount:</span>
+              <span class="font-bold text-earth">Rp{Math.round(props.trade.risk_amount || 0).toLocaleString('id-ID')}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-earth/70">Hold Days:</span>
+              <span class="font-bold text-forest">{props.trade.hold_days ?? "-"} days</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-earth/70">Session:</span>
+              <span class="font-bold text-forest">{props.trade.entry_session ?? "-"}</span>
+            </div>
+          </div>
+
+          {/* Entry Details Legs JSON renderer */}
+          <Show when={props.trade.entry_details && props.trade.entry_details.length > 0}>
             <div class="space-y-1">
-              <span class="text-[8px] font-bold text-earth uppercase tracking-widest block">Confluence</span>
-              <div class="flex flex-col gap-0.5">
-                <For each={props.trade.checklist}>
-                  {(item) => (
-                    <div class="flex items-center gap-1.5 text-[10px] text-forest font-medium">
-                      <span class="material-icons text-emerald-600 text-xs">check_circle</span>
-                      {item}
+              <span class="text-[8px] font-bold text-earth uppercase tracking-widest block">Entry Legs ({props.trade.entry_details?.length})</span>
+              <div class="bg-white border border-forest/5 rounded-xl p-2 space-y-1 text-[9.5px]">
+                <For each={props.trade.entry_details}>
+                  {(leg) => (
+                    <div class="flex justify-between text-earth">
+                      <span class="font-bold">{leg.lot} lot @ Rp{leg.price}</span>
+                      <span class="italic text-earth/60">{leg.reason || ""}</span>
+                    </div>
+                  )}
+                </For>
+              </div>
+            </div>
+          </Show>
+
+          {/* Exit Details Legs JSON renderer */}
+          <Show when={props.trade.exit_details && props.trade.exit_details.length > 0}>
+            <div class="space-y-1 animate-fade-in-up">
+              <span class="text-[8px] font-bold text-earth uppercase tracking-widest block">Exit Legs ({props.trade.exit_details?.length})</span>
+              <div class="bg-white border border-forest/5 rounded-xl p-2 space-y-1 text-[9.5px]">
+                <For each={props.trade.exit_details}>
+                  {(leg) => (
+                    <div class="flex justify-between text-earth">
+                      <span class="font-bold">{leg.lot} lot @ Rp{leg.price}</span>
+                      <span class="text-forest font-semibold">{leg.type}</span>
                     </div>
                   )}
                 </For>
@@ -200,11 +419,11 @@ function TradeAccordionItem(props: { trade: Trade; index: number }) {
           </Show>
 
           {/* Psychology Tags */}
-          <Show when={props.trade.psychologyTags.length > 0}>
+          <Show when={props.trade.psychology_tags && props.trade.psychology_tags.length > 0}>
             <div class="space-y-1">
-              <span class="text-[8px] font-bold text-earth uppercase tracking-widest block">Psychology</span>
+              <span class="text-[8px] font-bold text-earth uppercase tracking-widest block">Mindset Psychology</span>
               <div class="flex flex-wrap gap-1">
-                <For each={props.trade.psychologyTags}>
+                <For each={props.trade.psychology_tags}>
                   {(tag) => (
                     <span class="px-2 py-0.5 bg-sage/40 border border-forest/10 rounded-full text-[8px] font-bold uppercase tracking-wider text-forest">
                       {tag}

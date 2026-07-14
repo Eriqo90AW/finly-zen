@@ -25,7 +25,7 @@ export default function TradingJournal() {
     }
   };
 
-  const handleSaveTrade = async (date: string, trade: Trade) => {
+  const handleSaveTrade = async (date: string, trade: Partial<Trade>) => {
     await saveTrade(date, trade);
     // Refetch resources to dynamically update calendar heatmap, banner stats, and tooltips
     refetchDays();

@@ -1,15 +1,6 @@
-export interface Trade {
-  ticker: string;
-  setup: string;
-  returnR: number; // e.g. 3.0
-  pnl: number; // e.g. 1500000 (Rp1.500.000)
-  entry: number; // e.g. 4800 (Rp4.800)
-  stopLoss: number;
-  takeProfit: number;
-  checklist: string[];
-  psychologyTags: string[];
-  notes: string;
-}
+import { TradingJournalRow } from "./database.types";
+
+export type Trade = TradingJournalRow;
 
 export interface DailySummary {
   date: string; // YYYY-MM-DD
