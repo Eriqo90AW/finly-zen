@@ -151,7 +151,7 @@ const AddExpenseSlideOver = () => {
     >
       {/* Backdrop */}
       <div
-        class="absolute inset-0 bg-forest/40 transition-opacity duration-300"
+        class="absolute inset-0 bg-forest/40 transition-opacity duration-450 ease-[cubic-bezier(0.16,1,0.3,1)]"
         classList={{
           "opacity-100": state.ui.showAddExpense,
           "opacity-0": !state.ui.showAddExpense,
@@ -161,11 +161,12 @@ const AddExpenseSlideOver = () => {
 
       {/* Panel */}
       <div
-        class="relative w-full max-w-[420px] h-screen bg-white flex flex-col transition-transform duration-300 ease-out will-change-transform contain-content"
+        class="relative w-full max-w-[420px] h-screen bg-white flex flex-col will-change-transform contain-content shadow-2xl"
         style={{
           transform: state.ui.showAddExpense
             ? "translate3d(0, 0, 0)"
             : "translate3d(100%, 0, 0)",
+          transition: "transform 450ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         {/* Header */}

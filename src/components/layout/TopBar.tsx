@@ -33,6 +33,7 @@ const TopBar = () => {
     location.pathname.startsWith("/portfolio") || 
     location.pathname === "/quick-portfolio";
   const isDividendPage = () => location.pathname.startsWith("/dividend");
+  const isJournalPage = () => location.pathname.startsWith("/trading-journal");
 
   const [marketStatus, setMarketStatus] =
     createSignal<MarketStatus>(getMarketStatus());
@@ -117,85 +118,140 @@ const TopBar = () => {
       {/* Left Section: Adaptive Header */}
       <div class="flex items-center gap-6">
         <Show
-          when={!isStockPage() && !isDividendPage()}
+          when={!isStockPage() && !isDividendPage() && !isJournalPage()}
           fallback={
             <Show
               when={isDividendPage()}
               fallback={
-                <div class="flex items-center gap-4">
-                  <button
-                    onClick={() => navigate(-1)}
-                    class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
-                  >
-                    <ChevronLeftIcon />
-                  </button>
-                  <div class="h-8 w-px bg-forest/10 mx-1" />
+                <Show
+                  when={isJournalPage()}
+                  fallback={
+                    <div class="flex items-center gap-4">
+                      <button
+                        onClick={() => navigate(-1)}
+                        class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
+                      >
+                        <ChevronLeftIcon />
+                      </button>
+                      <div class="h-8 w-px bg-forest/10 mx-1" />
 
-                  <Show
-                    when={currentStockData()}
-                    fallback={
-                      <div class="flex items-center gap-2">
-                        <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider uppercase">
-                          {params.ticker}
-                        </span>
-                        <span class="text-xs text-earth font-medium animate-ellipsis">
-                          Loading data
-                        </span>
-                      </div>
-                    }
-                  >
-                    <div class="flex flex-col">
-                      <div class="flex items-center gap-2">
-                        <h2 class="text-xl font-cormorant font-bold text-forest leading-none max-w-[30rem] line-clamp-1">
-                          {currentStockData()?.company_name}
-                        </h2>
-                        <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider">
-                          {currentStockData()?.ticker}
-                        </span>
-                        <span class="bg-sage text-forest text-[10px] px-1.5 py-0.5 rounded font-medium">
-                          {currentStockData()?.exchange}
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-3 mt-1">
-                        <span class="text-sm font-outfit font-bold text-forest">
-                          {formatUSD(
-                            currentStockData()?.valuation.extended_hours_price || 0,
-                          )}
-                        </span>
-                        <span class="text-[10px] text-earth font-medium">
-                          Mkt Cap:{" "}
-                          {formatUSDCompact(
-                            currentStockData()?.valuation.market_cap || 0,
-                          )}
-                        </span>
-                        <span class="text-[9px] text-earth/60 uppercase tracking-widest">
-                          As of:{" "}
-                          {new Date(
-                            currentStockData()?.as_of || "",
-                          ).toLocaleDateString()}
-                        </span>
-
-                        {/* Market Timing Indicator */}
-                        <div class="flex items-center gap-2 px-2 py-0.5 bg-sage/30 rounded-full border border-forest/5">
-                          <div
-                            class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
-                          ></div>
-                          <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
-                            {marketStatus().session}
-                          </span>
-                        </div>
-
-                        <Show when={isStockLoading()}>
-                          <div class="flex items-center gap-1.5">
-                            <span class="text-[9px] text-forest font-bold uppercase tracking-widest animate-ellipsis">
-                              Loading
+                      <Show
+                        when={currentStockData()}
+                        fallback={
+                          <div class="flex items-center gap-2">
+                            <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider uppercase">
+                              {params.ticker}
+                            </span>
+                            <span class="text-xs text-earth font-medium animate-ellipsis">
+                              Loading data
                             </span>
                           </div>
-                        </Show>
+                        }
+                      >
+                        <div class="flex flex-col">
+                          <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-cormorant font-bold text-forest leading-none max-w-[30rem] line-clamp-1">
+                              {currentStockData()?.company_name}
+                            </h2>
+                            <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider">
+                              {currentStockData()?.ticker}
+                            </span>
+                            <span class="bg-sage text-forest text-[10px] px-1.5 py-0.5 rounded font-medium">
+                              {currentStockData()?.exchange}
+                            </span>
+                          </div>
+                          <div class="flex items-center gap-3 mt-1">
+                            <span class="text-sm font-outfit font-bold text-forest">
+                              {formatUSD(
+                                currentStockData()?.valuation.extended_hours_price || 0,
+                              )}
+                            </span>
+                            <span class="text-[10px] text-earth font-medium">
+                              Mkt Cap:{" "}
+                              {formatUSDCompact(
+                                currentStockData()?.valuation.market_cap || 0,
+                              )}
+                            </span>
+                            <span class="text-[9px] text-earth/60 uppercase tracking-widest">
+                              As of:{" "}
+                              {new Date(
+                                currentStockData()?.as_of || "",
+                              ).toLocaleDateString()}
+                            </span>
+
+                            {/* Market Timing Indicator */}
+                            <div class="flex items-center gap-2 px-2 py-0.5 bg-sage/30 rounded-full border border-forest/5">
+                              <div
+                                class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
+                              ></div>
+                              <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
+                                {marketStatus().session}
+                              </span>
+                            </div>
+
+                            <Show when={isStockLoading()}>
+                              <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] text-forest font-bold uppercase tracking-widest animate-ellipsis">
+                                  Loading
+                                </span>
+                              </div>
+                            </Show>
+                          </div>
+                        </div>
+                      </Show>
+                    </div>
+                  }
+                >
+                  {/* Custom Trading Journal Navbar */}
+                  <div class="flex items-center gap-4 flex-nowrap shrink-0">
+                    <h2 class="text-xl font-cormorant font-bold text-forest leading-none whitespace-nowrap">
+                      Trading Journal
+                    </h2>
+                    <div class="h-6 w-px bg-forest/10 mx-1 shrink-0" />
+                    
+                    <nav class="flex items-center gap-2">
+                      <a 
+                        href="/trading-journal" 
+                        class="px-3 py-1.5 bg-sage text-forest text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors border border-forest/5"
+                      >
+                        Overview
+                      </a>
+                      <a 
+                        href="#" 
+                        onClick={(e) => { e.preventDefault(); alert("Analytics feature coming soon!"); }} 
+                        class="px-3 py-1.5 text-earth hover:text-forest text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors"
+                      >
+                        Analytics
+                      </a>
+                      <a 
+                        href="#" 
+                        onClick={(e) => { e.preventDefault(); alert("Watchlists feature coming soon!"); }} 
+                        class="px-3 py-1.5 text-earth hover:text-forest text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors"
+                      >
+                        Watchlist
+                      </a>
+                    </nav>
+
+                    {/* Clock & Market status indicator */}
+                    <div class="flex items-center gap-3 ml-4 shrink-0">
+                      <div class="flex items-center justify-between px-3 py-1.5 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[10px] font-bold w-[10.5rem] overflow-hidden text-nowrap">
+                        <div class="flex items-center gap-1 truncate">
+                          <span class="material-icons !text-[14px] text-forest/50 shrink-0">
+                            schedule
+                          </span>
+                          <span class="truncate">{wibTime()}</span>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-sage/30 rounded-xl border border-forest/5">
+                        <div class={`w-1.5 h-1.5 rounded-full ${marketStatus().color} animate-pulse-soft`}></div>
+                        <span class="text-[9px] font-bold text-forest uppercase tracking-tight">
+                          US: {marketStatus().session}
+                        </span>
                       </div>
                     </div>
-                  </Show>
-                </div>
+                  </div>
+                </Show>
               }
             >
               {/* Dividend Page Mode */}
@@ -469,7 +525,7 @@ const TopBar = () => {
 
       {/* Search & User */}
       <div class="flex items-center gap-6">
-        <Show when={!isPortfolioPage() && !isDividendPage()}>
+        <Show when={!isPortfolioPage() && !isDividendPage() && !isJournalPage()}>
           <SearchBar />
         </Show>
 

@@ -23,7 +23,8 @@ const App = (props: ParentProps) => {
     location.pathname.startsWith("/stock") || 
     location.pathname.startsWith("/portfolio") ||
     location.pathname.startsWith("/quick-portfolio") ||
-    location.pathname.startsWith("/dividend");
+    location.pathname.startsWith("/dividend") ||
+    location.pathname.startsWith("/trading-journal");
 
   return (
     <div class="relative h-screen">
