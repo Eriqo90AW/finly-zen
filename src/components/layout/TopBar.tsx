@@ -16,7 +16,9 @@ import {
   formatUSDCompact,
   getUsdRate,
   formatRupiah,
+  setUsdExchangeRate,
 } from "../../utils/format";
+import { fetchUsdRate } from "../../data/portfolioData";
 import { Show, createSignal, For } from "solid-js";
 import { currentStockData, isStockLoading } from "../../store/stockContext";
 import { getMarketStatus, getIDXMarketStatus } from "../../utils/marketTime";
@@ -64,6 +66,7 @@ const TopBar = () => {
 
   const [wibTime, setWibTime] = createSignal(getWibDateTime());
   const [isSwitcherOpen, setIsSwitcherOpen] = createSignal(false);
+  const [isRefreshingUsd, setIsRefreshingUsd] = createSignal(false);
 
   let timer: any;
   onMount(() => {
@@ -470,6 +473,25 @@ const TopBar = () => {
                     currency_exchange
                   </span>
                   <span>1 USD = {formatRupiah(getUsdRate())}</span>
+                  <button
+                    onClick={async () => {
+                      if (isRefreshingUsd()) return;
+                      setIsRefreshingUsd(true);
+                      try {
+                        const rate = await fetchUsdRate();
+                        setUsdExchangeRate(rate);
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setIsRefreshingUsd(false);
+                      }
+                    }}
+                    class="ml-1 flex items-center justify-center p-0.5 rounded hover:bg-forest/10 transition-colors text-forest/60 hover:text-forest cursor-pointer"
+                    classList={{ "animate-spin": isRefreshingUsd() }}
+                    title="Refresh Exchange Rate"
+                  >
+                    <span class="material-icons !text-[12px]">sync</span>
+                  </button>
                 </div>
 
                 <div class="w-px h-4 bg-forest/10" />

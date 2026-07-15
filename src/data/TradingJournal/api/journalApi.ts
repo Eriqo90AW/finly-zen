@@ -74,7 +74,7 @@ export async function getMonthlyPerformance(month: string): Promise<MonthlyPerfo
   const dailyPnL: { [date: string]: number } = {};
 
   for (const row of data) {
-    if (row.pos_status === 'CLOSED') {
+    if (row.net_pnl !== null && row.net_pnl !== undefined) {
       const netPnL = Number(row.net_pnl || 0);
       totalPnL += netPnL;
       totalR += Number(row.risk_r || 0);
@@ -98,6 +98,92 @@ export async function getMonthlyPerformance(month: string): Promise<MonthlyPerfo
   performance.profitFactor = grossLosses > 0 ? parseFloat((grossWins / grossLosses).toFixed(2)) : (grossWins > 0 ? 99.9 : 0.0);
 
   // Calculate streak from daily summaries of this month
+  const sortedDates = Object.keys(dailyPnL).sort((a, b) => b.localeCompare(a));
+  let streak = 0;
+  for (const date of sortedDates) {
+    if (dailyPnL[date] > 0) {
+      streak++;
+    } else if (dailyPnL[date] < 0) {
+      break;
+    }
+  }
+  performance.streak = streak;
+
+  return performance;
+}
+
+/**
+ * Fetches the performance summary for all time.
+ * Calculates Win Rate, Profit Factor, Total PnL, Total R, and Current Win Streak
+ * directly from executed trades in Supabase.
+ */
+export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
+  const { data, error } = await supabase
+    .from('trading_journal')
+    .select('*')
+    .eq('record_type', 'EXECUTED')
+    .order('trade_date', { ascending: true });
+
+  if (error) {
+    console.error("Error fetching all-time performance:", error);
+    return {
+      monthName: "All Time",
+      streak: 0,
+      totalPnL: 0,
+      totalR: 0,
+      winRate: 0,
+      profitFactor: 0,
+    };
+  }
+
+  const performance: MonthlyPerformance = {
+    monthName: "All Time",
+    streak: 0,
+    totalPnL: 0,
+    totalR: 0,
+    winRate: 0,
+    profitFactor: 0,
+  };
+
+  if (!data || data.length === 0) {
+    return performance;
+  }
+
+  let totalPnL = 0;
+  let totalR = 0;
+  let wins = 0;
+  let losses = 0;
+  let grossWins = 0;
+  let grossLosses = 0;
+
+  // Track daily P&L to calculate consecutive winning days (streak)
+  const dailyPnL: { [date: string]: number } = {};
+
+  for (const row of data) {
+    if (row.net_pnl !== null && row.net_pnl !== undefined) {
+      const netPnL = Number(row.net_pnl || 0);
+      totalPnL += netPnL;
+      totalR += Number(row.risk_r || 0);
+
+      if (netPnL > 0) {
+        wins++;
+        grossWins += netPnL;
+      } else if (netPnL < 0) {
+        losses++;
+        grossLosses += Math.abs(netPnL);
+      }
+
+      dailyPnL[row.trade_date] = (dailyPnL[row.trade_date] || 0) + netPnL;
+    }
+  }
+
+  const totalClosedTrades = wins + losses;
+  performance.totalPnL = totalPnL;
+  performance.totalR = totalR;
+  performance.winRate = totalClosedTrades > 0 ? Math.round((wins / totalClosedTrades) * 100) : 0;
+  performance.profitFactor = grossLosses > 0 ? parseFloat((grossWins / grossLosses).toFixed(2)) : (grossWins > 0 ? 99.9 : 0.0);
+
+  // Calculate streak from daily summaries
   const sortedDates = Object.keys(dailyPnL).sort((a, b) => b.localeCompare(a));
   let streak = 0;
   for (const date of sortedDates) {

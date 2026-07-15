@@ -1,5 +1,5 @@
 import { createSignal, createResource, Show } from "solid-js";
-import { getMonthlyPerformance, getDailySummaries, getDailySummary, saveTrade } from "../data/TradingJournal/api/journalApi";
+import { getMonthlyPerformance, getAllTimePerformance, getDailySummaries, getDailySummary, saveTrade } from "../data/TradingJournal/api/journalApi";
 import { DailySummary, Trade } from "../data/TradingJournal/data/types";
 import PerformanceBanner from "../components/screen-trading-journal/PerformanceBanner";
 import JournalCalendar from "../components/screen-trading-journal/JournalCalendar";
@@ -14,6 +14,7 @@ export default function TradingJournal() {
 
   // Resources for async mock/supabase data loading
   const [performance, { refetch: refetchPerf }] = createResource(currentMonth, getMonthlyPerformance);
+  const [allTimePerformance, { refetch: refetchAllTimePerf }] = createResource(getAllTimePerformance);
   const [days, { refetch: refetchDays }] = createResource(currentMonth, getDailySummaries);
 
   // Fetch selected day summary and open drawer on the right
@@ -30,6 +31,7 @@ export default function TradingJournal() {
     // Refetch resources to dynamically update calendar heatmap, banner stats, and tooltips
     refetchDays();
     refetchPerf();
+    refetchAllTimePerf();
   };
 
   const handlePrevMonth = () => {
@@ -66,10 +68,13 @@ export default function TradingJournal() {
 
           {/* Performance Summary Banner */}
           <Show 
-            when={!performance.loading && performance()} 
+            when={performance() && allTimePerformance()} 
             fallback={<div class="h-32 bg-white rounded-premium border border-forest/10 animate-pulse shrink-0" />}
           >
-            {(perf) => <PerformanceBanner performance={perf()} />}
+            <PerformanceBanner 
+              performance={performance()!} 
+              allTimePerformance={allTimePerformance()!} 
+            />
           </Show>
 
           {/* Calendar Heatmap Grid */}
@@ -104,21 +109,15 @@ export default function TradingJournal() {
         </div>
 
         {/* Right Column: Dynamic Form / Drawer Panel */}
-        <div class="w-[380px] shrink-0 h-full flex flex-col overflow-hidden">
-          <Show 
-            when={selectedDaySummary()} 
-            fallback={<NewTradeForm onSave={handleSaveTrade} />}
-          >
-            {(day) => (
-              <DailySummaryDrawer 
-                day={day()} 
-                onClose={() => {
-                  setSelectedDaySummary(null);
-                  setActiveDate(null);
-                }}
-              />
-            )}
-          </Show>
+        <div class="w-[380px] shrink-0 h-full flex flex-col relative overflow-hidden">
+          <NewTradeForm onSave={handleSaveTrade} />
+          <DailySummaryDrawer 
+            day={selectedDaySummary()} 
+            onClose={() => {
+              setSelectedDaySummary(null);
+              setActiveDate(null);
+            }}
+          />
         </div>
       </div>
       
