@@ -22,4 +22,6 @@ export interface MonthlyPerformance {
   totalR: number;
   winRate: number;
   profitFactor: number;
+  realizedWin: number;
+  realizedLoss: number;
 }

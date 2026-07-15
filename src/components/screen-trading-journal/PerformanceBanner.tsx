@@ -68,6 +68,11 @@ export default function PerformanceBanner(props: PerformanceBannerProps) {
           >
             {currentPerformance().totalPnL >= 0 ? "+" : ""}{formatRupiah(currentPerformance().totalPnL)}
           </span>
+          <div class="flex items-center gap-1.5 mt-0.5 text-[8.5px] font-bold leading-none">
+            <span class="text-emerald-600">+{formatRupiah(currentPerformance().realizedWin)}</span>
+            <span class="text-earth/30">|</span>
+            <span class="text-rose-500">-{formatRupiah(currentPerformance().realizedLoss)}</span>
+          </div>
         </div>
         <div class="flex flex-col">
           <span class="text-[9px] font-bold text-earth uppercase tracking-widest mb-1">R-Multiple</span>

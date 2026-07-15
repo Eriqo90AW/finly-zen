@@ -31,6 +31,8 @@ function generateEmptyPerformance(monthStr: string): MonthlyPerformance {
     totalR: 0,
     winRate: 0,
     profitFactor: 0,
+    realizedWin: 0,
+    realizedLoss: 0,
   };
 }
 
@@ -96,6 +98,8 @@ export async function getMonthlyPerformance(month: string): Promise<MonthlyPerfo
   performance.totalR = totalR;
   performance.winRate = totalClosedTrades > 0 ? Math.round((wins / totalClosedTrades) * 100) : 0;
   performance.profitFactor = grossLosses > 0 ? parseFloat((grossWins / grossLosses).toFixed(2)) : (grossWins > 0 ? 99.9 : 0.0);
+  performance.realizedWin = grossWins;
+  performance.realizedLoss = grossLosses;
 
   // Calculate streak from daily summaries of this month
   const sortedDates = Object.keys(dailyPnL).sort((a, b) => b.localeCompare(a));
@@ -133,6 +137,8 @@ export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
       totalR: 0,
       winRate: 0,
       profitFactor: 0,
+      realizedWin: 0,
+      realizedLoss: 0,
     };
   }
 
@@ -143,6 +149,8 @@ export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
     totalR: 0,
     winRate: 0,
     profitFactor: 0,
+    realizedWin: 0,
+    realizedLoss: 0,
   };
 
   if (!data || data.length === 0) {
@@ -182,6 +190,8 @@ export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
   performance.totalR = totalR;
   performance.winRate = totalClosedTrades > 0 ? Math.round((wins / totalClosedTrades) * 100) : 0;
   performance.profitFactor = grossLosses > 0 ? parseFloat((grossWins / grossLosses).toFixed(2)) : (grossWins > 0 ? 99.9 : 0.0);
+  performance.realizedWin = grossWins;
+  performance.realizedLoss = grossLosses;
 
   // Calculate streak from daily summaries
   const sortedDates = Object.keys(dailyPnL).sort((a, b) => b.localeCompare(a));
