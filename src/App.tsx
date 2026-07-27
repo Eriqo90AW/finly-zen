@@ -21,6 +21,7 @@ const App = (props: ParentProps) => {
 
   const shouldHideAddButton = () => 
     location.pathname.startsWith("/stock") || 
+    location.pathname.startsWith("/markets") ||
     location.pathname.startsWith("/portfolio") ||
     location.pathname.startsWith("/quick-portfolio") ||
     location.pathname.startsWith("/dividend") ||

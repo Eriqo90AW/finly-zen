@@ -10,6 +10,8 @@ import PaymentsIcon from "@suid/icons-material/PaymentsOutlined";
 import TableChartIcon from "@suid/icons-material/TableChartOutlined";
 import CalendarMonthIcon from "@suid/icons-material/CalendarMonthOutlined";
 
+import FormatListNumberedIcon from "@suid/icons-material/FormatListNumberedOutlined";
+
 const Sidebar = () => {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
@@ -25,7 +27,7 @@ const Sidebar = () => {
       </div>
 
       {/* Nav Links */}
-      <nav class="flex-1 px-4 space-y-2 mt-4">
+      <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
         <div class="px-4 mb-2 text-[10px] font-bold uppercase tracking-widest text-earth/60">Expense Tracker</div>
         <A href="/" end class={`nav-link ${isActive("/") ? "active" : ""}`}>
           <DashboardIcon />
@@ -52,6 +54,10 @@ const Sidebar = () => {
         <A href="/stock/AAPL" class={`nav-link ${location.pathname.startsWith("/stock") ? "active" : ""}`}>
           <ShowChartIcon />
           <span class="font-outfit">Markets</span>
+        </A>
+        <A href="/markets/list" class={`nav-link ${isActive("/markets/list") ? "active" : ""}`}>
+          <FormatListNumberedIcon />
+          <span class="font-outfit">Market Cap List</span>
         </A>
         <A href="/quick-portfolio" class={`nav-link ${isActive("/quick-portfolio") ? "active" : ""}`}>
           <TableChartIcon />

@@ -1,4 +1,4 @@
-import { createSignal, createMemo, onMount, Show } from "solid-js";
+import { createSignal, createMemo, onMount, onCleanup, Show } from "solid-js";
 import Calendar from "../components/screen-dividend/Calendar";
 import DividendListCard from "../components/screen-dividend/DividendListCard";
 import { getAllDividends, getDividendsByStatus, refreshDividends, isDividendsRefreshing } from "../data/dividendData";
@@ -14,8 +14,18 @@ const Dividend = () => {
   const announcedCount = createMemo(() => getDividendsByStatus("upcoming").length);
   const projectedCount = createMemo(() => getDividendsByStatus("projected").length);
 
+  let refreshTimer: any;
+
   onMount(() => {
     refreshDividends();
+    // Auto-refresh dividend data every 5 minutes while on the page
+    refreshTimer = setInterval(() => {
+      refreshDividends();
+    }, 5 * 60 * 1000);
+  });
+
+  onCleanup(() => {
+    if (refreshTimer) clearInterval(refreshTimer);
   });
 
   return (

@@ -25,6 +25,7 @@ import { getMarketStatus, getIDXMarketStatus } from "../../utils/marketTime";
 import { onCleanup, onMount } from "solid-js";
 import type { MarketStatus, IDXMarketStatus } from "../../types";
 import { getPortfolioColor } from "../../utils/colors";
+import { refreshDividends, isDividendsRefreshing } from "../../data/dividendData";
 
 const TopBar = () => {
   const location = useLocation();
@@ -307,6 +308,19 @@ const TopBar = () => {
                     ({idxMarketStatus().timeRemaining} left)
                   </span>
                 </div>
+
+                {/* Manual Sync Button */}
+                <button
+                  onClick={() => refreshDividends(true)}
+                  disabled={isDividendsRefreshing()}
+                  title="Sync Dividends"
+                  class="flex items-center gap-1.5 px-3 py-2 bg-sage/40 hover:bg-sage/70 active:scale-95 transition-all rounded-xl border border-forest/10 text-forest text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
+                >
+                  <span class={`material-icons !text-sm ${isDividendsRefreshing() ? "animate-spin" : ""}`}>
+                    sync
+                  </span>
+                  <span>{isDividendsRefreshing() ? "Syncing..." : "Sync"}</span>
+                </button>
               </div>
             </Show>
           }

@@ -7,6 +7,7 @@ type SortKey = "asset" | "qty" | "avgPrice" | "fxRate" | "currentPrice" | "value
 
 interface QuickPortfolioTableProps {
   assets: PortfolioAsset[];
+  distinctAssetCount?: number;
   cashBalance: number;
   totalValue: number;
   overallPL: number;
@@ -411,6 +412,13 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
               class="w-full bg-sage/30 border border-transparent rounded-full py-1.5 pl-9 pr-4 font-outfit text-xs text-near-black placeholder:text-earth/60 focus:bg-white focus:border-forest/30 transition-all focus:outline-none"
             />
           </div>
+
+          <Show when={props.distinctAssetCount !== undefined}>
+            <span class="px-2.5 py-1 rounded-full bg-forest/10 text-forest font-outfit text-[11px] font-bold flex items-center gap-1 border border-forest/10 select-none">
+              <span class="material-icons !text-xs">pie_chart</span>
+              {props.distinctAssetCount} Assets Invested
+            </span>
+          </Show>
         </div>
 
         <div class="flex items-center gap-2">

@@ -15,6 +15,7 @@ import Portfolio from "./pages/Portfolio";
 import Dividend from "./pages/Dividend";
 import QuickPortfolio from "./pages/QuickPortfolio";
 import TradingJournal from "./pages/TradingJournal";
+import MarketCapList from "./pages/MarketCapList";
 
 const root = document.getElementById('root');
 
@@ -33,6 +34,7 @@ render(
       <Route path="/goals" component={Goals} />
       <Route path="/reports" component={Reports} />
       <Route path="/stock/:ticker" component={StockDashboard} />
+      <Route path="/markets/list" component={MarketCapList} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/portfolio/:id" component={Portfolio} />
       <Route path="/portfolio/:id/trades" component={Portfolio} />

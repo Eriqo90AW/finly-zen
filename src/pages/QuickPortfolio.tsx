@@ -30,6 +30,8 @@ import { QuickPortfolioCharts } from "../components/screen-quick-portfolio/Quick
 import { QuickPortfolioTable } from "../components/screen-quick-portfolio/QuickPortfolioTable";
 import { AddHoldingModal } from "../components/screen-quick-portfolio/AddHoldingModal";
 import { ConfirmDeleteAssetModal } from "../components/screen-quick-portfolio/ConfirmDeleteAssetModal";
+import { CategoryPnLCard, type CategoryPnLItem } from "../components/screen-quick-portfolio/CategoryPnLCard";
+import { DailyMoversCard } from "../components/screen-quick-portfolio/DailyMoversCard";
 
 const USER_ID = "a4d800bd-e779-4e7b-8982-2cab3d10035b";
 
@@ -113,22 +115,19 @@ export default function QuickPortfolio() {
       displayAmount = amount / getUsdRate();
     }
 
-    const hasFraction = displayAmount % 1 !== 0;
-    const decimals = hasFraction ? 8 : (display === 'USD' ? 2 : 0);
-
     if (display === 'USD') {
       return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
         minimumFractionDigits: 2,
-        maximumFractionDigits: Math.max(2, decimals),
+        maximumFractionDigits: 2,
       }).format(displayAmount);
     } else {
       return new Intl.NumberFormat("id-ID", {
         style: "currency",
         currency: "IDR",
         minimumFractionDigits: 0,
-        maximumFractionDigits: decimals,
+        maximumFractionDigits: 2,
       }).format(displayAmount);
     }
   };
@@ -141,13 +140,37 @@ export default function QuickPortfolio() {
   // Relative time helper for "Last updated: …"
   const formatRelative = (ts: number | null) => {
     if (!ts) return "—";
-    const diff = Date.now() - ts;
+    const nowTs = Date.now();
+    const diff = nowTs - ts;
+    
     if (diff < 30_000) return "Just now";
     if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`;
     if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
     if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+
     const d = new Date(ts);
-    return `Today ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    const nowD = new Date(nowTs);
+
+    const isSameDay =
+      d.getDate() === nowD.getDate() &&
+      d.getMonth() === nowD.getMonth() &&
+      d.getFullYear() === nowD.getFullYear();
+
+    const yesterdayD = new Date(nowTs - 86_400_000);
+    const isYesterday =
+      d.getDate() === yesterdayD.getDate() &&
+      d.getMonth() === yesterdayD.getMonth() &&
+      d.getFullYear() === yesterdayD.getFullYear();
+
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    const timeStr = `${hours}:${mins}`;
+
+    if (isSameDay) return `Today at ${timeStr}`;
+    if (isYesterday) return `Yesterday at ${timeStr}`;
+
+    const monthStr = d.toLocaleString("en-US", { month: "short" });
+    return `${monthStr} ${d.getDate()}, ${timeStr}`;
   };
 
   // Reactive label
@@ -220,13 +243,11 @@ export default function QuickPortfolio() {
     }
   });
 
-  // Track when the global store finishes a refresh
+  // Track when market prices finish refreshing
   createEffect(() => {
     const refreshing = portfolioState.isRefreshing;
     if (!refreshing) {
-      const p = quickPortfolio();
-      const dbTs = p?.updated_at ? new Date(p.updated_at).getTime() : null;
-      setLastRefreshedAt(dbTs ?? Date.now());
+      setLastRefreshedAt(Date.now());
     }
   });
 
@@ -272,6 +293,54 @@ export default function QuickPortfolio() {
     const p = quickPortfolio();
     if (!p || !p.assets) return false;
     return p.assets.some((a: PortfolioAsset) => a.previousClose !== null);
+  });
+
+  // Distinct assets count
+  const distinctAssetCount = createMemo(() => {
+    const p = quickPortfolio();
+    if (!p || !p.assets) return 0;
+    return p.assets.filter((a: PortfolioAsset) => a.totalShares > 0).length;
+  });
+
+  // PnL per Category breakdown
+  const categoryPnLData = createMemo((): CategoryPnLItem[] => {
+    const p = quickPortfolio();
+    const categories: ("Stocks" | "IDX" | "Crypto" | "ETFs")[] = ["Stocks", "IDX", "Crypto", "ETFs"];
+    
+    return categories.map((cat) => {
+      const icon = getCategoryIcon(cat);
+      const catAssets = (p?.assets || []).filter((a: PortfolioAsset) => getCategory(a.ticker) === cat);
+      
+      let catTotalValue = 0;
+      let catOverallPL = 0;
+      let catCostBasis = 0;
+      let catTodayChange = 0;
+      let catPreviousTotal = 0;
+
+      catAssets.forEach((a: PortfolioAsset) => {
+        catTotalValue += a.currentValue;
+        catOverallPL += a.totalGainLoss;
+        catCostBasis += (a.currentValue - a.totalGainLoss);
+        catTodayChange += (a.dayChange || 0);
+        if (a.previousClose !== null) {
+          catPreviousTotal += (a.totalShares * a.previousClose);
+        }
+      });
+
+      const overallPLPercent = catCostBasis > 0 ? catOverallPL / catCostBasis : 0;
+      const todayChangePercent = catPreviousTotal > 0 ? (catTodayChange / catPreviousTotal) * 100 : 0;
+
+      return {
+        category: cat,
+        icon,
+        totalValue: catTotalValue,
+        overallPL: catOverallPL,
+        overallPLPercent,
+        todayChange: catTodayChange,
+        todayChangePercent,
+        assetCount: catAssets.length,
+      };
+    });
   });
 
   // Dynamic Conic Allocation percentages (category view: Stocks, IDX, Crypto, Cash)
@@ -871,7 +940,14 @@ export default function QuickPortfolio() {
 
   return (
     <div class="flex-1 flex flex-col gap-6 w-full pb-12 animate-fade-in-up">
-      <QuickPortfolioHeader lastUpdatedLabel={lastUpdatedLabel()} />
+      <QuickPortfolioHeader 
+        lastUpdatedLabel={lastUpdatedLabel()} 
+        isRefreshing={portfolioState.isRefreshing}
+        onRefresh={async () => {
+          const p = quickPortfolio();
+          if (p) await refreshPortfolio(p.id);
+        }}
+      />
 
       <Show 
         when={!isLoading()} 
@@ -894,6 +970,24 @@ export default function QuickPortfolio() {
             formatPercent={formatPercent}
           />
 
+          {/* New Row: Category PnL Card & Daily Movers Card */}
+          <div class="col-span-12 lg:col-span-6 flex flex-col">
+            <CategoryPnLCard 
+              categories={categoryPnLData()}
+              formatVal={formatVal}
+              formatPercent={formatPercent}
+            />
+          </div>
+
+          <div class="col-span-12 lg:col-span-6 flex flex-col">
+            <DailyMoversCard 
+              assets={quickPortfolio()?.assets || []}
+              formatVal={formatVal}
+              formatPercent={formatPercent}
+              getDisplayTicker={getDisplayTicker}
+            />
+          </div>
+
           <QuickPortfolioCharts 
             allocations={allocations()}
             allocationView={allocationView()}
@@ -913,6 +1007,7 @@ export default function QuickPortfolio() {
 
         <QuickPortfolioTable 
           assets={quickPortfolio()?.assets || []}
+          distinctAssetCount={distinctAssetCount()}
           cashBalance={cashBalance()}
           totalValue={totalValue()}
           overallPL={overallPL()}

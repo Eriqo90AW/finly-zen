@@ -69,7 +69,7 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
   );
 
   return (
-    <div class="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Asset Allocation Card */}
       <div class="bg-white rounded-2xl p-5 border border-forest/10 shadow-sm flex flex-col min-h-[380px]">
         <div class="flex items-center justify-between mb-4 gap-2">

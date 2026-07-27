@@ -42,6 +42,8 @@ function lookupCompanyName(ticker: string): string {
 // --- Entry normalization (shared by static JSON + fresh edge-function data) ---
 
 function normalizeEntry(item: any): DividendEntry {
+  const rawTicker = String(item.ticker || "");
+  const cleanTicker = rawTicker.replace(/\.JK$/i, "");
   const parsedPaymentDate = parseDateToISO(item.payment_date);
   const parsedCumDate = parseDateToISO(item.cum_date);
   const today = getLocalTodayStr();
@@ -69,8 +71,8 @@ function normalizeEntry(item: any): DividendEntry {
   }
 
   return {
-    ticker: item.ticker,
-    company_name: lookupCompanyName(item.company_name || item.ticker),
+    ticker: cleanTicker,
+    company_name: lookupCompanyName(item.company_name || cleanTicker),
     currency: item.currency || "IDR",
     amount: Number(item.amount),
     last_price: item.last_price != null ? Number(item.last_price) : null,
@@ -198,6 +200,9 @@ async function fetchFreshDividends(): Promise<DividendEntry[]> {
   const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const SUPABASE_URL = "https://ltjpsxlnxpjivoxgmmxn.supabase.co/functions/v1/fetch-dividends";
 
+  // Ensure tickers are formatted with .JK for Yahoo Finance lookup in Edge Function
+  const formattedTickers = allTickers.map((t) => (t.endsWith(".JK") ? t : `${t}.JK`));
+
   const response = await fetch(SUPABASE_URL, {
     method: "POST",
     headers: {
@@ -205,7 +210,7 @@ async function fetchFreshDividends(): Promise<DividendEntry[]> {
       Authorization: `Bearer ${ANON_KEY}`,
       apikey: ANON_KEY,
     },
-    body: JSON.stringify({ tickers: allTickers }),
+    body: JSON.stringify({ tickers: formattedTickers }),
   });
 
   if (!response.ok) {
@@ -222,11 +227,11 @@ async function fetchFreshDividends(): Promise<DividendEntry[]> {
 let lastFetchTime = 0;
 let fetchInProgress: Promise<void> | null = null;
 
-export function refreshDividends(): Promise<void> {
+export function refreshDividends(force: boolean = false): Promise<void> {
   if (fetchInProgress) return fetchInProgress;
 
   const now = Date.now();
-  if (now - lastFetchTime < MIN_FETCH_INTERVAL) {
+  if (!force && now - lastFetchTime < MIN_FETCH_INTERVAL) {
     return Promise.resolve();
   }
 
@@ -239,10 +244,10 @@ export function refreshDividends(): Promise<void> {
         setAllDividends(merged);
         writeCache(merged);
       }
+      lastFetchTime = Date.now();
     } catch (error) {
       console.error("Failed to refresh dividends:", error);
     } finally {
-      lastFetchTime = Date.now();
       setRefreshing(false);
       fetchInProgress = null;
     }
