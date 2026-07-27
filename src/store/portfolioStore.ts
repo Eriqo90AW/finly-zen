@@ -202,7 +202,12 @@ const computePortfolioState = (
       assets.push({
         id: ticker,
         ticker,
-        name: dbAsset?.name || priceMap[ticker]?.fundamentals?.price?.shortName || ticker,
+        name: (dbAsset?.name && dbAsset.name.toUpperCase() !== ticker.toUpperCase() ? dbAsset.name : undefined)
+          || priceMap[ticker]?.company_name 
+          || priceMap[ticker]?.fundamentals?.price?.longName 
+          || priceMap[ticker]?.fundamentals?.price?.shortName 
+          || priceMap[ticker]?.fundamentals?.summaryProfile?.longName 
+          || ticker,
         logoUrl: dbAsset?.logo_url || priceMap[ticker]?.logo_url || undefined,
         currency: assetCurrency,
         conversionRate: assetConversionRate,

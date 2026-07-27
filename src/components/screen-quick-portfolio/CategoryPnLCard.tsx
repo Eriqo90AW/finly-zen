@@ -21,12 +21,12 @@ export const CategoryPnLCard = (props: CategoryPnLCardProps) => {
   const [viewMode, setViewMode] = createSignal<"overall" | "today" | "both">("both");
 
   return (
-    <div class="bg-white rounded-2xl p-5 border border-forest/10 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+    <div class="bg-white rounded-2xl p-4 border border-forest/10 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all h-60">
       {/* Card Header */}
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
-          <span class="material-icons text-forest !text-lg">category</span>
-          <h4 class="font-outfit text-xs text-earth uppercase tracking-wider font-bold">
+          <span class="material-icons text-forest !text-base">category</span>
+          <h4 class="font-outfit text-[11px] text-earth uppercase tracking-wider font-bold">
             PnL by Category
           </h4>
         </div>
@@ -67,14 +67,14 @@ export const CategoryPnLCard = (props: CategoryPnLCardProps) => {
       </div>
 
       {/* Categories Grid */}
-      <div class="grid grid-cols-2 gap-2.5">
+      <div class="grid grid-cols-2 gap-2">
         <For each={props.categories}>
           {(cat) => {
             const isOverallPos = cat.overallPL >= 0;
             const isTodayPos = cat.todayChange >= 0;
 
             return (
-              <div class="p-2.5 rounded-xl bg-sage/15 border border-forest/5 flex flex-col justify-between hover:bg-sage/30 transition-colors">
+              <div class="p-2 rounded-xl bg-sage/15 border border-forest/5 flex flex-col justify-between hover:bg-sage/30 transition-colors">
                 {/* Header row */}
                 <div class="flex items-center justify-between mb-1">
                   <div class="flex items-center gap-1.5">

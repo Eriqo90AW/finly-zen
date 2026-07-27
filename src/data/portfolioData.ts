@@ -187,7 +187,10 @@ export async function addPortfolioTransaction(
 
 export async function upsertAsset(stockItem: MultiStockItem): Promise<void> {
   const ticker = stockItem.symbol.toUpperCase();
-  const name = stockItem.fundamentals?.price?.shortName || stockItem.symbol;
+  const name = (stockItem as any).company_name 
+    || stockItem.fundamentals?.price?.longName 
+    || stockItem.fundamentals?.price?.shortName 
+    || stockItem.symbol;
   
   // Auto-detect type
   let type: AssetType = "US_STOCK";

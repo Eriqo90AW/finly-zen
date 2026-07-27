@@ -199,12 +199,11 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
 
     let displayVal = currentVal;
     if (field === "avgPrice") {
-      const asset = props.assets.find((a) => a.ticker === ticker);
-      const assetCurrency = asset?.currency || "USD";
-      if (assetCurrency === "USD" && props.currencyView === "IDR") {
-        displayVal = currentVal * props.getUsdRate();
-      } else if (assetCurrency === "IDR" && props.currencyView === "USD") {
+      // currentVal is asset.averagePrice which is in portfolio base currency (IDR).
+      if (props.currencyView === "USD") {
         displayVal = currentVal / props.getUsdRate();
+      } else {
+        displayVal = currentVal;
       }
     }
 

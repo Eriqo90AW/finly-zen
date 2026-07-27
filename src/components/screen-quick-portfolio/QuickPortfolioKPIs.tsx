@@ -13,17 +13,17 @@ interface QuickPortfolioKPIsProps {
 
 export const QuickPortfolioKPIs = (props: QuickPortfolioKPIsProps) => {
   return (
-    <div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* KPI 1: Total Portfolio Value */}
-      <div class="bg-white rounded-2xl p-5 border border-forest/10 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+      <div class="bg-white rounded-2xl p-4 border border-forest/10 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
         <div class="absolute top-0 right-0 w-24 h-24 bg-forest/5 rounded-bl-full opacity-50 -mr-8 -mt-8"></div>
-        <p class="font-label-md text-xs text-earth uppercase tracking-wider mb-1 font-bold">Total Portfolio Value</p>
+        <p class="font-label-md text-[11px] text-earth uppercase tracking-wider mb-1 font-bold">Total Portfolio Value</p>
         <h3 class="text-3xl font-outfit font-bold text-near-black tracking-tight">{props.formatVal(props.totalValue)}</h3>
       </div>
 
       {/* KPI 2: Overall P/L */}
-      <div class="bg-white rounded-2xl p-5 border border-forest/10 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
-        <p class="font-label-md text-xs text-earth uppercase tracking-wider mb-1 font-bold">Overall P/L</p>
+      <div class="bg-white rounded-2xl p-4 border border-forest/10 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+        <p class="font-label-md text-[11px] text-earth uppercase tracking-wider mb-1 font-bold">Overall P/L</p>
         <div class="flex items-baseline gap-2 mt-1">
           <h3 class="text-2xl font-outfit font-bold tracking-tight" classList={{ "text-forest": props.overallPL >= 0, "text-red-600": props.overallPL < 0 }}>
             {props.overallPL >= 0 ? "+" : ""}{props.formatVal(props.overallPL)}
@@ -41,8 +41,8 @@ export const QuickPortfolioKPIs = (props: QuickPortfolioKPIsProps) => {
       </div>
 
       {/* KPI 3: Today's Change */}
-      <div class="bg-white rounded-2xl p-5 border border-forest/10 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
-        <p class="font-label-md text-xs text-earth uppercase tracking-wider mb-1 font-bold">Today's Change</p>
+      <div class="bg-white rounded-2xl p-4 border border-forest/10 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+        <p class="font-label-md text-[11px] text-earth uppercase tracking-wider mb-1 font-bold">Today's Change</p>
         <Show
           when={props.hasTodayChangeData}
           fallback={

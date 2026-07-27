@@ -69,28 +69,33 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
   );
 
   return (
-    <div class="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Asset Allocation Card */}
-      <div class="bg-white rounded-2xl p-5 border border-forest/10 shadow-sm flex flex-col min-h-[380px]">
-        <div class="flex items-center justify-between mb-4 gap-2">
-          <h4 class="font-outfit text-sm font-bold text-near-black uppercase tracking-wider shrink-0">Asset Allocation</h4>
+      <div class="bg-white rounded-2xl p-4 border border-forest/10 shadow-sm flex flex-col group hover:shadow-md transition-all h-60">
+        <div class="flex items-center justify-between mb-2 gap-2 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="material-icons text-forest !text-base">pie_chart</span>
+            <h4 class="font-outfit text-[11px] text-earth uppercase tracking-wider font-bold shrink-0">
+              Asset Allocation
+            </h4>
+          </div>
           <div class="flex bg-sage/40 p-0.5 rounded-lg border border-forest/5 shadow-inner shrink-0">
             <button
               onClick={() => props.setAllocationView("category")}
-              class="px-2.5 py-1 rounded-md text-[10px] font-outfit font-bold transition-all duration-200 uppercase tracking-wider cursor-pointer border-0"
+              class="px-2 py-0.5 rounded-md text-[9px] font-outfit font-bold uppercase tracking-wider cursor-pointer border-0 transition-all"
               classList={{
-                "bg-forest text-white shadow-sm": props.allocationView === "category",
-                "text-earth/65 hover:text-forest": props.allocationView !== "category",
+                "bg-forest text-white shadow-xs": props.allocationView === "category",
+                "text-earth/70 hover:text-forest": props.allocationView !== "category",
               }}
             >
               Category
             </button>
             <button
               onClick={() => props.setAllocationView("detail")}
-              class="px-2.5 py-1 rounded-md text-[10px] font-outfit font-bold transition-all duration-200 uppercase tracking-wider cursor-pointer border-0"
+              class="px-2 py-0.5 rounded-md text-[9px] font-outfit font-bold uppercase tracking-wider cursor-pointer border-0 transition-all"
               classList={{
-                "bg-forest text-white shadow-sm": props.allocationView === "detail",
-                "text-earth/65 hover:text-forest": props.allocationView !== "detail",
+                "bg-forest text-white shadow-xs": props.allocationView === "detail",
+                "text-earth/70 hover:text-forest": props.allocationView !== "detail",
               }}
             >
               Detail
@@ -102,8 +107,8 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
           when={props.allocationView === "category"}
           fallback={
             /* Detail view: ApexCharts donut + scrollable ticker list */
-            <>
-              <div class="relative h-[140px] shrink-0 mb-4">
+            <div class="flex-1 min-h-0 flex flex-col justify-between">
+              <div class="relative h-[95px] shrink-0 mb-1">
                 <SolidApexCharts
                   options={detailDonutOptions()}
                   series={detailDonutSeries()}
@@ -112,52 +117,50 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
                 />
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div class="flex flex-col items-center font-outfit">
-                    <span class="text-[10px] text-earth uppercase font-semibold">Total</span>
-                    <span class="text-sm text-forest font-bold">100%</span>
+                    <span class="text-[9px] text-earth uppercase font-semibold">Total</span>
+                    <span class="text-xs text-forest font-bold">100%</span>
                   </div>
                 </div>
               </div>
 
-              <div class="flex-1 flex flex-col min-h-0">
-                <div class="overflow-y-auto custom-scrollbar-thin -mr-1 pr-1 space-y-1 max-h-[150px]">
-                  <For each={props.detailAllocations}>
-                    {(item) => (
-                      <div class="flex items-center justify-between group hover:bg-earth/5 px-1.5 py-1 rounded-lg transition-colors duration-150">
-                        <div class="flex items-center gap-1.5 min-w-0 flex-1 mr-1">
-                          <div
-                            class="w-1 h-8 rounded-full shrink-0"
-                            style={{ "background-color": item.color }}
-                          />
-                          <div class="flex flex-col min-w-0 overflow-hidden">
-                            <span class="text-[11px] font-outfit font-bold text-earth group-hover:text-forest transition-colors leading-tight truncate">
-                              {item.ticker}
-                            </span>
-                            <span class="text-[10px] text-earth/40 truncate max-w-[80px]">
-                              {item.isCash ? "" : item.name}
-                            </span>
-                          </div>
-                        </div>
-                        <div class="flex flex-col items-end shrink-0">
-                          <span class="text-[11px] font-outfit font-bold text-forest">
-                            {item.percentage.toFixed(1)}%
+              <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar-thin -mr-1 pr-1 space-y-1">
+                <For each={props.detailAllocations}>
+                  {(item) => (
+                    <div class="flex items-center justify-between group hover:bg-earth/5 px-1.5 py-0.5 rounded-lg transition-colors duration-150">
+                      <div class="flex items-center gap-1.5 min-w-0 flex-1 mr-1">
+                        <div
+                          class="w-1 h-6 rounded-full shrink-0"
+                          style={{ "background-color": item.color }}
+                        />
+                        <div class="flex flex-col min-w-0 overflow-hidden">
+                          <span class="text-[11px] font-outfit font-bold text-earth group-hover:text-forest transition-colors leading-tight truncate">
+                            {item.ticker}
                           </span>
-                          <span class="text-[10px] font-semibold text-earth/40 truncate max-w-[80px]">
-                            {props.formatVal(item.value)}
+                          <span class="text-[9px] text-earth/40 truncate max-w-[80px]">
+                            {item.isCash ? "" : item.name}
                           </span>
                         </div>
                       </div>
-                    )}
-                  </For>
-                </div>
+                      <div class="flex flex-col items-end shrink-0">
+                        <span class="text-[11px] font-outfit font-bold text-forest">
+                          {item.percentage.toFixed(1)}%
+                        </span>
+                        <span class="text-[9px] font-semibold text-earth/40 truncate max-w-[80px]">
+                          {props.formatVal(item.value)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </For>
               </div>
-            </>
+            </div>
           }
         >
           {/* Category view: CSS conic donut + 2x2 legend */}
-          <div class="flex-1 flex flex-col">
-            <div class="flex-1 flex items-center justify-center relative">
+          <div class="flex-1 min-h-0 flex flex-col justify-between">
+            <div class="flex-1 min-h-0 flex items-center justify-center relative py-1">
               <div
-                class="w-32 h-32 rounded-full relative"
+                class="w-24 h-24 rounded-full relative"
                 style={{
                   background: `conic-gradient(
                     ${categoryColors.stocks} 0% ${props.allocations.stocks}%,
@@ -175,7 +178,7 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
               </div>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-earth">
+            <div class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-earth shrink-0">
               <div class="flex items-center gap-2">
                 <div class="w-2.5 h-2.5 rounded-full bg-[#1a4d2e]" />
                 <span>Stocks ({props.allocations.stocks.toFixed(1)}%)</span>
@@ -198,17 +201,22 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
       </div>
 
       {/* Performance Trend */}
-      <div class="bg-white rounded-2xl p-5 border border-forest/10 shadow-sm flex flex-col min-h-[380px]">
-        <div class="flex justify-between items-start mb-3 gap-3">
+      <div class="bg-white rounded-2xl p-4 border border-forest/10 shadow-sm flex flex-col group hover:shadow-md transition-all h-60">
+        <div class="flex justify-between items-start mb-2 gap-3 shrink-0">
           <div>
-            <h4 class="font-outfit text-sm font-bold text-near-black uppercase tracking-wider">Performance Trend</h4>
+            <div class="flex items-center gap-2">
+              <span class="material-icons text-forest !text-base">show_chart</span>
+              <h4 class="font-outfit text-[11px] text-earth uppercase tracking-wider font-bold">
+                Performance Trend
+              </h4>
+            </div>
             <Show when={props.perfKpi}>
               {(kpi) => {
                 const positive = () => kpi().isPositive;
                 return (
-                  <div class="flex items-center gap-1.5 mt-1.5">
+                  <div class="flex items-center gap-1.5 mt-1 font-mono">
                     <span
-                      class="font-outfit text-base font-bold tracking-tight"
+                      class="font-outfit text-sm font-bold tracking-tight"
                       classList={{
                         "text-forest": positive(),
                         "text-red-600": !positive(),
@@ -217,13 +225,11 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
                       {positive() ? "+" : ""}{props.formatVal(kpi().change)}
                     </span>
                     <span
-                      class="text-[10px] font-outfit font-bold uppercase tracking-wider"
-                      classList={{
-                        "text-forest": positive(),
-                        "text-red-600": !positive(),
-                      }}
+                      class={`text-[9px] px-1.5 py-0.5 rounded-md font-semibold font-mono ${
+                        positive() ? "bg-forest/10 text-forest" : "bg-red-50 text-red-600"
+                      }`}
                     >
-                      ({props.formatPercent(kpi().pct / 100)})
+                      {props.formatPercent(kpi().pct / 100)}
                     </span>
                   </div>
                 );
@@ -231,17 +237,17 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
             </Show>
           </div>
 
-          <div class="flex bg-sage/40 p-1 rounded-xl border border-forest/5 shadow-inner shrink-0">
+          <div class="flex bg-sage/40 p-0.5 rounded-lg border border-forest/5 shadow-inner shrink-0">
             <For each={["1D", "1W", "1M", "1Y", "ALL"] as PerfPeriod[]}>
               {(p) => {
                 const active = () => props.perfPeriod === p;
                 return (
                   <button
                     onClick={() => props.setPerfPeriod(p)}
-                    class="px-2.5 py-1 rounded-lg text-[10px] font-outfit font-bold transition-all duration-200 uppercase tracking-wider cursor-pointer border-0"
+                    class="px-2 py-0.5 rounded-md text-[9px] font-outfit font-bold uppercase tracking-wider cursor-pointer border-0 transition-all"
                     classList={{
-                      "bg-forest text-white shadow-sm": active(),
-                      "text-earth/65 hover:text-forest hover:bg-forest/5": !active(),
+                      "bg-forest text-white shadow-xs": active(),
+                      "text-earth/70 hover:text-forest": !active(),
                     }}
                   >
                     {p}
@@ -252,7 +258,7 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
           </div>
         </div>
 
-        <div class="flex-1 min-h-[200px]">
+        <div class="flex-1 min-h-0 w-full">
           <Show
             when={props.perfChartReady && props.perfSeries.length > 1}
             fallback={

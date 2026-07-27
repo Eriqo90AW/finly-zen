@@ -610,11 +610,19 @@ export default function QuickPortfolio() {
     if (!asset) return;
 
     const oldQty = asset.totalShares;
-    const oldAvgPrice = asset.averagePrice;
-    const oldConversionRate = asset.conversionRate ?? 1;
+    const assetCurrency = asset.currency || "USD";
+    const oldConversionRate = (asset.conversionRate && asset.conversionRate > 1)
+      ? asset.conversionRate
+      : (assetCurrency === "USD" ? getUsdRate() : 1);
+
+    // asset.averagePrice in portfolioStore is stored in portfolio base currency (IDR).
+    // Convert to settlement currency (e.g. USD) for price_per_unit in portfolio_transactions.
+    const oldAvgPriceInSettlementCurrency = assetCurrency === "USD"
+      ? asset.averagePrice / oldConversionRate
+      : asset.averagePrice;
 
     const newQty = field === "qty" ? newVal : oldQty;
-    const newAvgPrice = field === "avgPrice" ? newVal : oldAvgPrice;
+    const newAvgPrice = field === "avgPrice" ? newVal : oldAvgPriceInSettlementCurrency;
     const newConversionRate = field === "conversionRate" ? newVal : oldConversionRate;
 
     setIsSubmitting(true);
@@ -958,7 +966,7 @@ export default function QuickPortfolio() {
           </div>
         }
       >
-        <section class="grid grid-cols-12 gap-6">
+        <section class="grid grid-cols-12 gap-4">
           <QuickPortfolioKPIs 
             totalValue={totalValue()}
             overallPL={overallPL()}
@@ -985,6 +993,7 @@ export default function QuickPortfolio() {
               formatVal={formatVal}
               formatPercent={formatPercent}
               getDisplayTicker={getDisplayTicker}
+              getCategory={getCategory}
             />
           </div>
 
