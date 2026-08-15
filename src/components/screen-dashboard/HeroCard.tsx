@@ -8,7 +8,7 @@ import {
   onCleanup,
   untrack,
 } from "solid-js";
-import { state, toggleShowAllTime, toggleRecurringDebt } from "../../store";
+import { state, toggleShowAllTime, toggleRecurringDebt, setSelectedAccount } from "../../store";
 import { formatRupiah } from "../../utils/format";
 import { getDateRange } from "../../utils/date";
 import type { HeroCardProps } from "../../types";
@@ -16,7 +16,6 @@ import type { HeroCardProps } from "../../types";
 export const HeroCard = (props: HeroCardProps) => {
   const [activeIndex, setActiveIndex] = createSignal(0);
   const [displayTotal, setDisplayTotal] = createSignal(0);
-  let scrollContainer: HTMLDivElement | undefined;
 
   // Derive unique accounts and their colors from all transactions
   const accounts = createMemo(() => {
@@ -33,7 +32,34 @@ export const HeroCard = (props: HeroCardProps) => {
     ];
   });
 
-  const activeAccount = () => accounts()[activeIndex()];
+  const activeAccount = () => accounts()[activeIndex()] || accounts()[0];
+
+  // Respond to external selectedAccount changes (e.g. from the RecentTransactions dropdown)
+  createEffect(() => {
+    const selected = state.ui.selectedAccount;
+    const accList = accounts();
+    let targetIndex = 0;
+    if (selected) {
+      const foundIdx = accList.findIndex((a) => a.name === selected);
+      if (foundIdx !== -1) {
+        targetIndex = foundIdx;
+      }
+    }
+    if (targetIndex !== untrack(activeIndex)) {
+      setActiveIndex(targetIndex);
+    }
+  });
+
+  // Sync internal swipe/change to the global store
+  createEffect(() => {
+    const acc = activeAccount();
+    const isAll = !acc || acc.name === "All Accounts";
+    const targetName = isAll ? null : acc.name;
+    const targetColor = isAll ? null : (acc.color ?? null);
+    if (untrack(() => state.ui.selectedAccount) !== targetName) {
+      setSelectedAccount(targetName, targetColor);
+    }
+  });
 
   // Calculate stats for all accounts in one pass
   const allStats = createMemo(() => {
@@ -125,10 +151,10 @@ export const HeroCard = (props: HeroCardProps) => {
     () => allStats()[activeIndex()] || allStats()[0],
   );
 
-  // Count up animation for the big number
+  // Count up animation for the active big numeral
   createEffect(() => {
     const target = activeStats().net;
-    const duration = 1000;
+    const duration = 1200;
     const startTime = performance.now();
     const startValue = untrack(displayTotal);
     let frameId: number;
@@ -136,9 +162,9 @@ export const HeroCard = (props: HeroCardProps) => {
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const easeOut = 1 - Math.pow(1 - progress, 4);
 
-      setDisplayTotal(startValue + (target - startValue) * easeOut);
+      setDisplayTotal(Math.round(startValue + (target - startValue) * easeOut));
 
       if (progress < 1) {
         frameId = requestAnimationFrame(animate);
@@ -150,49 +176,59 @@ export const HeroCard = (props: HeroCardProps) => {
     onCleanup(() => cancelAnimationFrame(frameId));
   });
 
-  // Handle scroll to update active index
-  const handleScroll = () => {
-    if (!scrollContainer) return;
-    const width = scrollContainer.offsetWidth;
-    const index = Math.round(scrollContainer.scrollLeft / width);
-    if (index !== activeIndex()) {
-      setActiveIndex(index);
-    }
-  };
-
-  onMount(() => {
-    scrollContainer?.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
-  });
-
-  onCleanup(() => {
-    scrollContainer?.removeEventListener("scroll", handleScroll);
-  });
-
-  const scrollToAccount = (index: number) => {
-    if (!scrollContainer) return;
-    scrollContainer.scrollTo({
-      left: index * scrollContainer.offsetWidth,
-      behavior: "smooth",
-    });
-  };
-
   const scrollLeft = () => {
-    if (!scrollContainer) return;
-    const newIndex = Math.max(0, activeIndex() - 1);
-    scrollToAccount(newIndex);
+    setActiveIndex((prev) => Math.max(0, prev - 1));
   };
 
   const scrollRight = () => {
-    if (!scrollContainer) return;
-    const newIndex = Math.min(allStats().length - 1, activeIndex() + 1);
-    scrollToAccount(newIndex);
+    setActiveIndex((prev) => Math.min(allStats().length - 1, prev + 1));
+  };
+
+  // Touch / Swipe handling
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX;
+    const deltaY = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        scrollRight();
+      } else {
+        scrollLeft();
+      }
+    }
+  };
+
+  // Mouse drag handling
+  let mouseStartX = 0;
+  let isDragging = false;
+
+  const handleMouseDown = (e: MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    mouseStartX = e.clientX;
+    isDragging = true;
+  };
+
+  const handleMouseUp = (e: MouseEvent) => {
+    if (!isDragging) return;
+    isDragging = false;
+    const deltaX = e.clientX - mouseStartX;
+    if (deltaX < -40) {
+      scrollRight();
+    } else if (deltaX > 40) {
+      scrollLeft();
+    }
   };
 
   return (
     <div
-      class="col-span-8 row-span-2 premium-card p-0 relative overflow-hidden group flex flex-col transition-all duration-700 ease-in-out"
+      class="col-span-8 row-span-2 premium-card p-0 relative overflow-hidden group flex flex-col transition-[background-color,box-shadow] duration-700 ease-out"
       style={{
         "background-color": activeStats().color || "#FDF5E6",
         "background-image": activeStats().color
@@ -258,62 +294,72 @@ export const HeroCard = (props: HeroCardProps) => {
         </button>
       </Show>
 
-      {/* Swipeable Container */}
+      {/* Swipeable / Animated Transform Container */}
       <div
-        ref={scrollContainer}
-        class="hero-swiper flex-1 flex overflow-x-auto h-full"
+        class="flex-1 overflow-hidden relative select-none cursor-grab active:cursor-grabbing h-full"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
       >
-        <For each={allStats()}>
-          {(stats, index) => (
-            <div class="hero-slide p-10 relative z-10 flex flex-col justify-center space-y-8 min-w-full">
-              <div class="space-y-1">
-                <p class="text-xs font-bold text-forest/40 uppercase tracking-widest">
-                  {stats.name}
-                </p>
-                <h3 class="text-7xl hero-numeral text-forest">
-                  {formatRupiah(
-                    index() === activeIndex() ? displayTotal() : stats.net,
-                  )}
-                </h3>
-              </div>
+        <div
+          class="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
+          style={{
+            transform: `translateX(-${activeIndex() * 100}%)`,
+          }}
+        >
+          <For each={allStats()}>
+            {(stats, index) => (
+              <div class="p-10 relative z-10 flex flex-col justify-center space-y-8 min-w-full w-full shrink-0">
+                <div class="space-y-1">
+                  <p class="text-xs font-bold text-forest/40 uppercase tracking-widest">
+                    {stats.name}
+                  </p>
+                  <h3 class="text-7xl hero-numeral text-forest tabular-nums">
+                    {formatRupiah(
+                      index() === activeIndex() ? displayTotal() : stats.net,
+                    )}
+                  </h3>
+                </div>
 
-              <div class="h-px bg-forest/10 w-full" />
+                <div class="h-px bg-forest/10 w-full" />
 
-              <div class="grid grid-cols-3 gap-8">
-                <div>
-                  <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
-                    {state.ui.showAllTime
-                      ? "All Time Income"
-                      : "Monthly Income"}
-                  </p>
-                  <p class="text-xl font-outfit font-semibold text-forest">
-                    {formatRupiah(stats.income)}
-                  </p>
-                </div>
-                <div>
-                  <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
-                    {state.ui.showAllTime
-                      ? "All Time Expenses"
-                      : "Monthly Expenses"}
-                  </p>
-                  <p class="text-xl font-outfit font-semibold text-forest">
-                    {formatRupiah(stats.expenses)}
-                  </p>
-                </div>
-                <div>
-                  <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
-                    {state.ui.showAllTime
-                      ? "All Time Daily Avg"
-                      : "Daily Average"}
-                  </p>
-                  <p class="text-xl font-outfit font-semibold text-forest">
-                    {formatRupiah(stats.dailyAvg)}
-                  </p>
+                <div class="grid grid-cols-3 gap-8">
+                  <div>
+                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
+                      {state.ui.showAllTime
+                        ? "All Time Income"
+                        : "Monthly Income"}
+                    </p>
+                    <p class="text-xl font-outfit font-semibold text-forest">
+                      {formatRupiah(stats.income)}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
+                      {state.ui.showAllTime
+                        ? "All Time Expenses"
+                        : "Monthly Expenses"}
+                    </p>
+                    <p class="text-xl font-outfit font-semibold text-forest">
+                      {formatRupiah(stats.expenses)}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
+                      {state.ui.showAllTime
+                        ? "All Time Daily Avg"
+                        : "Daily Average"}
+                    </p>
+                    <p class="text-xl font-outfit font-semibold text-forest">
+                      {formatRupiah(stats.dailyAvg)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </For>
+            )}
+          </For>
+        </div>
       </div>
 
       {/* Pagination Dots */}
@@ -321,8 +367,8 @@ export const HeroCard = (props: HeroCardProps) => {
         <For each={accounts()}>
           {(_, index) => (
             <button
-              onClick={() => scrollToAccount(index())}
-              class={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+              onClick={() => setActiveIndex(index())}
+              class={`w-1.5 h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                 index() === activeIndex()
                   ? "bg-forest w-4"
                   : "bg-forest/20 hover:bg-forest/40"

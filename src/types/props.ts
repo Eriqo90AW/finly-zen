@@ -5,6 +5,7 @@ import { StockData } from "./stock";
 export interface RecentTransactionsProps {
   transactions: Transaction[];
   loading: boolean;
+  allTransactions?: Transaction[];
 }
 
 export type SortKey = "name" | "category" | "account" | "date" | "amount";

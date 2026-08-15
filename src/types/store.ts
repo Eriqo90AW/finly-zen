@@ -32,5 +32,7 @@ export type AppState = {
     showAddExpense: boolean;
     showAllTime: boolean;
     showRecurringDebt: boolean;
+    selectedAccount: string | null; // null = "All Accounts"
+    selectedAccountColor: string | null;
   };
 };

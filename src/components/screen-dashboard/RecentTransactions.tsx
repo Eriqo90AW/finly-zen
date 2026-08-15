@@ -1,9 +1,10 @@
-import { For, Show, createSignal, createMemo } from "solid-js";
+import { For, Show, createSignal, createMemo, onCleanup } from "solid-js";
 import {
   RecentTransactionsProps,
   SortKey,
   SortDirection,
 } from "../../types";
+import { state, setSelectedAccount } from "../../store";
 import {
   formatIconName,
   formatRupiah,
@@ -18,6 +19,34 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   const [showOnlyRecurring, setShowOnlyRecurring] = createSignal(false);
   const [sortKey, setSortKey] = createSignal<SortKey>("date");
   const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc");
+  const [accountDropdownOpen, setAccountDropdownOpen] = createSignal(false);
+
+  const handleClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest(".account-dropdown-container")) {
+      setAccountDropdownOpen(false);
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("click", handleClickOutside);
+    onCleanup(() => window.removeEventListener("click", handleClickOutside));
+  }
+
+  const availableAccounts = createMemo(() => {
+    const accs = new Map<string, string | undefined>();
+    const source = props.allTransactions || props.transactions;
+    source.forEach((t) => {
+      if (t.accountName && !accs.has(t.accountName)) {
+        accs.set(t.accountName, t.accountColor);
+      }
+    });
+
+    return [
+      { name: "All Accounts", color: undefined },
+      ...Array.from(accs.entries()).map(([name, color]) => ({ name, color })),
+    ];
+  });
 
   const handleSort = (key: SortKey) => {
     if (sortKey() === key) {
@@ -114,6 +143,133 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
       <div class="p-6 border-b border-forest/10 flex items-center justify-between">
         <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
         <div class="flex items-center gap-4">
+          {/* Account Dropdown */}
+          <div class="relative account-dropdown-container">
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-colors duration-200 cursor-pointer select-none group/acc hover:shadow-sm"
+              style={{
+                ...(state.ui.selectedAccountColor
+                  ? {
+                      "background-color": `${state.ui.selectedAccountColor}20`,
+                      "border-color": `${state.ui.selectedAccountColor}45`,
+                    }
+                  : state.ui.selectedAccount
+                    ? {
+                        "background-color": "rgba(82, 194, 120, 0.15)",
+                        "border-color": "rgba(82, 194, 120, 0.35)",
+                      }
+                    : {
+                        "background-color": "rgba(44, 74, 56, 0.05)",
+                        "border-color": "rgba(44, 74, 56, 0.1)",
+                      }),
+              }}
+              onClick={() => setAccountDropdownOpen((v) => !v)}
+              aria-expanded={accountDropdownOpen()}
+            >
+              <span
+                class="material-icons !text-[13px]"
+                style={{
+                  color:
+                    state.ui.selectedAccountColor ||
+                    (state.ui.selectedAccount
+                      ? "var(--color-forest)"
+                      : "var(--color-mid-green)"),
+                }}
+              >
+                account_balance_wallet
+              </span>
+              <span
+                class="text-[10px] font-bold uppercase tracking-widest"
+                style={{
+                  color: state.ui.selectedAccountColor || undefined,
+                }}
+                classList={{
+                  "text-earth":
+                    !state.ui.selectedAccountColor && !state.ui.selectedAccount,
+                  "text-forest":
+                    !state.ui.selectedAccountColor && !!state.ui.selectedAccount,
+                }}
+              >
+                Account:
+              </span>
+              <span
+                class="text-[10px] font-bold uppercase tracking-widest"
+                style={{
+                  color: state.ui.selectedAccountColor || undefined,
+                }}
+                classList={{
+                  "text-forest font-black":
+                    !state.ui.selectedAccountColor && !!state.ui.selectedAccount,
+                  "text-forest/70":
+                    !state.ui.selectedAccountColor && !state.ui.selectedAccount,
+                }}
+              >
+                {state.ui.selectedAccount || "All Accounts"}
+              </span>
+              <span
+                class="material-icons !text-[14px] transition-transform duration-200"
+                classList={{
+                  "rotate-180": accountDropdownOpen(),
+                }}
+                style={{
+                  color:
+                    state.ui.selectedAccountColor ||
+                    "var(--color-forest)",
+                }}
+              >
+                expand_more
+              </span>
+            </button>
+
+            {/* Dropdown Menu */}
+            <Show when={accountDropdownOpen()}>
+              <div class="absolute left-0 mt-1.5 w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-1 z-30 flex flex-col gap-0.5 animate-slide-down">
+                <For each={availableAccounts()}>
+                  {(acc) => {
+                    const isSelected = () =>
+                      acc.name === "All Accounts"
+                        ? !state.ui.selectedAccount
+                        : state.ui.selectedAccount === acc.name;
+                    return (
+                      <button
+                        type="button"
+                        class="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer text-left"
+                        classList={{
+                          "bg-forest/10 text-forest font-bold": isSelected(),
+                          "text-forest/80 hover:bg-forest/5": !isSelected(),
+                        }}
+                        onClick={() => {
+                          setSelectedAccount(
+                            acc.name === "All Accounts" ? null : acc.name,
+                            acc.color ?? null,
+                          );
+                          setAccountDropdownOpen(false);
+                        }}
+                      >
+                        <div class="flex items-center gap-2">
+                          <span
+                            class="w-2.5 h-2.5 rounded-full border border-forest/20 shrink-0"
+                            style={{
+                              "background-color":
+                                acc.color || "var(--color-mid-green)",
+                            }}
+                          />
+                          <span class="truncate">{acc.name}</span>
+                        </div>
+                        <Show when={isSelected()}>
+                          <span class="material-icons !text-[14px] text-forest">
+                            check
+                          </span>
+                        </Show>
+                      </button>
+                    );
+                  }}
+                </For>
+              </div>
+            </Show>
+          </div>
+
           <div
             class="flex items-center gap-2 group cursor-pointer"
             onClick={() => setShowOnlyRecurring((v) => !v)}

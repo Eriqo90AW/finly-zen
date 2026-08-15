@@ -44,6 +44,13 @@ const Dashboard = () => {
     });
   });
 
+  // Further filter by selected account for RecentTransactions
+  const accountFilteredTransactions = createMemo(() => {
+    const selected = state.ui.selectedAccount;
+    if (!selected) return monthlyTransactions();
+    return monthlyTransactions().filter((t) => t.accountName === selected);
+  });
+
   return (
     <div class="space-y-8 animate-fade-in-up">
       <div class="bento-grid">
@@ -108,7 +115,8 @@ const Dashboard = () => {
 
         {/* Recent Transactions Table */}
         <RecentTransactions
-          transactions={monthlyTransactions()}
+          transactions={accountFilteredTransactions()}
+          allTransactions={transactions() || []}
           loading={transactions.loading}
         />
       </div>

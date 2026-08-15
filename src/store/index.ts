@@ -29,6 +29,8 @@ const DEFAULT_STATE: AppState = {
     showAddExpense: false,
     showAllTime: false,
     showRecurringDebt: false,
+    selectedAccount: null,
+    selectedAccountColor: null,
   },
 };
 
@@ -87,5 +89,13 @@ export const toggleShowAllTime = () => {
 
 export const toggleRecurringDebt = () => {
   setState("ui", "showRecurringDebt", (s) => !s);
+};
+
+export const setSelectedAccount = (
+  account: string | null,
+  color: string | null = null,
+) => {
+  setState("ui", "selectedAccount", account);
+  setState("ui", "selectedAccountColor", color);
 };
 
