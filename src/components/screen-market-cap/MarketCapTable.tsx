@@ -1,4 +1,5 @@
 import { createSignal, createMemo, For, Show } from "solid-js";
+import { AssetLogo } from "../common/AssetLogo";
 
 export interface MarketCapItem {
   rank: number;
@@ -262,18 +263,14 @@ export const MarketCapTable = (props: MarketCapTableProps) => {
                     </td>
                     <td class="px-6 py-3.5">
                       <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-sage flex items-center justify-center text-forest overflow-hidden shrink-0 font-bold text-[10px]">
-                          <Show
-                            when={item.logoUrl}
-                            fallback={item.ticker.slice(0, 3)}
-                          >
-                            <img
-                              src={item.logoUrl}
-                              alt={item.ticker}
-                              class="w-full h-full object-cover"
-                            />
-                          </Show>
-                        </div>
+                        <AssetLogo
+                          ticker={item.ticker}
+                          logoUrl={item.logoUrl}
+                          name={item.name}
+                          category={item.category}
+                          size="sm"
+                          class="w-7 h-7 rounded-lg bg-sage shadow-xs border border-forest/10"
+                        />
                         <div>
                           <div class="font-bold text-near-black group-hover:text-forest transition-colors">
                             {item.name}

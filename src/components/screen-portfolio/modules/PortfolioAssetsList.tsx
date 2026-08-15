@@ -6,6 +6,7 @@ import { getAssetColor } from "../../../utils/colors";
 import { getMarketStatus } from "../../../utils/marketTime";
 import type { PortfolioAsset } from "../../../types";
 import { useNavigate } from "@solidjs/router";
+import { AssetLogo } from "../../common/AssetLogo";
 
 interface PortfolioAssetsListProps {
   portfolioId: string;
@@ -500,45 +501,15 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
 
                       {/* Name Column */}
                       <div class="flex-[2] pr-4 flex items-center gap-4 min-w-0">
-                        <Show
-                          when={asset.logoUrl}
-                          fallback={
-                            <div
-                              class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
-                              style={{ "background-color": assetColor }}
-                            >
-                              {asset.ticker.charAt(0)}
-                            </div>
-                          }
-                        >
-                          {(logoUrl) => {
-                            const [hasError, setHasError] = createSignal(false);
-                            return (
-                              <div
-                                class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden"
-                                style={{
-                                  "background-color": hasError()
-                                    ? assetColor
-                                    : "#ffffff",
-                                }}
-                              >
-                                <Show
-                                  when={!hasError()}
-                                  fallback={
-                                    <span>{asset.ticker.charAt(0)}</span>
-                                  }
-                                >
-                                  <img
-                                    src={logoUrl()}
-                                    alt={asset.ticker}
-                                    class="w-full h-full object-contain p-1 bg-white"
-                                    onError={() => setHasError(true)}
-                                  />
-                                </Show>
-                              </div>
-                            );
-                          }}
-                        </Show>
+                        <AssetLogo
+                          ticker={asset.ticker}
+                          logoUrl={asset.logoUrl}
+                          name={asset.name}
+                          size="lg"
+                          class="w-10 h-10 rounded-xl shadow-xs border border-forest/10"
+                          imageClass="object-contain p-1 bg-white"
+                          fallbackType="letter"
+                        />
                         <div class="flex flex-col min-w-0">
                           <span 
                             onClick={(e) => {

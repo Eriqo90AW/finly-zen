@@ -11,11 +11,11 @@ export const ConfirmDeleteAssetModal = (props: ConfirmDeleteAssetModalProps) => 
   return (
     <Show when={props.isOpen}>
       <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-forest/30 backdrop-blur-xs p-6"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-sm p-6 animate-fade-in"
         onClick={props.onClose}
       >
         <div
-          class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl relative overflow-hidden animate-scale-in"
+          class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl relative overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div class="flex flex-col items-center text-center">

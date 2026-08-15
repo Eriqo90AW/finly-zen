@@ -2,6 +2,7 @@ import { createSignal, createMemo, For, Show } from "solid-js";
 import { formatPercent } from "../../utils/format";
 import { quickPortfolioSearch, setQuickPortfolioSearch } from "../../store/portfolioStore";
 import type { PortfolioAsset } from "../../types";
+import { AssetLogo } from "../common/AssetLogo";
 
 type SortKey = "asset" | "qty" | "avgPrice" | "fxRate" | "currentPrice" | "value" | "gain" | "allocation";
 
@@ -10,6 +11,7 @@ interface QuickPortfolioTableProps {
   distinctAssetCount?: number;
   cashBalance: number;
   totalValue: number;
+  initialCapital?: number;
   overallPL: number;
   overallPLPercent: number;
   currencyView: "USD" | "IDR";
@@ -115,14 +117,125 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
     }
   };
 
-  // Filter Assets by Search
+  // Asset Type / Category Filter State
+  const [selectedAssetType, setSelectedAssetType] = createSignal<string>(
+    (() => {
+      try {
+        return localStorage.getItem("finly_zen_quick_portfolio_asset_type_filter") || "ALL";
+      } catch (e) {
+        return "ALL";
+      }
+    })()
+  );
+
+  const handleSelectAssetType = (category: string) => {
+    setSelectedAssetType(category);
+    try {
+      localStorage.setItem("finly_zen_quick_portfolio_asset_type_filter", category);
+    } catch (e) {
+      console.warn("localStorage asset type filter persistence failed:", e);
+    }
+  };
+
+  // Compute category counts for pills
+  const categoryCounts = createMemo(() => {
+    const counts: Record<string, number> = {
+      ALL: props.assets.length,
+    };
+    props.assets.forEach((a) => {
+      const cat = props.getCategory(a.ticker);
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  });
+
+  // Dynamic & standard categories list for filter pills
+  const filterCategories = createMemo(() => {
+    const standard = [
+      { id: "ALL", label: "All", icon: "layers" },
+      { id: "Stocks", label: "Stocks", icon: props.getCategoryIcon("Stocks") },
+      { id: "IDX", label: "IDX", icon: props.getCategoryIcon("IDX") },
+      { id: "Crypto", label: "Crypto", icon: props.getCategoryIcon("Crypto") },
+    ];
+
+    const standardIds = new Set(standard.map((s) => s.id));
+    const dynamicItems: { id: string; label: string; icon: string }[] = [];
+
+    props.assets.forEach((a) => {
+      const cat = props.getCategory(a.ticker);
+      if (cat && !standardIds.has(cat)) {
+        standardIds.add(cat);
+        dynamicItems.push({
+          id: cat,
+          label: cat,
+          icon: props.getCategoryIcon(cat),
+        });
+      }
+    });
+
+    return [...standard, ...dynamicItems];
+  });
+
+  // Filter Assets by Search and Asset Type
   const filteredAssets = createMemo(() => {
+    let list = props.assets;
+
+    const type = selectedAssetType();
+    if (type !== "ALL") {
+      list = list.filter((a) => props.getCategory(a.ticker) === type);
+    }
+
     const query = quickPortfolioSearch().toLowerCase().trim();
-    if (!query) return props.assets;
-    return props.assets.filter((a) =>
-      a.ticker.toLowerCase().includes(query) ||
-      (a.name || "").toLowerCase().includes(query)
-    );
+    if (query) {
+      list = list.filter(
+        (a) =>
+          a.ticker.toLowerCase().includes(query) ||
+          (a.name || "").toLowerCase().includes(query)
+      );
+    }
+
+    return list;
+  });
+
+  // Check if filtering is active (category filter or search query)
+  const isFiltered = createMemo(() => {
+    return selectedAssetType() !== "ALL" || Boolean(quickPortfolioSearch().trim());
+  });
+
+  // Dynamic Total Holdings Value for the filtered subset
+  const dynamicTotalValue = createMemo(() => {
+    if (!isFiltered()) {
+      return props.totalValue;
+    }
+    return filteredAssets().reduce((sum, a) => sum + (a.currentValue || 0), 0);
+  });
+
+  // Dynamic Gain/Loss for the filtered subset
+  const dynamicPL = createMemo(() => {
+    if (!isFiltered()) {
+      return props.overallPL;
+    }
+    return filteredAssets().reduce((sum, a) => sum + (a.totalGainLoss || 0), 0);
+  });
+
+  // Dynamic Gain/Loss percentage for the filtered subset (or all displayed assets)
+  const dynamicPLPercent = createMemo(() => {
+    const totalCost = filteredAssets().reduce((sum, a) => {
+      const cost = a.currentValue - a.totalGainLoss;
+      return sum + (cost > 0 ? cost : 0);
+    }, 0);
+    return totalCost > 0 ? (dynamicPL() / totalCost) : 0;
+  });
+
+  // Label for Total Value row
+  const dynamicTotalLabel = createMemo(() => {
+    if (selectedAssetType() !== "ALL") {
+      return `Total ${selectedAssetType()} Value`;
+    }
+    if (quickPortfolioSearch().trim()) {
+      return "Filtered Holdings Value";
+    }
+    return "Total Holdings Value";
   });
 
   // Sort Filtered Assets reactively
@@ -389,44 +502,77 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
   };
 
   return (
-    <section class="bg-white rounded-2xl border border-forest/10 shadow-sm flex flex-col overflow-hidden">
+    <section class="bg-card-bg rounded-premium border border-forest/10 shadow-premium flex flex-col overflow-hidden">
       {/* Table Header Control Bar */}
-      <div class="p-4 border-b border-forest/5 flex justify-between items-center bg-white/60 backdrop-blur-sm">
-        <div class="flex items-center gap-3">
+      <div class="p-4 sm:p-5 border-b border-forest/10 flex flex-wrap justify-between items-center gap-3 bg-white/70 backdrop-blur-sm">
+        {/* Left Side: Add Holding & Search */}
+        <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
           <button 
             onClick={props.onStartAddHolding}
-            class="bg-forest text-white font-outfit text-xs font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 hover:bg-forest/90 transition-all shadow-sm hover:shadow cursor-pointer border-0 outline-none select-none"
+            class="bg-forest text-white font-outfit text-xs font-bold h-[30px] px-3.5 rounded-full flex items-center gap-1.5 hover:bg-mid-green transition-all shadow-xs hover:-translate-y-0.5 cursor-pointer border-0 outline-none select-none active:scale-95 shrink-0"
           >
-            <span class="material-icons !text-sm">add</span>
+            <span class="material-icons !text-base">add</span>
             Add Holding
           </button>
           
-          <div class="relative w-64">
-            <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-earth !text-sm">search</span>
+          <div class="relative w-48 sm:w-56 lg:w-60 flex items-center">
+            <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-earth !text-base pointer-events-none">search</span>
             <input 
               type="text" 
               value={quickPortfolioSearch()}
               onInput={(e) => setQuickPortfolioSearch(e.currentTarget.value)}
               placeholder="Filter holdings..." 
-              class="w-full bg-sage/30 border border-transparent rounded-full py-1.5 pl-9 pr-4 font-outfit text-xs text-near-black placeholder:text-earth/60 focus:bg-white focus:border-forest/30 transition-all focus:outline-none"
+              class="w-full h-[30px] bg-sage/40 border border-forest/10 rounded-full pl-8 pr-3.5 font-outfit text-xs text-near-black placeholder:text-earth/60 focus:bg-white focus:border-forest focus:ring-2 focus:ring-forest/20 transition-all focus:outline-none"
             />
           </div>
-
-          <Show when={props.distinctAssetCount !== undefined}>
-            <span class="px-2.5 py-1 rounded-full bg-forest/10 text-forest font-outfit text-[11px] font-bold flex items-center gap-1 border border-forest/10 select-none">
-              <span class="material-icons !text-xs">pie_chart</span>
-              {props.distinctAssetCount} Assets Invested
-            </span>
-          </Show>
         </div>
 
-        <div class="flex items-center gap-2">
-          {/* Hide FX rate visibility toggle (Requirement 3) */}
+        {/* Right Side: Pill Filters placed to the left of Show FX Rate, then Show FX Rate & Copy JSON */}
+        <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {/* Asset Type Filter Pills */}
+          <div class="flex items-center gap-1 bg-sage/25 p-1 rounded-full border border-forest/10 overflow-x-auto no-scrollbar">
+            <For each={filterCategories()}>
+              {(cat) => {
+                const isSelected = () => selectedAssetType() === cat.id;
+                const count = () => (categoryCounts()[cat.id] || 0);
+
+                return (
+                  <button 
+                    type="button"
+                    onClick={() => handleSelectAssetType(cat.id)}
+                    class="rounded-full px-3 h-[28px] text-[11px] sm:text-xs font-outfit font-bold flex items-center gap-1.5 transition-all duration-150 cursor-pointer select-none border outline-none active:scale-95 whitespace-nowrap"
+                    classList={{
+                      "bg-forest text-white border-forest shadow-xs": isSelected(),
+                      "bg-transparent text-earth hover:text-forest hover:bg-sage/50 border-transparent": !isSelected(),
+                    }}
+                  >
+                    <span class="material-icons !text-[13px] leading-none">
+                      {cat.icon}
+                    </span>
+                    <span>{cat.label}</span>
+                    <span 
+                      class="text-[9.5px] px-1.5 py-0.2 rounded-full font-bold transition-colors leading-none"
+                      classList={{
+                        "bg-white/20 text-white": isSelected(),
+                        "bg-forest/10 text-forest": !isSelected(),
+                      }}
+                    >
+                      {count()}
+                    </span>
+                  </button>
+                );
+              }}
+            </For>
+          </div>
+
+          <div class="h-5 w-px bg-forest/10 hidden sm:block" />
+
+          {/* Hide FX rate visibility toggle */}
           <button 
             onClick={toggleHideFxRate}
-            class="text-earth hover:text-forest border border-forest/10 hover:bg-sage/20 px-3.5 py-1.5 rounded-xl font-outfit text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer select-none bg-white"
+            class="text-earth hover:text-forest border border-forest/10 hover:bg-sage/40 px-3.5 h-[30px] rounded-full font-outfit text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer select-none bg-white/80 shrink-0 shadow-xs"
           >
-            <span class="material-icons !text-sm">
+            <span class="material-icons !text-base">
               {hideFxRate() ? "visibility_off" : "visibility"}
             </span>
             {hideFxRate() ? "Show FX Rate" : "Hide FX Rate"}
@@ -434,10 +580,10 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
 
           <button 
             onClick={props.onCopyJson}
-            class="text-earth hover:text-forest border border-forest/10 hover:bg-sage/20 px-3.5 py-1.5 rounded-xl font-outfit text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-white"
-            classList={{ "text-forest border-forest/30 bg-sage/10": props.isCopied }}
+            class="text-earth hover:text-forest border border-forest/10 hover:bg-sage/40 px-3.5 h-[30px] rounded-full font-outfit text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-white/80 shrink-0 shadow-xs"
+            classList={{ "text-forest border-forest/30 bg-sage/40": props.isCopied }}
           >
-            <span class="material-icons !text-sm">
+            <span class="material-icons !text-base">
               {props.isCopied ? "check" : "content_copy"}
             </span>
             {props.isCopied ? "Copied!" : "Copy JSON"}
@@ -450,7 +596,7 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
         <table class="w-full text-left border-collapse whitespace-nowrap">
           <thead class="bg-sage/20 border-b border-forest/5 text-[11px] text-earth">
             <tr class="group/header">
-              <th class="px-6 py-3 font-semibold uppercase tracking-wider w-1/3">
+              <th class="px-6 py-3 font-semibold uppercase tracking-wider w-1/4">
                 <button 
                   onClick={() => handleSort("asset")} 
                   class="flex items-center gap-1 hover:text-forest transition-colors cursor-pointer font-semibold uppercase text-left bg-transparent border-0 p-0 outline-none select-none"
@@ -554,7 +700,7 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
                 </button>
               </th>
 
-              <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-1/6">
+              <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-[calc(100%/7)]">
                 <button 
                   onClick={() => handleSort("gain")} 
                   class="flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer font-semibold uppercase w-full bg-transparent border-0 p-0 outline-none select-none"
@@ -571,7 +717,7 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
                 </button>
               </th>
 
-              <th class="px-6 py-3 font-semibold uppercase tracking-wider text-right w-[100px]">
+              <th class="pl-6 pr-8 py-3 font-semibold uppercase tracking-wider text-right w-[14%] min-w-[180px]">
                 <button 
                   onClick={() => handleSort("allocation")} 
                   class="flex items-center justify-end gap-1 hover:text-forest transition-colors cursor-pointer font-semibold uppercase w-full bg-transparent border-0 p-0 outline-none select-none"
@@ -603,14 +749,14 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
                     {/* Asset Column */}
                     <td class="px-6 py-4 border-r border-transparent group-hover:border-forest/5 transition-colors overflow-hidden max-w-[320px]">
                       <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-sage flex items-center justify-center text-forest overflow-hidden shrink-0">
-                          <Show 
-                            when={asset.logoUrl} 
-                            fallback={<span class="material-icons !text-sm">{props.getCategoryIcon(cat)}</span>}
-                          >
-                            <img src={asset.logoUrl} alt={asset.ticker} class="w-full h-full object-cover animate-fade-in" />
-                          </Show>
-                        </div>
+                        <AssetLogo
+                          ticker={asset.ticker}
+                          logoUrl={asset.logoUrl}
+                          name={asset.name}
+                          category={cat}
+                          size="sm"
+                          class="w-7 h-7 rounded-lg bg-sage shadow-xs border border-forest/10"
+                        />
                         <div class="min-w-0">
                           <div class="font-bold text-near-black truncate">{asset.name || asset.ticker}</div>
                           <div class="flex items-center gap-1.5 mt-0.5">
@@ -740,17 +886,42 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
                     </td>
 
                     {/* Allocation Column */}
-                    <td class="px-6 py-4 text-right">
-                      <div class="flex items-center justify-end gap-2">
-                        <div class="flex-1 max-w-[80px]">
+                    <td class="pl-6 pr-2 py-4 text-right">
+                      <div class="flex items-center justify-end">
+                        <div class="flex flex-col items-end flex-1">
                           {(() => {
-                            const alloc = (asset.currentValue / (props.totalValue || 1)) * 100;
+                            const mktAlloc = (asset.currentValue / (props.totalValue || 1)) * 100;
+                            const costVal = asset.currentValue - asset.totalGainLoss;
+                            const costAlloc = (costVal / (props.initialCapital || 1)) * 100;
+                            const drift = mktAlloc - costAlloc;
+                            const isPos = drift >= 0;
                             return (
                               <>
                                 <div class="w-full bg-sage/60 rounded-full h-1.5 mb-1 overflow-hidden border border-forest/30">
-                                  <div class="bg-forest h-1.5 rounded-full" style={{ width: `${alloc}%` }} />
+                                  <div
+                                    class="bg-forest h-1.5 rounded-full"
+                                    style={{ width: `${Math.min(100, Math.max(0, mktAlloc))}%` }}
+                                  />
                                 </div>
-                                <div class="text-right text-[10px] text-earth font-mono">{alloc.toFixed(1)}%</div>
+                                <div class="flex items-center justify-between w-full text-[10px] font-mono leading-tight">
+                                  <span class="font-bold text-near-black">
+                                    {mktAlloc.toFixed(1)}%
+                                  </span>
+                                  <span
+                                    class={`text-[8.5px] px-1 py-0.2 rounded-full font-bold font-mono ${
+                                      isPos
+                                        ? "bg-emerald-500/10 text-emerald-700"
+                                        : "bg-rose-500/10 text-rose-600"
+                                    }`}
+                                    title="Allocation Drift (Market % − Cost %)"
+                                  >
+                                    {isPos ? "+" : ""}
+                                    {drift.toFixed(1)}%
+                                  </span>
+                                </div>
+                                <div class="text-[9px] text-earth/60 font-mono mt-0.5">
+                                  {costAlloc.toFixed(1)}% Cost
+                                </div>
                               </>
                             );
                           })()}
@@ -759,7 +930,7 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
                           type="button"
                           onClick={() => props.onDeleteHolding(asset.ticker)}
                           disabled={props.isSubmitting}
-                          class="opacity-0 group-hover:opacity-100 transition-opacity text-earth/40 hover:text-red-500 cursor-pointer disabled:cursor-not-allowed shrink-0 border-0 bg-transparent"
+                          class="w-5 h-5 flex items-start justify-start opacity-0 group-hover:opacity-100 transition-opacity text-earth/40 hover:text-red-500 cursor-pointer disabled:cursor-not-allowed shrink-0 border-0 bg-transparent ml-1.5"
                           title="Remove holding"
                         >
                           <span class="material-icons !text-sm">delete</span>
@@ -941,67 +1112,102 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
                 );
               }}
             </Show>
+
+            {/* Empty State when no assets match filter */}
+            <Show when={sortedAssets().length === 0 && !newRowDraft()}>
+              <tr>
+                <td colspan={hideFxRate() ? 7 : 8} class="text-center py-12 text-earth">
+                  <div class="flex flex-col items-center justify-center gap-2">
+                    <span class="material-icons text-3xl text-earth/40">filter_alt_off</span>
+                    <p class="font-outfit text-xs font-semibold">
+                      {quickPortfolioSearch()
+                        ? `No assets found matching "${quickPortfolioSearch()}"${selectedAssetType() !== "ALL" ? ` in ${selectedAssetType()}` : ""}`
+                        : `No assets found in ${selectedAssetType()}`}
+                    </p>
+                    <Show when={selectedAssetType() !== "ALL" || quickPortfolioSearch()}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedAssetType("ALL");
+                          setQuickPortfolioSearch("");
+                        }}
+                        class="text-[11px] font-bold text-forest hover:underline cursor-pointer bg-transparent border-0 mt-1"
+                      >
+                        Reset filters
+                      </button>
+                    </Show>
+                  </div>
+                </td>
+              </tr>
+            </Show>
           </tbody>
 
           {/* Total Row */}
           <tfoot class="bg-sage/10 border-t-2 border-forest/10 font-outfit text-xs font-bold text-near-black">
-            <tr>
-              <td class="px-6 py-4">Cash Balance</td>
-              <Show
-                when={isCashEditing()}
-                fallback={
-                  <td
-                    onClick={() => {
-                      setIsCashEditing(true);
-                      const val = props.currencyView === "IDR"
-                        ? props.cashBalance
-                        : props.cashBalance / props.getUsdRate();
-                      setEditValue(val.toFixed(2));
-                      setTimeout(() => {
-                        cashInputRef?.focus();
-                        cashInputRef?.select();
-                      }, 50);
-                    }}
-                    class="px-6 py-4 text-right font-mono hover:bg-forest/5 cursor-pointer border-r border-transparent group-hover:border-forest/5 transition-colors"
-                    colspan={hideFxRate() ? 5 : 6}
-                  >
-                    {props.formatCash(props.cashBalance)}
+            <Show when={!isFiltered()}>
+              <tr>
+                <td class="px-6 py-4">Cash Balance</td>
+                <Show
+                  when={isCashEditing()}
+                  fallback={
+                    <td
+                      onClick={() => {
+                        setIsCashEditing(true);
+                        const val = props.currencyView === "IDR"
+                          ? props.cashBalance
+                          : props.cashBalance / props.getUsdRate();
+                        setEditValue(val.toFixed(2));
+                        setTimeout(() => {
+                          cashInputRef?.focus();
+                          cashInputRef?.select();
+                        }, 50);
+                      }}
+                      class="px-6 py-4 text-right font-mono hover:bg-forest/5 cursor-pointer border-r border-transparent group-hover:border-forest/5 transition-colors"
+                      colspan={hideFxRate() ? 5 : 6}
+                    >
+                      {props.formatCash(props.cashBalance)}
+                    </td>
+                  }
+                >
+                  <td class="px-4 py-3 border-2 border-forest bg-sage/20 relative shadow-inner" colspan={hideFxRate() ? 4 : 5}>
+                    <div class="flex items-center justify-end">
+                      <input
+                        ref={cashInputRef}
+                        type="text"
+                        inputmode="decimal"
+                        autocomplete="off"
+                        value={editValue()}
+                        onInput={(e) => setEditValue(e.currentTarget.value.replace(/[^0-9.,]/g, ""))}
+                        onBlur={saveCashEdit}
+                        onKeyDown={handleCashKeyDown}
+                        class="w-full bg-transparent border-none text-right font-mono text-near-black font-bold focus:ring-0 focus:outline-none p-0"
+                      />
+                    </div>
+                    <div class="absolute -top-1.5 -right-1.5 bg-forest text-white text-[8px] font-bold px-1 rounded shadow-sm z-10">Edit</div>
                   </td>
-                }
-              >
-                <td class="px-4 py-3 border-2 border-forest bg-sage/20 relative shadow-inner" colspan={hideFxRate() ? 4 : 5}>
-                  <div class="flex items-center justify-end">
-                    <input
-                      ref={cashInputRef}
-                      type="text"
-                      inputmode="decimal"
-                      autocomplete="off"
-                      value={editValue()}
-                      onInput={(e) => setEditValue(e.currentTarget.value.replace(/[^0-9.,]/g, ""))}
-                      onBlur={saveCashEdit}
-                      onKeyDown={handleCashKeyDown}
-                      class="w-full bg-transparent border-none text-right font-mono text-near-black font-bold focus:ring-0 focus:outline-none p-0"
-                    />
-                  </div>
-                  <div class="absolute -top-1.5 -right-1.5 bg-forest text-white text-[8px] font-bold px-1 rounded shadow-sm z-10">Edit</div>
+                </Show>
+                <td class="px-6 py-4 text-right font-mono" colspan="2">
+                  {((props.cashBalance / (props.totalValue || 1)) * 100).toFixed(1)}% of total
                 </td>
-              </Show>
-              <td class="px-6 py-4 text-right font-mono" colspan="2">
-                {((props.cashBalance / (props.totalValue || 1)) * 100).toFixed(1)}% of total
-              </td>
-            </tr>
+              </tr>
+            </Show>
             <tr class="bg-sage/20 border-t border-forest/10 text-sm">
-              <td class="px-6 py-4 font-bold" colspan={hideFxRate() ? 4 : 5}>Total Holdings Value</td>
-              <td class="px-6 py-4 text-right font-mono font-extrabold">{props.formatVal(props.totalValue)}</td>
+              <td class="px-6 py-4 font-bold" colspan={hideFxRate() ? 4 : 5}>
+                {dynamicTotalLabel()}
+              </td>
+              <td class="px-6 py-4 text-right font-mono font-extrabold">{props.formatVal(dynamicTotalValue())}</td>
               <td class="px-6 py-4 text-right">
                 <div class="flex flex-col items-end">
-                  <span class="font-mono font-extrabold" classList={{ "text-forest": props.overallPL >= 0, "text-red-600": props.overallPL < 0 }}>
-                    {props.overallPL >= 0 ? "+" : ""}{props.formatVal(props.overallPL)}
+                  <span class="font-mono font-extrabold" classList={{ "text-forest": dynamicPL() >= 0, "text-red-600": dynamicPL() < 0 }}>
+                    {dynamicPL() >= 0 ? "+" : ""}{props.formatVal(dynamicPL())}
+                  </span>
+                  <span class="text-xs font-mono font-bold" classList={{ "text-forest": dynamicPL() >= 0, "text-red-600": dynamicPL() < 0 }}>
+                    {formatPercent(dynamicPLPercent())}
                   </span>
                 </div>
               </td>
-              <td class="px-6 py-4 text-right font-mono text-xs">
-                {formatPercent(props.overallPLPercent)}
+              <td class="px-6 py-4 text-right font-mono text-xs font-bold text-near-black">
+                {((dynamicTotalValue() / (props.totalValue || 1)) * 100).toFixed(1)}%
               </td>
             </tr>
           </tfoot>

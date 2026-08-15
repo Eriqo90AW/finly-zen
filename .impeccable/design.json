@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-28T22:04:00Z",
+  "title": "Design System: Finly Zen",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Forest Green", "canonical": "#1a4d2e", "tonalRamp": ["#0b2315", "#123721", "#1a4d2e", "#24663e", "#2d7d46", "#3d9e5b", "#62be7e", "#e8f5ec"] },
+      "secondary": { "role": "secondary", "displayName": "Mid Green", "canonical": "#2d7d46", "tonalRamp": ["#0f3219", "#1d532c", "#2d7d46", "#3ea25d", "#5ac47a", "#81d79b", "#b2eabb", "#e8f7ec"] },
+      "accent": { "role": "accent", "displayName": "Spring Accent", "canonical": "#52c278", "tonalRamp": ["#164a27", "#277241", "#3e9c5c", "#52c278", "#78d497", "#a0e5b6", "#c8f3d6", "#f0fcf4"] },
+      "sage": { "role": "surface-tint", "displayName": "Sage Light", "canonical": "#e8f5ec", "tonalRamp": ["#1d3c26", "#386544", "#5c946c", "#87c197", "#b6e4c2", "#d5f1dd", "#e8f5ec", "#f6fbf8"] },
+      "earth": { "role": "muted-text", "displayName": "Earth Muted", "canonical": "#5c6b5e", "tonalRamp": ["#1b231d", "#2e3b30", "#455447", "#5c6b5e", "#778779", "#96a498", "#b8c3ba", "#e5eae6"] },
+      "page-bg": { "role": "background", "displayName": "Mint Canvas", "canonical": "#f0f7f2", "tonalRamp": ["#122317", "#243f2d", "#3c6148", "#5c8769", "#83af90", "#afd3bb", "#d8ecd9", "#f0f7f2"] },
+      "card-bg": { "role": "surface", "displayName": "Card White", "canonical": "#ffffff", "tonalRamp": ["#1c1c1c", "#383838", "#595959", "#7d7d7d", "#a3a3a3", "#c9c9c9", "#ededed", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Cormorant garamond Display", "purpose": "Hero numerals, net worth totals, and editorial header numbers." },
+      "headline": { "displayName": "Cormorant Garamond Headline", "purpose": "Page section titles." },
+      "title": { "displayName": "Outfit Title", "purpose": "Card titles and module headings." },
+      "body": { "displayName": "Outfit Body", "purpose": "Standard UI text and table content." },
+      "label": { "displayName": "Outfit Micro-Label", "purpose": "Uppercase section tags and micro-headers." }
+    },
+    "shadows": [
+      { "name": "shadow-premium", "value": "0 2px 20px rgba(26, 77, 46, 0.08)", "purpose": "Canonical soft green-tinted card elevation." },
+      { "name": "shadow-hover", "value": "0 4px 20px rgba(26, 77, 46, 0.12)", "purpose": "Interactive lift elevation on card hover." },
+      { "name": "shadow-modal", "value": "0 20px 40px rgba(26, 77, 46, 0.15)", "purpose": "High elevation depth for modals and popovers." }
+    ],
+    "motion": [
+      { "name": "fadeInUp", "value": "opacity 0.5s ease-out, transform 0.5s ease-out", "purpose": "Page and section entry animation." },
+      { "name": "slideInRight", "value": "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Slide-over panel entrance." }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button in deep forest green",
+      "html": "<button class=\"ds-btn-primary\">+ ADD EXPENSE</button>",
+      "css": ".ds-btn-primary { background-color: #1a4d2e; color: #ffffff; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.875rem; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 10px rgba(26,77,46,0.15); } .ds-btn-primary:hover { background-color: #2d7d46; transform: translateY(-2px); shadow: 0 4px 16px rgba(26,77,46,0.25); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary or subtle inline action button",
+      "html": "<button class=\"ds-btn-ghost\">VIEW ALL</button>",
+      "css": ".ds-btn-ghost { background-color: transparent; color: #1a4d2e; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 0.875rem; padding: 10px 18px; border-radius: 12px; border: none; cursor: pointer; transition: background-color 0.2s ease; } .ds-btn-ghost:hover { background-color: rgba(232, 245, 236, 0.7); }"
+    },
+    {
+      "name": "Premium Card",
+      "kind": "card",
+      "refersTo": "card-premium",
+      "description": "Flagship card container with green-tinted border and soft elevation",
+      "html": "<div class=\"ds-card-premium\"><div class=\"ds-card-header\">TOTAL PORTFOLIO VALUE</div><div class=\"ds-card-value\">Rp 248.500.000</div></div>",
+      "css": ".ds-card-premium { background-color: #ffffff; border-radius: 18px; border: 1px solid rgba(26, 77, 46, 0.1); box-shadow: 0 2px 20px rgba(26, 77, 46, 0.08); padding: 24px; font-family: 'Outfit', sans-serif; } .ds-card-header { font-size: 10px; font-weight: 700; color: #5c6b5e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; } .ds-card-value { font-family: 'Cormorant Garamond', serif; font-size: 2.25rem; font-weight: 700; color: #1c2b20; }"
+    },
+    {
+      "name": "Micro Tag Chip",
+      "kind": "chip",
+      "refersTo": "chip-pill",
+      "description": "Category or status pill tag",
+      "html": "<span class=\"ds-chip\">DIVIDEND YIELD 4.8%</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; background-color: rgba(232, 245, 236, 0.8); color: #1a4d2e; border: 1px solid rgba(26, 77, 46, 0.1); border-radius: 9999px; padding: 4px 12px; font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Sidebar navigation item",
+      "html": "<div class=\"ds-nav-item active\"><span class=\"ds-nav-text\">Dashboard</span></div>",
+      "css": ".ds-nav-item { display: flex; align-items: center; padding: 12px 16px; border-radius: 12px; color: #5c6b5e; font-family: 'Outfit', sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; } .ds-nav-item:hover { background-color: rgba(232, 245, 236, 0.5); color: #1a4d2e; } .ds-nav-item.active { background-color: #e8f5ec; color: #1a4d2e; font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Editorial Sanctuary",
+    "overview": "Finly Zen is designed as a serene, high-craft financial ledger. Inspired by editorial publishing and Japanese zen gardens, it pairs structured financial data with organic forest greens, pale mint surfaces, soft ambient elevation, and timeless serif typography. The environment eliminates visual anxiety, turning financial tracking and stock analysis into a calm, focused ritual.",
+    "keyCharacteristics": [
+      "Light-mode only design architecture (no dark mode).",
+      "Dual typography model: Cormorant Garamond for editorial numerals and titles; Outfit for clean UI labels and body text.",
+      "Opacity modulation (forest/10, sage/50, spring/10) for depth and subtle interaction states.",
+      "Micro-typography signatures: uppercase tracking-widest labels (text-[10px] font-bold text-earth uppercase).",
+      "Green-tinted soft elevation (shadow-premium) and thin translucent borders (border-forest/10)."
+    ],
+    "rules": [
+      { "name": "The Rarity Rule", "body": "Primary forest green is used deliberately on ≤15% of screen real estate. Its quiet authority depends on not saturating the user's field of view.", "section": "colors" },
+      { "name": "The Green Border Rule", "body": "Borders are never pure gray (#e5e7eb). All borders use translucent green tinting (border border-forest/10).", "section": "colors" },
+      { "name": "The Editorial Numeral Rule", "body": "Financial summary totals and net worth displays use Cormorant Garamond. Operational UI numbers use Outfit.", "section": "typography" },
+      { "name": "The Layered Surface Rule", "body": "Cards rest flat on #f0f7f2 mint background with thin border-forest/10 borders and shadow-premium depth.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Cormorant Garamond for major financial numerals, net worth headers, and editorial titles.",
+      "Do apply opacity modulation (forest/10, sage/50) for subtle borders, hover fills, and surface tints.",
+      "Do format section labels as uppercase micro-typography (text-[10px] font-bold text-earth uppercase tracking-widest).",
+      "Do wrap primary screen modules in .premium-card."
+    ],
+    "donts": [
+      "Don't introduce dark mode styles, dark background utilities, or pure black backgrounds.",
+      "Don't use pure gray borders (border-gray-200 or #e5e7eb); always use translucent green tinting (border-forest/10).",
+      "Don't clutter screens with dense action buttons; keep primary actions limited and prioritized.",
+      "Don't break the dual font hierarchy by using sans-serif for hero numbers or serif for micro UI labels."
+    ]
+  }
+}

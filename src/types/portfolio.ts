@@ -94,6 +94,21 @@ export interface AssetDB {
   updated_at: string;
 }
 
+export interface PortfolioHoldingDB {
+  portfolio_id: string;
+  user_id: string;
+  portfolio_name: string;
+  base_currency: string;
+  icon: string | null;
+  asset: string;
+  category: string;
+  quantity: number;
+  live_market_price: number;
+  current_value_base: number;
+  pnl: number;
+  allocation: number;
+}
+
 // --- API Response Interfaces ---
 export interface MultiStockItem {
   symbol: string;
@@ -120,7 +135,10 @@ export interface AllocationItem {
   ticker: string;
   name: string;
   value: number;
+  costBasis?: number;
   percentage: number;
+  costPercentage?: number;
+  drift?: number;
   color: string;
 }
 

@@ -1,242 +1,211 @@
-# Finly Zen — Design System Reference
-
-A single source of truth for Finly Zen's visual language. Consult this before building new screens or components to stay consistent with the existing aesthetic.
-
-> **Stack:** SolidJS + Vite + Tailwind CSS v4 (CSS-first config) + TypeScript
-> **Design philosophy:** Light-mode-only, desktop-first, "premium zen garden" — deep forest greens over a pale mint background, editorial serif numerals, soft green-tinted elevation.
-> **Master file:** Almost the entire design system is declared in `src/index.css` (the `@theme` block, base layer, and component classes). There is **no `tailwind.config.js`** — Tailwind v4 uses CSS-first config.
-
+---
+name: Finly Zen
+description: Premium Zen Garden personal finance & IDX investment design system
+colors:
+  primary: "#1a4d2e"
+  secondary: "#2d7d46"
+  accent: "#52c278"
+  sage: "#e8f5ec"
+  sand: "#fdf5e6"
+  earth: "#5c6b5e"
+  near-black: "#1c2b20"
+  page-bg: "#f0f7f2"
+  card-bg: "#ffffff"
+  fin-green: "#10b981"
+  fin-red: "#f43f5e"
+  fin-blue: "#6366f1"
+  fin-purple: "#a78bfa"
+  fin-amber: "#f59e0b"
+typography:
+  display:
+    fontFamily: "Cormorant Garamond, serif"
+    fontSize: "clamp(2rem, 5vw, 4.5rem)"
+    fontWeight: 700
+    lineHeight: "1.1"
+  headline:
+    fontFamily: "Cormorant Garamond, serif"
+    fontSize: "2rem"
+    fontWeight: 700
+    lineHeight: "1.2"
+  title:
+    fontFamily: "Outfit, sans-serif"
+    fontSize: "1.25rem"
+    fontWeight: 600
+    lineHeight: "1.4"
+  body:
+    fontFamily: "Outfit, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: "1.5"
+  label:
+    fontFamily: "Outfit, sans-serif"
+    fontSize: "0.625rem"
+    fontWeight: 700
+    lineHeight: "1.2"
+    letterSpacing: "0.1em"
+rounded:
+  sm: "8px"
+  md: "12px"
+  card: "18px"
+  lg: "24px"
+  full: "9999px"
+spacing:
+  xs: "4px"
+  sm: "8px"
+  md: "16px"
+  lg: "24px"
+  xl: "32px"
+components:
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "#ffffff"
+    rounded: "{rounded.md}"
+    padding: "12px 24px"
+  button-primary-hover:
+    backgroundColor: "{colors.secondary}"
+  button-ghost:
+    backgroundColor: "transparent"
+    textColor: "{colors.primary}"
+    rounded: "{rounded.md}"
+    padding: "12px 24px"
+  card-premium:
+    backgroundColor: "{colors.card-bg}"
+    textColor: "{colors.near-black}"
+    rounded: "{rounded.card}"
+    padding: "24px"
 ---
 
-## 1. Color System
+# Design System: Finly Zen
 
-All brand tokens are defined as Tailwind v4 theme variables in `src/index.css` (lines 3–30) and become utilities like `bg-forest`, `text-earth`, `border-forest/10`.
+## Overview
 
-### Brand / Core Palette
+**Creative North Star: "The Editorial Sanctuary"**
 
-| Token | Hex | Utility | Role |
-|---|---|---|---|
-| `--color-page-bg` | `#f0f7f2` | `bg-page-bg` | App background (pale mint) |
-| `--color-card-bg` | `#ffffff` | `bg-card-bg` | Card background |
-| `--color-forest` | `#1a4d2e` | `forest` | **Primary brand** — buttons, nav, accents |
-| `--color-mid-green` | `#2d7d46` | `mid-green` | Secondary green / hover state |
-| `--color-spring` | `#52c278` | `spring` | Accent green — FAB, positive highlights |
-| `--color-sage` | `#e8f5ec` | `sage` | Light green tint — surfaces, pills, hover bgs |
-| `--color-cream` | `#fdfaf5` | `cream` | Warm neutral |
-| `--color-sand` | `#fdf5e6` | `sand` | Warm neutral (default hero card bg) |
-| `--color-earth` | `#5c6b5e` | `earth` | Muted / secondary text |
-| `--color-near-black` | `#1c2b20` | `near-black` | Body text (near-black green) |
-| `--color-terracotta` | `#d47b5a` | `terracotta` | Warm accent |
-| `--color-terracotta-dark` | `#823c22` | `terracotta-dark` | Dark warm accent |
+Finly Zen is designed as a serene, high-craft financial ledger. Inspired by editorial publishing and Japanese zen gardens, it pairs structured financial data with organic forest greens, pale mint surfaces, soft ambient elevation, and timeless serif typography. The environment eliminates visual anxiety, turning financial tracking and stock analysis into a calm, focused ritual.
 
-> The HTML `<meta name="theme-color">` is `#1A4D2E` (`index.html` line 6).
+The visual language relies on subtle opacity layering rather than heavy contrasts or harsh divides. Textures feel paper-like and tactile (`#f0f7f2` page backdrop with `#ffffff` cards). Green tinting is present on every line, divider, and hover state, creating a cohesive aesthetic signature across all screens.
 
-### Financial Semantic Colors (`src/index.css` lines 25–29)
+**Key Characteristics:**
+- Light-mode only design architecture (no dark mode).
+- Dual typography model: Cormorant Garamond for editorial numerals and titles; Outfit for clean UI labels and body text.
+- Opacity modulation (`forest/10`, `sage/50`, `spring/10`) for depth and subtle interaction states.
+- Micro-typography signatures: uppercase tracking-widest labels (`text-[10px] font-bold text-earth uppercase`).
+- Green-tinted soft elevation (`shadow-premium`) and thin translucent borders (`border-forest/10`).
 
-| Token | Hex | Usage |
-|---|---|---|
-| `--color-fin-green` | `#10b981` | Positive finance (emerald) |
-| `--color-fin-red` | `#f43f5e` | Negative finance (rose) |
-| `--color-fin-blue` | `#6366f1` | Valuation metrics (indigo) |
-| `--color-fin-purple` | `#a78bfa` | Advanced ratios (violet) |
-| `--color-fin-amber` | `#f59e0b` | Health / risk metrics (amber) |
+## Colors
 
-### Tailwind Defaults Still in Use
+The palette is anchored in forest greens, pale mint tints, and soft earthy neutrals, punctuated by distinct semantic financial signal colors for gains and losses.
 
-For semantic / signal states the project leans on Tailwind's built-ins alongside the custom tokens:
-- **Positive/gains:** `text-spring`, `text-emerald-600/700`, `bg-emerald-500/8`, `bg-spring/10`, `bg-emerald-100`
-- **Negative/losses:** `text-red-500/600`, `text-rose-500/700`, `bg-red-500/10`, `bg-rose-50`, `bg-red-100`
-- **Warning/neutral:** `text-amber-500/600/700`, `bg-amber-500/8`
-- **Tooltip bg:** `bg-neutral-900/95`
+### Primary
+- **Forest Green** (`#1a4d2e`): Primary brand color for headers, main call-to-action buttons, active navigation, and brand anchor points.
 
-### Dynamic / Data-Driven Palettes
+### Secondary
+- **Mid Green** (`#2d7d46`): Secondary brand green for interactive hover states, primary button hover fills, and active highlight states.
 
-- **`getAssetColor(ticker)`** (`src/utils/colors.ts` lines 3–44) — 40-color palette for per-stock charting (blue `#3B82F6`, emerald `#10B981`, amber `#F59E0B`, red `#EF4444`, violet `#8B5CF6`, …). Deterministic by ticker string.
-- **`getPortfolioColor(name)`** (`src/utils/colors.ts` lines 53–71) — 10-color subset for portfolio identity dots.
-- **Category/account colors** come from Supabase as `0xFFRRGGBB` strings, normalized via `formatHexColor()` (`src/utils/format.ts` lines 121–127) and applied as inline `style="background-color: …"` with `var(--color-forest)` fallback.
+### Tertiary
+- **Spring Accent** (`#52c278`): Bright accent green used on Floating Action Buttons (FAB), positive metric pill indicators, and key focus callouts.
 
-### Color Conventions
+### Neutral
+- **Page Mint Background** (`#f0f7f2`): Soft, pale mint canvas that reduces eye strain compared to stark white backgrounds.
+- **Card Surface** (`#ffffff`): Pure white elevated card surfaces providing crisp contrast for text and charts.
+- **Sage Tint** (`#e8f5ec`): Very light green surface fill for table headers, chip pills, hover backgrounds, and container accents.
+- **Sand Warm Neutral** (`#fdf5e6`): Warm cream neutral used for hero card backgrounds and editorial highlight blocks.
+- **Earth Muted Text** (`#5c6b5e`): Muted secondary body text and metadata label color.
+- **Near Black Body Text** (`#1c2b20`): Primary high-contrast body and heading text color.
 
-- **Opacity modulation is the dominant technique.** Brand colors are almost always applied with opacity: `forest/10`, `forest/5`, `sage/30`, `sage/50`, `spring/10`, `emerald-500/8`. This produces the soft, layered "premium" look.
-- **Borders are always green-tinted, never pure gray/black:** `border border-forest/10`, `border border-forest/5`, `border-b border-forest/10`.
-- **No dark mode.** Zero `dark:` utilities exist — the app is light-mode only.
+### Financial Signals
+- **Positive Gain / Emerald** (`#10b981`): Portfolio profits, positive ROI, and budget surplus.
+- **Negative Loss / Rose** (`#f43f5e`): Portfolio drawdown, expenses, and budget overruns.
+- **Valuation Blue** (`#6366f1`): Price-to-earnings ratios, valuation multiples, and benchmark comparison overlays.
+- **Ratios Purple** (`#a78bfa`): Dividend payout ratios and financial health indicators.
+- **Risk Amber** (`#f59e0b`): Warning states, volatile market indicators, and pending transaction statuses.
 
----
+### Named Rules
+**The Rarity Rule.** Primary forest green is used deliberately on ≤15% of screen real estate. Its quiet authority depends on not saturating the user's field of view.
 
-## 2. Typography
+**The Green Border Rule.** Borders are never pure gray (`#e5e7eb`). All borders use translucent green tinting (`border border-forest/10` or `border border-forest/5`).
 
-### Fonts (loaded in `index.html` line 26)
-- **Cormorant Garamond** — `ital,wght@0,400;0,500;0,600;0,700;1,400` — editorial serif for headings & big numerals
-- **Outfit** — `wght@300;400;500;600;700` — clean sans for all UI / body text
-- **Material Icons** font (line 27) — used via `<span class="material-icons">…</span>`
+## Typography
 
-### Font Tokens (`src/index.css` lines 17–19)
+**Display Font:** Cormorant Garamond (editorial serif for hero numerals and main headers)
+**Body Font:** Outfit (clean, modern sans-serif for UI labels, tables, and controls)
 
-| Token | Utility | Stack | Role |
-|---|---|---|---|
-| `--font-cormorant` | `font-cormorant` | `"Cormorant Garamond", serif` | Headings, hero numerals |
-| `--font-cormorant-bold` | `font-cormorant-bold` | `"Cormorant Garamond", serif` + weight 900 | Extra-bold emphasis (custom `@utility`, line 233) |
-| `--font-outfit` | `font-outfit` | `"Outfit", sans-serif` | Body / UI (default) |
+**Character:** The pairing couples classical financial publication warmth with modern, legible application interface typography.
 
-### Base Rules (`src/index.css` lines 32–43)
-- `body` defaults to `font-outfit`, `antialiased`, `text-near-black` on `bg-page-bg`.
-- `h1`, `h2`, `h3`, and `.hero-numeral` automatically apply `font-cormorant font-bold`.
+### Hierarchy
+- **Display** (Bold 700, `clamp(2rem, 5vw, 4.5rem)`, line-height 1.1): Used for hero financial totals, net worth metrics, and main dashboard hero numbers.
+- **Headline** (Bold 700, `2rem` / `text-3xl`, line-height 1.2): Section titles and page headers.
+- **Title** (SemiBold 600, `1.25rem` / `text-xl`, line-height 1.4): Card headers, module titles, and modal headers.
+- **Body** (Regular 400, `0.875rem` / `text-sm`, line-height 1.5): Standard UI text, table rows, and description copy.
+- **Label** (Bold 700, `0.625rem` / `text-[10px]`, letter-spacing 0.1em, uppercase): Section sub-headers, pill labels, table header titles, and category tags.
 
-### Size Scale
-No custom `fontSize` — uses Tailwind defaults + heavy arbitrary pixel values for micro-typography:
-- **Display / hero numerals:** `text-7xl`, `text-5xl`, `text-[38px]`
-- **Headings:** `text-3xl/4xl/2xl/xl/lg`
-- **Body:** `text-sm`, `text-xs`
-- **Micro-labels:** `text-[10px]`, `text-[9px]`, `text-[8px]` — a signature pattern
+### Named Rules
+**The Editorial Numeral Rule.** Financial summary totals and net worth displays use Cormorant Garamond (`font-cormorant font-bold`). Operational UI numbers (inputs, table line items) use Outfit (`font-outfit`).
 
-### Typographic Conventions
-- **Uppercase micro-labels** are the signature UI text treatment:
-  `text-[10px] font-bold text-earth uppercase tracking-widest`
-- Tracking values in use: `tracking-widest`, `tracking-wider`, `tracking-tight`, `tracking-[0.15em]`, `tracking-[0.1em]`, `tracking-tighter`.
-- **Big financial figures use Cormorant serif** (net worth, hero numbers) for an editorial/premium feel; **UI numbers use Outfit** with `font-bold` (700) or `font-black` (900).
+**The Micro-Label Rule.** Metadata tags and section labels must be formatted as uppercase micro-labels (`text-[10px] font-bold text-earth uppercase tracking-widest`).
 
----
+## Layout
 
-## 3. Spacing, Radius & Shadows
+Finly Zen uses a fixed, three-region desktop layout designed for wide screen monitoring.
 
-### Spacing
-No custom spacing scale — uses Tailwind v4 defaults (`p-4`, `p-6`, `p-8`, `gap-3/6`, `space-y-8`, …).
+- **Sidebar (Left):** Fixed `220px` width with white background, `border-r border-forest/10`, brand logo top, and vertical navigation list.
+- **Main View (Center):** Top bar (`80px` height with `backdrop-filter: blur(12px)` sticky header) + main scroll container with `max-w-[1400px]` centered content canvas.
+- **Insights Sidebar (Right):** Collapsible right pane (`w-[280px]` ↔ `w-0` smooth 300ms transition) for quick stats, notifications, and AI insights.
+- **Grid Layout:** 12-column bento grid (`.bento-grid`) with `1.5rem` (`24px`) grid gaps for dashboard widget composition.
 
-### Custom Tokens (`src/index.css` lines 21–22)
-```css
---shadow-premium: 0 2px 20px rgba(26, 77, 46, 0.08);  /* green-tinted soft elevation */
---radius-premium: 18px;                                /* canonical card radius */
-```
+## Elevation & Depth
 
-### Border Radius Conventions (very consistent)
-- **Premium cards:** `rounded-premium` (18px) — `.premium-card`
-- **Standard cards / inputs / buttons:** `rounded-xl` (12px) — overwhelmingly the most common
-- **Large surfaces / slide-overs / modals:** `rounded-2xl` (16px) and `rounded-3xl` (24px)
-- **Pills / badges / status dots:** `rounded-full`, `rounded-lg`, `rounded-md`
+Depth is established through soft, green-tinted ambient shadows and subtle backdrop blurs rather than stark black shadows.
 
-### Shadows
-- **Signature:** `shadow-premium` (green-tinted soft shadow) on `.premium-card`.
-- **Metric cards:** `shadow-[0_1px_12px_rgba(26,77,46,0.05)]` → hover `shadow-[0_4px_20px_rgba(26,77,46,0.1)]`.
-- **Buttons / FAB / dropdowns:** Tailwind `shadow-2xl/xl/lg/md/sm`.
+### Shadow Vocabulary
+- **Premium Card Elevation** (`box-shadow: 0 2px 20px rgba(26, 77, 46, 0.08)`): Canonical soft elevation on resting cards (`.premium-card`).
+- **Card Hover Elevation** (`box-shadow: 0 4px 20px rgba(26, 77, 46, 0.12)`): Smooth lift response on card hover.
+- **Dropdown & Modal Elevation** (`box-shadow: 0 20px 40px rgba(26, 77, 46, 0.15)`): High depth for popovers, slide-overs, and floating dialogs.
 
----
+### Named Rules
+**The Layered Surface Rule.** Cards rest flat on `#f0f7f2` mint background with thin `border-forest/10` borders and `shadow-premium` depth. Floating popovers use `backdrop-blur-md` for visual layering.
 
-## 4. Component Classes & Patterns
+## Shapes
 
-### Reusable CSS Classes (`src/index.css`)
-- **`.premium-card`** (lines 65–71) — the flagship card: `bg-card-bg rounded-premium border border-forest/10 shadow-premium`, hover → `shadow-sm`. Use this for almost every surface.
-- **`.fin-metric-card`** (lines 99–106) — `bg-white/70 backdrop-blur-sm rounded-2xl border border-forest/8` with light green shadow; hover `scale-[1.02]`.
-- **`.bento-grid`** (lines 58–63) — 12-col grid, `minmax(100px, auto)` rows, `1.5rem` gap — the Dashboard layout grid.
-- **`.nav-link`** (lines 73–79) — sidebar nav item: `flex items-center gap-3 px-4 py-3 rounded-xl text-earth hover:bg-sage/50 hover:text-forest transition-all`; `.nav-link.active` → `bg-sage text-forest font-semibold`.
-- **`.hero-swiper` / `.hero-slide`** (lines 82–97) — horizontal scroll-snap carousel.
-- **`.ios-switch` / `.ios-switch-thumb`** (lines 209–231) — iOS-style toggle.
-- **`.sticky-header`** (lines 336–340) — `position: sticky` + `backdrop-filter: blur(12px)`.
+- **Card Radius:** `18px` (`rounded-premium` / `rounded-[18px]`) — canonical container radius.
+- **Button & Input Radius:** `12px` (`rounded-xl`) — standard interactive element radius.
+- **Modal & Slide-over Radius:** `24px` (`rounded-3xl`) — large dialog container radius.
+- **Status Pills & FAB:** `9999px` (`rounded-full`) — status indicators, tag badges, and floating action button.
 
-### UI Library
-- **No component library.** All components are hand-built with Tailwind utilities.
-- `@suid/material` is installed but used **only for icons** (`@suid/icons-material/*`: `Add`, `Close`, `DashboardOutlined`, `ReceiptLongOutlined`, …).
-- Material Icons **font** is also used directly: `<span class="material-icons">eco</span>`, `chevron_left`, `expand_more`, `schedule`, `sync`.
-- **ApexCharts** (`solid-apexcharts`) for all data viz; global tooltip overrides in `index.css` lines 110–116.
+## Components
 
-### Component Patterns
+### Buttons
+- **Shape:** Soft rounded rectangle (`12px` / `rounded-xl`).
+- **Primary:** `bg-forest text-white hover:bg-mid-green font-outfit font-bold px-6 py-3 transition-all duration-200 hover:-translate-y-0.5`.
+- **Ghost / Secondary:** `text-forest bg-transparent hover:bg-sage/50 font-outfit font-medium px-4 py-2 transition-colors`.
+- **Pill Chip:** `bg-sage/40 text-forest border border-forest/10 rounded-full px-3 py-1 text-[10px] font-bold uppercase`.
 
-**Cards** — `.premium-card` is the universal container. Many add subtle green gradients: `bg-gradient-to-br from-white via-sage/5 to-sage/10` (StockHero), `bg-gradient-to-b from-white to-sage/5` (MetricsCard).
+### Cards / Containers
+- **Corner Style:** `18px` (`rounded-premium`).
+- **Background:** White (`#ffffff`) with optional gradient accent (`bg-gradient-to-br from-white via-sage/5 to-sage/10`).
+- **Border:** Translucent green (`border border-forest/10`).
+- **Shadow:** Soft ambient green shadow (`shadow-premium`).
+- **Internal Padding:** `1.5rem` (`24px` / `p-6`).
 
-**Buttons**
-- Primary: `bg-forest text-white hover:bg-mid-green rounded-xl font-outfit font-bold` with `hover:-translate-y-1` lift.
-- Secondary/ghost: `text-earth hover:bg-sage/50 text-forest transition-colors`.
-- Pill/chip: `px-3 py-1.5 bg-sage/40 border-forest/10 rounded-full text-[10px] font-bold uppercase`.
-- Icon button: `w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest border border-forest/5`.
+### Inputs / Fields
+- **Style:** Light mint background (`bg-page-bg`), `12px` radius (`rounded-xl`), `border border-forest/10`.
+- **Focus:** `focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest`.
+- **Amount Underline Field:** Ultra-large monetary inputs use a clean underline border (`border-b-2 border-sage/40 focus:border-forest text-4xl font-cormorant`).
 
-**Global FAB** (`App.tsx`) — `w-16 h-16 bg-spring text-white rounded-full shadow-2xl` bottom-right; icon rotates 90° on hover. Hidden on stock/portfolio/dividend pages.
+### Navigation
+- **Sidebar Links:** `flex items-center gap-3 px-4 py-3 rounded-xl text-earth hover:bg-sage/50 hover:text-forest transition-all`.
+- **Active State:** `bg-sage text-forest font-semibold shadow-sm`.
 
-**Segmented toggles** — `flex p-1 bg-page-bg rounded-2xl`, selected = `bg-white shadow-md` (e.g. currency toggle, expense type toggle).
+## Do's and Don'ts
 
-**Inputs** — `bg-page-bg rounded-xl border border-forest/5 font-outfit focus:outline-none focus:ring-2 focus:ring-forest/10`. Large amount input uses underline style: `border-b-2 border-sage/30 focus:border-forest text-5xl`.
+### Do:
+- **Do** use `Cormorant Garamond` for major financial numerals, net worth headers, and editorial titles.
+- **Do** apply opacity modulation (`forest/10`, `sage/50`) for subtle borders, hover fills, and surface tints.
+- **Do** format section labels as uppercase micro-typography (`text-[10px] font-bold text-earth uppercase tracking-widest`).
+- **Do** wrap primary screen modules in `.premium-card` (`bg-card-bg rounded-premium border border-forest/10 shadow-premium`).
 
-**Modals** — centered `fixed inset-0 z-50 flex items-center justify-center bg-forest/40` backdrop with `bg-white rounded-3xl p-8 shadow-2xl` panel; `<Show when={isOpen}>` wrapper; `stopPropagation` on inner panel; some have a colored top accent line (`h-1 bg-forest`).
-
-**Slide-overs** (`AddExpenseSlideOver`) — right-anchored `w-full max-w-[420px] h-screen bg-white`, `translate3d(100%,0,0)` ↔ `translate3d(0,0,0)` with `transition-transform duration-300 ease-out`, `bg-forest/40` backdrop.
-
-**Tooltips** (`components/modules/Tooltip.tsx`) — custom, 2s hover delay, `bg-neutral-900/95 backdrop-blur-md text-white text-xs rounded-xl`, four positions with CSS-border arrows.
-
-**Metric rows** (`MetricsCard`) — colored dot + label + value + good/bad/neutral signal badge, whole row wrapped in a `Tooltip`; verdict logic in `src/utils/metricEvaluator.ts`.
-
-**Status indicators** — market session dots: `w-2 h-2 rounded-full animate-pulse-soft` with semantic color.
-
-**Empty / loading states** — `bg-page-bg rounded-2xl animate-pulse` placeholders; spinner: `border-2 border-forest/20 border-t-forest rounded-full animate-spin`.
-
-### Layout (`MainLayout.tsx`)
-Fixed three-region desktop layout:
-- **Left:** `Sidebar` — `w-[220px]`, white bg, `border-r border-forest/10`
-- **Center:** `TopBar` (h-20) + scrollable `<main class="p-6">` with `max-w-[1400px] mx-auto`
-- **Right:** `InsightsSidebar` — collapsible, animates `w-[280px]` ↔ `w-0` via `transition-all duration-300`
-
----
-
-## 5. Animations & Motion
-
-Custom keyframes in `src/index.css`:
-
-| Keyframe | Class | Use |
-|---|---|---|
-| `fadeInUp` (119) | `.animate-fade-in-up` | Page entry (0.5s, opacity + translateY 12px → 0) |
-| `spin-slow` (134) | `.animate-spin-slow` | 8s linear rotation |
-| `slideDown` (147) | `.animate-slide-down` | Dropdown reveal (max-height) |
-| `pulse-soft` (165) | `.animate-pulse-soft` | Market-status dots (2s, scale 1↔1.2) |
-| `ellipsis` (181) | `.animate-ellipsis::after` | "Loading" dots |
-| `slideInRight` (238) | `.animate-slide-in-right` | Slide-over entry (cubic-bezier 0.16,1,0.3,1) |
-| `bellRing` (253) | `.animate-bell-ring` | Notification bell wiggle |
-
-- **Staggered entry:** `.stagger-1` … `.stagger-5` (lines 330–334) — 0.05s incremental delays for list sequences.
-- **Transitions:** `transition-all/colors/transform`, durations `duration-100/200/300/500/700/1000`, default `ease-out`.
-- **Hover lift pattern:** `hover:-translate-y-1`, `hover:scale-110`, `group-hover:scale-110`, `scale-[1.02]`.
-
----
-
-## 6. Styling Conventions
-
-- **Glassmorphism:** `backdrop-blur-sm/md` + `backdrop-filter: blur(12px)` for sticky headers and overlays.
-- **Subtle green gradients:** `from-white via-sage/5 to-sage/10`, decorative blurred circles `bg-forest/5 rounded-full blur-3xl`.
-- **Responsive:** desktop-first; only `lg:` is used (3 occurrences in `StockHero`). `sm/md/xl/2xl` unused.
-- **Naming:** components grouped by screen under `components/screen-*` / `components/scren-markets` (note: existing folder typo "scren"); shared layout in `components/layout/`, widgets in `components/modules/`; modals in `modals/` subfolders.
-- **State:** UI state in a Solid `createStore` (`src/store/index.ts`), persisted to `localStorage` under `finly_zen_state_v2`.
-- **Currency:** dual IDR (default) / USD with live-ish rate (default 17400); formatters in `src/utils/format.ts` (`formatRupiah`, `formatRupiahShort` → "Rp1,5jt", `formatUSD`, `formatUSDCompact` → "$1.23M", `formatPercent` with `+`, `formatMultiple` → "2.34x"). Indonesian locale `id-ID`.
-
----
-
-## 7. Key File Reference
-
-| File | Why it matters |
-|---|---|
-| `src/index.css` | **THE design system** — `@theme` tokens, base styles, component classes, all keyframes |
-| `index.html` | Font imports (line 26), Material Icons (27), theme-color meta (6) |
-| `package.json` | Dependency list (lines 14–32) |
-| `vite.config.ts` | Tailwind v4 Vite plugin setup |
-| `src/utils/colors.ts` | `getAssetColor` (40-color) + `getPortfolioColor` (10-color) palettes |
-| `src/utils/format.ts` | `formatHexColor` + all currency/number formatters |
-| `src/utils/metricEvaluator.ts` | Good/neutral/bad metric signal logic |
-| `src/components/layout/MainLayout.tsx` | Three-region layout reference |
-| `src/components/layout/Sidebar.tsx` | `.nav-link` usage, brand logo |
-| `src/components/layout/TopBar.tsx` | Pills, segmented toggles, status dots, dropdowns |
-| `src/components/screen-dashboard/HeroCard.tsx` | `.premium-card`, `.hero-swiper`, Cormorant numerals, gradient overlays |
-| `src/components/screen-dashboard/modules/AddExpenseSlideOver.tsx` | Slide-over + form input + segmented toggle patterns |
-| `src/components/screen-portfolio/modals/CreatePortfolioModal.tsx` | Modal pattern with accent top-line |
-| `src/components/scren-markets/MetricsCard.tsx` | Financial semantic colors + good/bad/neutral signals + tooltips |
-| `src/components/scren-markets/StockHero.tsx` | Gradient hero card, status badges, chips (only `lg:` usage) |
-| `src/components/modules/Tooltip.tsx` | Shared tooltip widget |
-| `src/pages/Dashboard.tsx` | `.bento-grid` composition |
-| `src/store/index.ts` | UI state shape (lines 24–32), localStorage persistence |
-
----
-
-## 8. Quick Start for New Screens
-
-1. Wrap content in `.premium-card` (or `.fin-metric-card` for metric tiles).
-2. Use `font-cormorant` for hero numerals / section headings; `font-outfit` everywhere else.
-3. Label sections with the uppercase micro-label pattern: `text-[10px] font-bold text-earth uppercase tracking-widest`.
-4. Borders: `border border-forest/10` (never pure gray). Shadows: `shadow-premium` on cards.
-5. Positive/negative values: `text-emerald-600` / `text-rose-500` (or `fin-green`/`fin-red` in market screens).
-6. Enter the page with `.animate-fade-in-up`; stagger children with `.stagger-1` … `.stagger-5`.
-7. Primary actions: `bg-forest text-white hover:bg-mid-green rounded-xl`; secondary: `text-forest hover:bg-sage/50`.
-8. Modals: `bg-forest/40` backdrop + `bg-white rounded-3xl p-8 shadow-2xl` panel.
+### Don't:
+- **Don't** introduce dark mode styles, dark background utilities, or pure black backgrounds.
+- **Don't** use pure gray borders (`border-gray-200` or `#e5e7eb`); always use translucent green tinting (`border-forest/10`).
+- **Don't** clutter screens with dense action buttons; keep primary actions limited and prioritized.
+- **Don't** break the dual font hierarchy by using sans-serif for hero numbers or serif for micro UI labels.

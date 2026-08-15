@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import type {
   PortfolioDB,
   PortfolioTransactionDB,
+  PortfolioHoldingDB,
   AssetDB,
   MultiStockItem,
   MultiStockResponse,
@@ -147,6 +148,20 @@ export async function getPortfolioTransactions(portfolioId: string): Promise<Por
 
   if (error) {
     console.error(`Error fetching transactions for portfolio ${portfolioId}:`, error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function getPortfolioHoldings(portfolioId: string): Promise<PortfolioHoldingDB[]> {
+  const { data, error } = await supabase
+    .from("portfolio_holdings")
+    .select("*")
+    .eq("portfolio_id", portfolioId);
+
+  if (error) {
+    console.error(`Error fetching holdings for portfolio ${portfolioId}:`, error);
     return [];
   }
 

@@ -6,6 +6,7 @@ import type { PortfolioAsset, PortfolioTransaction } from "../../../types";
 import { useNavigate } from "@solidjs/router";
 import { getAssetThesis, updateAssetThesis } from "../../../data/portfolioData";
 import { getAssetColor } from "../../../utils/colors";
+import { AssetLogo } from "../../common/AssetLogo";
 
 interface AssetDetailsSlideOverProps {
   asset: PortfolioAsset | null;
@@ -139,52 +140,15 @@ export const AssetDetailsSlideOver = (props: AssetDetailsSlideOverProps) => {
                 {/* Header */}
                 <div class="p-6 border-b border-forest/10 flex items-center justify-between bg-sage/5">
                   <div class="flex items-center gap-3">
-                    <Show
-                      when={asset().logoUrl}
-                      fallback={
-                        <div
-                          class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
-                          style={{ "background-color": getAssetColor(asset().ticker) }}
-                        >
-                          {asset().ticker.charAt(0)}
-                        </div>
-                      }
-                    >
-                      {(logoUrl) => {
-                        const [hasError, setHasError] = createSignal(false);
-                        
-                        // Reset hasError if the ticker changes
-                        createEffect(() => {
-                          asset().ticker;
-                          setHasError(false);
-                        });
-
-                        return (
-                          <div
-                            class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden"
-                            style={{
-                              "background-color": hasError()
-                                ? getAssetColor(asset().ticker)
-                                : "#ffffff",
-                            }}
-                          >
-                            <Show
-                              when={!hasError()}
-                              fallback={
-                                <span>{asset().ticker.charAt(0)}</span>
-                              }
-                            >
-                              <img
-                                src={logoUrl()}
-                                alt={asset().ticker}
-                                class="w-full h-full object-contain p-1 bg-white"
-                                onError={() => setHasError(true)}
-                              />
-                            </Show>
-                          </div>
-                        );
-                      }}
-                    </Show>
+                    <AssetLogo
+                      ticker={asset().ticker}
+                      logoUrl={asset().logoUrl}
+                      name={asset().name}
+                      size="lg"
+                      class="w-10 h-10 rounded-xl shadow-xs border border-forest/10"
+                      imageClass="object-contain p-1 bg-white"
+                      fallbackType="letter"
+                    />
                     <div>
                       <h3 
                         onClick={() => {

@@ -78,7 +78,6 @@ export default function QuickPortfolio() {
   const getCategory = (ticker: string) => {
     const t = ticker.toUpperCase();
     if (t.endsWith(".JK")) return "IDX";
-    if (t === "VOO") return "ETFs";
     if (t.endsWith("-USD") || t === "BTC" || t === "BTC-USD") return "Crypto";
     return "Stocks";
   };
@@ -92,7 +91,6 @@ export default function QuickPortfolio() {
   // Get Material symbol/icon depending on asset type/category
   const getCategoryIcon = (category: string) => {
     if (category === "Crypto") return "currency_bitcoin";
-    if (category === "ETFs") return "account_balance";
     if (category === "IDX") return "show_chart";
     return "phone_iphone"; // Default Stocks
   };
@@ -251,21 +249,27 @@ export default function QuickPortfolio() {
     }
   });
 
-  // Calculations
-  const assetsValueUSD = createMemo(() => {
+  // Calculations (adheres strictly to specification)
+  const assetsValue = createMemo(() => {
     const p = quickPortfolio();
     if (!p || !p.assets) return 0;
     return p.assets.reduce((sum: number, a: PortfolioAsset) => sum + a.currentValue, 0);
   });
 
   const cashBalance = () => quickPortfolio()?.cash || 0;
-  const cashValueUSD = createMemo(() => cashBalance());
+  const cashValue = createMemo(() => cashBalance());
 
-  const totalValue = createMemo(() => assetsValueUSD() + cashValueUSD());
+  const totalValue = createMemo(() => quickPortfolio()?.totalValue ?? (assetsValue() + cashValue()));
   const initialCapital = () => quickPortfolio()?.initialCapital || 0;
 
-  const overallPL = () => totalValue() - initialCapital();
-  const overallPLPercent = () => initialCapital() > 0 ? (overallPL() / initialCapital()) : 0;
+  const overallPL = createMemo(() => quickPortfolio()?.allTimeGain ?? (totalValue() - initialCapital()));
+  const overallPLPercent = createMemo(() => {
+    const p = quickPortfolio();
+    if (p && typeof p.allTimeGainPercentage === "number") {
+      return p.allTimeGainPercentage / 100;
+    }
+    return initialCapital() > 0 ? (overallPL() / initialCapital()) : 0;
+  });
 
   // Today's Change
   const todayChange = createMemo(() => {
@@ -305,7 +309,7 @@ export default function QuickPortfolio() {
   // PnL per Category breakdown
   const categoryPnLData = createMemo((): CategoryPnLItem[] => {
     const p = quickPortfolio();
-    const categories: ("Stocks" | "IDX" | "Crypto" | "ETFs")[] = ["Stocks", "IDX", "Crypto", "ETFs"];
+    const categories: ("Stocks" | "IDX" | "Crypto")[] = ["Stocks", "IDX", "Crypto"];
     
     return categories.map((cat) => {
       const icon = getCategoryIcon(cat);
@@ -343,54 +347,107 @@ export default function QuickPortfolio() {
     });
   });
 
-  // Dynamic Conic Allocation percentages (category view: Stocks, IDX, Crypto, Cash)
+  // Dynamic Allocation breakdown (Market Value %, Cost Basis %, Drift)
   const allocations = createMemo(() => {
     const p = quickPortfolio();
-    if (!p) return { stocks: 0, idx: 0, crypto: 0, cash: 0 };
-    const total = totalValue() || 1;
+    if (!p) {
+      return {
+        stocks: 0,
+        idx: 0,
+        crypto: 0,
+        cash: 0,
+        market: { stocks: 0, idx: 0, crypto: 0, cash: 0 },
+        cost: { stocks: 0, idx: 0, crypto: 0, cash: 0 },
+        drift: { stocks: 0, idx: 0, crypto: 0, cash: 0 },
+      };
+    }
+    const totalMkt = totalValue() || 1;
+    const totalCost = initialCapital() || 1;
 
-    let stocksVal = 0;
-    let idxVal = 0;
-    let cryptoVal = 0;
+    let stocksMkt = 0, idxMkt = 0, cryptoMkt = 0;
+    let stocksCost = 0, idxCost = 0, cryptoCost = 0;
 
-    (p.assets || []).forEach((a: any) => {
+    (p.assets || []).forEach((a: PortfolioAsset) => {
       const cat = getCategory(a.ticker);
-      if (cat === "IDX") idxVal += a.currentValue;
-      else if (cat === "Crypto") cryptoVal += a.currentValue;
-      else stocksVal += a.currentValue;
+      const cost = a.currentValue - a.totalGainLoss;
+      if (cat === "IDX") {
+        idxMkt += a.currentValue;
+        idxCost += cost;
+      } else if (cat === "Crypto") {
+        cryptoMkt += a.currentValue;
+        cryptoCost += cost;
+      } else {
+        stocksMkt += a.currentValue;
+        stocksCost += cost;
+      }
     });
 
+    const cash = cashBalance();
+
+    const mktStocks = (stocksMkt / totalMkt) * 100;
+    const mktIdx = (idxMkt / totalMkt) * 100;
+    const mktCrypto = (cryptoMkt / totalMkt) * 100;
+    const mktCash = (cash / totalMkt) * 100;
+
+    const costStocks = (stocksCost / totalCost) * 100;
+    const costIdx = (idxCost / totalCost) * 100;
+    const costCrypto = (cryptoCost / totalCost) * 100;
+    const costCash = (cash / totalCost) * 100;
+
     return {
-      stocks: (stocksVal / total) * 100,
-      idx: (idxVal / total) * 100,
-      crypto: (cryptoVal / total) * 100,
-      cash: (cashValueUSD() / total) * 100,
+      stocks: mktStocks,
+      idx: mktIdx,
+      crypto: mktCrypto,
+      cash: mktCash,
+      market: { stocks: mktStocks, idx: mktIdx, crypto: mktCrypto, cash: mktCash },
+      cost: { stocks: costStocks, idx: costIdx, crypto: costCrypto, cash: costCash },
+      drift: {
+        stocks: mktStocks - costStocks,
+        idx: mktIdx - costIdx,
+        crypto: mktCrypto - costCrypto,
+        cash: mktCash - costCash,
+      },
     };
   });
 
-  // Per-ticker detail allocation (detail view)
+  // Per-ticker detail allocation (detail view with both Market % and Cost %)
   const detailAllocations = createMemo((): AllocationItem[] => {
     const p = quickPortfolio();
     if (!p) return [];
-    const total = totalValue() || 1;
-    const cash = cashValueUSD();
-    const cashPct = total > 0 ? (cash / total) * 100 : 0;
+    const totalMkt = totalValue() || 1;
+    const totalCost = initialCapital() || 1;
+    const cash = cashBalance();
+    const cashMktPct = totalMkt > 0 ? (cash / totalMkt) * 100 : 0;
+    const cashCostPct = totalCost > 0 ? (cash / totalCost) * 100 : 0;
 
-    const items: AllocationItem[] = (p.assets || []).map((a: any) => ({
-      isCash: false,
-      ticker: getDisplayTicker(a.ticker),
-      name: a.name || a.ticker,
-      value: a.currentValue,
-      percentage: total > 0 ? (a.currentValue / total) * 100 : 0,
-      color: getAssetColor(a.ticker),
-    }));
+    const items: AllocationItem[] = (p.assets || []).map((a: PortfolioAsset) => {
+      const cost = a.currentValue - a.totalGainLoss;
+      const mktPct = totalMkt > 0 ? (a.currentValue / totalMkt) * 100 : 0;
+      const costPct = totalCost > 0 ? (cost / totalCost) * 100 : 0;
+      const drift = mktPct - costPct;
+
+      return {
+        isCash: false,
+        ticker: getDisplayTicker(a.ticker),
+        name: a.name || a.ticker,
+        value: a.currentValue,
+        costBasis: cost,
+        percentage: mktPct,
+        costPercentage: costPct,
+        drift,
+        color: getAssetColor(a.ticker),
+      };
+    });
 
     items.push({
       isCash: true,
       ticker: "Cash",
       name: "Liquidity",
       value: cash,
-      percentage: cashPct,
+      costBasis: cash,
+      percentage: cashMktPct,
+      costPercentage: cashCostPct,
+      drift: cashMktPct - cashCostPct,
       color: "#cbd5e1",
     });
 
@@ -609,21 +666,24 @@ export default function QuickPortfolio() {
     const asset = p.assets.find((a: any) => a.ticker === ticker);
     if (!asset) return;
 
+    const isIdx = ticker.endsWith(".JK");
     const oldQty = asset.totalShares;
-    const assetCurrency = asset.currency || "USD";
-    const oldConversionRate = (asset.conversionRate && asset.conversionRate > 1)
-      ? asset.conversionRate
-      : (assetCurrency === "USD" ? getUsdRate() : 1);
+    const assetCurrency = isIdx ? "IDR" : (asset.currency || "USD");
+    const oldConversionRate = isIdx
+      ? 1
+      : (asset.conversionRate && asset.conversionRate > 1
+        ? asset.conversionRate
+        : (assetCurrency === "USD" ? getUsdRate() : 1));
 
     // asset.averagePrice in portfolioStore is stored in portfolio base currency (IDR).
     // Convert to settlement currency (e.g. USD) for price_per_unit in portfolio_transactions.
-    const oldAvgPriceInSettlementCurrency = assetCurrency === "USD"
-      ? asset.averagePrice / oldConversionRate
-      : asset.averagePrice;
+    const oldAvgPriceInSettlementCurrency = isIdx
+      ? asset.averagePrice
+      : (assetCurrency === "USD" ? asset.averagePrice / oldConversionRate : asset.averagePrice);
 
     const newQty = field === "qty" ? newVal : oldQty;
     const newAvgPrice = field === "avgPrice" ? newVal : oldAvgPriceInSettlementCurrency;
-    const newConversionRate = field === "conversionRate" ? newVal : oldConversionRate;
+    const newConversionRate = isIdx ? 1 : (field === "conversionRate" ? newVal : oldConversionRate);
 
     setIsSubmitting(true);
     try {
@@ -643,7 +703,7 @@ export default function QuickPortfolio() {
           qty: newQty,
           price_per_unit: newAvgPrice,
           fx_rate_to_base: newConversionRate,
-          settlement_currency: asset.currency || "USD",
+          settlement_currency: assetCurrency,
           notes: "Consolidated holding edit",
           transaction_date: new Date().toISOString(),
           linked_transaction_id: null,
@@ -653,12 +713,12 @@ export default function QuickPortfolio() {
 
         await addPortfolioTransaction({
           portfolio_id: p.id,
-          asset_ticker: (asset.currency || "USD").toUpperCase(),
+          asset_ticker: assetCurrency.toUpperCase(),
           type: "WITHDRAWAL",
           qty: newCost,
           price_per_unit: 1,
           fx_rate_to_base: newConversionRate,
-          settlement_currency: asset.currency || "USD",
+          settlement_currency: assetCurrency,
           notes: `Cash withdrawal for consolidated BUY ${ticker}`,
           transaction_date: new Date().toISOString(),
           linked_transaction_id: assetTx.id,
@@ -666,7 +726,7 @@ export default function QuickPortfolio() {
       }
 
       await refreshPortfolio(p.id);
-      const updated = portfolioState.portfolios.find(x => x.id === p.id);
+      const updated = portfolioState.portfolios.find((x) => x.id === p.id);
       if (updated) {
         setQuickPortfolio(updated);
       }
@@ -708,7 +768,7 @@ export default function QuickPortfolio() {
 
       await refreshPortfolio(p.id);
 
-      const updated = portfolioState.portfolios.find(x => x.id === p.id);
+      const updated = portfolioState.portfolios.find((x) => x.id === p.id);
       if (updated) {
         setQuickPortfolio(updated);
       }
@@ -727,7 +787,7 @@ export default function QuickPortfolio() {
 
     try {
       await adjustPortfolioCash(p.id, newCash);
-      const found = portfolioState.portfolios.find(x => x.id === p.id);
+      const found = portfolioState.portfolios.find((x) => x.id === p.id);
       if (found) {
         setQuickPortfolio(found);
       }
@@ -756,6 +816,10 @@ export default function QuickPortfolio() {
       return;
     }
 
+    const isIdx = symbol.endsWith(".JK");
+    const effCurrency = isIdx ? "IDR" : currency;
+    const effRate = isIdx ? 1 : conversionRate;
+
     setIsSubmitting(true);
     try {
       await upsertAsset({
@@ -779,8 +843,8 @@ export default function QuickPortfolio() {
         type: "BUY",
         qty,
         price_per_unit: price,
-        fx_rate_to_base: conversionRate,
-        settlement_currency: currency,
+        fx_rate_to_base: effRate,
+        settlement_currency: effCurrency,
         notes: "Quick holding added",
         transaction_date: new Date().toISOString(),
         linked_transaction_id: null,
@@ -790,12 +854,12 @@ export default function QuickPortfolio() {
 
       await addPortfolioTransaction({
         portfolio_id: p.id,
-        asset_ticker: currency.toUpperCase(),
+        asset_ticker: effCurrency.toUpperCase(),
         type: "WITHDRAWAL",
         qty: cost,
         price_per_unit: 1,
-        fx_rate_to_base: conversionRate,
-        settlement_currency: currency,
+        fx_rate_to_base: effRate,
+        settlement_currency: effCurrency,
         notes: `Cash withdrawal for BUY ${symbol}`,
         transaction_date: new Date().toISOString(),
         linked_transaction_id: assetTx.id,
@@ -803,7 +867,7 @@ export default function QuickPortfolio() {
 
       await refreshPortfolio(p.id);
 
-      const updated = portfolioState.portfolios.find(x => x.id === p.id);
+      const updated = portfolioState.portfolios.find((x) => x.id === p.id);
       if (updated) {
         setQuickPortfolio(updated);
       }
@@ -820,8 +884,9 @@ export default function QuickPortfolio() {
     const symbol = newTicker().trim().toUpperCase();
     const qty = Number(newQty());
     const price = Number(newPrice());
-    const currency = newCurrency();
-    const conversionRate = Number(newConversionRate());
+    const isIdx = symbol.endsWith(".JK");
+    const currency = isIdx ? "IDR" : newCurrency();
+    const conversionRate = isIdx ? 1 : Number(newConversionRate());
 
     if (!symbol || qty <= 0 || price <= 0) {
       alert("Please fill in valid symbol, quantity, and buy price.");
@@ -836,18 +901,19 @@ export default function QuickPortfolio() {
     if (!p) return;
 
     const cost = qty * price;
-    const costIDR = currency === "IDR" ? cost : cost * conversionRate;
-    const costUSD = currency === "USD" ? cost : cost / conversionRate;
-    const newCash = p.cash - costIDR;
 
     setIsSubmitting(true);
     try {
-      const existing = p.assets.find((a: any) => a.ticker === symbol);
+      const existing = p.assets?.find((a: any) => a.ticker === symbol);
       if (existing) {
-        const oldCostUSD = existing.totalShares * existing.averagePrice;
-        const mergedQty = existing.totalShares + qty;
-        const mergedAvgPriceUSD = (oldCostUSD + costUSD) / mergedQty;
-        const mergedNewCash = p.cash - costIDR;
+        const oldQty = existing.totalShares;
+        const oldCostIDR = oldQty * existing.averagePrice;
+        const newCostIDR = isIdx ? cost : cost * conversionRate;
+        const mergedQty = oldQty + qty;
+        const mergedAvgCostIDR = (oldCostIDR + newCostIDR) / mergedQty;
+        const mergedPriceInCurrency = isIdx
+          ? mergedAvgCostIDR
+          : (currency === "USD" ? mergedAvgCostIDR / conversionRate : mergedAvgCostIDR);
 
         await supabase
           .from("portfolio_transactions")
@@ -855,20 +921,31 @@ export default function QuickPortfolio() {
           .eq("portfolio_id", p.id)
           .eq("asset_ticker", symbol);
 
-        await addPortfolioTransaction({
+        const assetTx = await addPortfolioTransaction({
           portfolio_id: p.id,
           asset_ticker: symbol,
           type: "BUY",
           qty: mergedQty,
-          price_per_unit: currency === "USD" ? mergedAvgPriceUSD : mergedAvgPriceUSD * conversionRate,
-          fx_rate_to_base: currency === "USD" ? conversionRate : 1,
+          price_per_unit: mergedPriceInCurrency,
+          fx_rate_to_base: conversionRate,
           settlement_currency: currency,
           notes: "Merged position addition",
           transaction_date: new Date().toISOString(),
           linked_transaction_id: null,
         });
 
-        await adjustPortfolioCash(p.id, mergedNewCash);
+        await addPortfolioTransaction({
+          portfolio_id: p.id,
+          asset_ticker: currency.toUpperCase(),
+          type: "WITHDRAWAL",
+          qty: mergedQty * mergedPriceInCurrency,
+          price_per_unit: 1,
+          fx_rate_to_base: conversionRate,
+          settlement_currency: currency,
+          notes: `Cash withdrawal for merged BUY ${symbol}`,
+          transaction_date: new Date().toISOString(),
+          linked_transaction_id: assetTx.id,
+        });
       } else {
         await upsertAsset({
           symbol,
@@ -885,7 +962,7 @@ export default function QuickPortfolio() {
           },
         });
 
-        await addPortfolioTransaction({
+        const assetTx = await addPortfolioTransaction({
           portfolio_id: p.id,
           asset_ticker: symbol,
           type: "BUY",
@@ -898,11 +975,22 @@ export default function QuickPortfolio() {
           linked_transaction_id: null,
         });
 
-        await adjustPortfolioCash(p.id, newCash);
+        await addPortfolioTransaction({
+          portfolio_id: p.id,
+          asset_ticker: currency.toUpperCase(),
+          type: "WITHDRAWAL",
+          qty: cost,
+          price_per_unit: 1,
+          fx_rate_to_base: conversionRate,
+          settlement_currency: currency,
+          notes: `Cash withdrawal for BUY ${symbol}`,
+          transaction_date: new Date().toISOString(),
+          linked_transaction_id: assetTx.id,
+        });
       }
 
       await refreshPortfolio(p.id);
-      
+
       setNewTicker("");
       setNewQty(null);
       setNewPrice(null);
@@ -966,7 +1054,7 @@ export default function QuickPortfolio() {
           </div>
         }
       >
-        <section class="grid grid-cols-12 gap-4">
+        <section class="grid grid-cols-12 gap-6">
           <QuickPortfolioKPIs 
             totalValue={totalValue()}
             overallPL={overallPL()}
@@ -978,8 +1066,8 @@ export default function QuickPortfolio() {
             formatPercent={formatPercent}
           />
 
-          {/* New Row: Category PnL Card & Daily Movers Card */}
-          <div class="col-span-12 lg:col-span-6 flex flex-col">
+          {/* Row: Category PnL Card & Daily Movers Card */}
+          <div class="col-span-12 lg:col-span-6 flex flex-col h-full">
             <CategoryPnLCard 
               categories={categoryPnLData()}
               formatVal={formatVal}
@@ -987,7 +1075,7 @@ export default function QuickPortfolio() {
             />
           </div>
 
-          <div class="col-span-12 lg:col-span-6 flex flex-col">
+          <div class="col-span-12 lg:col-span-6 flex flex-col h-full">
             <DailyMoversCard 
               assets={quickPortfolio()?.assets || []}
               formatVal={formatVal}
@@ -1019,6 +1107,7 @@ export default function QuickPortfolio() {
           distinctAssetCount={distinctAssetCount()}
           cashBalance={cashBalance()}
           totalValue={totalValue()}
+          initialCapital={initialCapital()}
           overallPL={overallPL()}
           overallPLPercent={overallPLPercent()}
           currencyView={currencyView()}

@@ -22,6 +22,7 @@ import {
 } from "../../utils/format";
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import type { Portfolio, PortfolioTransactionDB } from "../../types";
+import { AssetLogo } from "../common/AssetLogo";
 
 interface TradeHistoryProps {
   portfolio: Portfolio;
@@ -1040,45 +1041,14 @@ export const TradeHistory = (props: TradeHistoryProps) => {
                 return (
                   <div class="flex items-center justify-between p-3 rounded-xl bg-sage/10 border border-forest/5 hover:border-forest/10 transition-all">
                     <div class="flex items-center gap-2.5">
-                      <Show
-                        when={tickerLogos()[item.ticker.toUpperCase()]}
-                        fallback={
-                          <div
-                            class="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0"
-                            style={{ "background-color": assetColor }}
-                          >
-                            {item.ticker.charAt(0)}
-                          </div>
-                        }
-                      >
-                        {(logoUrl) => {
-                          const [hasError, setHasError] = createSignal(false);
-                          return (
-                            <div
-                              class="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm overflow-hidden shrink-0"
-                              style={{
-                                "background-color": hasError()
-                                  ? assetColor
-                                  : "#ffffff",
-                              }}
-                            >
-                              <Show
-                                when={!hasError()}
-                                fallback={
-                                  <span>{item.ticker.charAt(0)}</span>
-                                }
-                              >
-                                <img
-                                  src={logoUrl()}
-                                  alt={item.ticker}
-                                  class="w-full h-full object-contain p-0.5 bg-white"
-                                  onError={() => setHasError(true)}
-                                />
-                              </Show>
-                            </div>
-                          );
-                        }}
-                      </Show>
+                      <AssetLogo
+                        ticker={item.ticker}
+                        logoUrl={tickerLogos()[item.ticker.toUpperCase()]}
+                        size="sm"
+                        class="w-7 h-7 rounded-lg shadow-xs border border-forest/10"
+                        imageClass="object-contain p-0.5 bg-white"
+                        fallbackType="letter"
+                      />
                       <div class="flex flex-col min-w-0">
                         <span 
                           onClick={(e) => {
@@ -1125,45 +1095,14 @@ export const TradeHistory = (props: TradeHistoryProps) => {
                 return (
                   <div class="flex items-center justify-between p-3 rounded-xl bg-red-500/5 border border-red-500/5 hover:border-red-500/10 transition-all">
                     <div class="flex items-center gap-2.5">
-                      <Show
-                        when={tickerLogos()[item.ticker.toUpperCase()]}
-                        fallback={
-                          <div
-                            class="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0"
-                            style={{ "background-color": assetColor }}
-                          >
-                            {item.ticker.charAt(0)}
-                          </div>
-                        }
-                      >
-                        {(logoUrl) => {
-                          const [hasError, setHasError] = createSignal(false);
-                          return (
-                            <div
-                              class="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm overflow-hidden shrink-0"
-                              style={{
-                                "background-color": hasError()
-                                  ? assetColor
-                                  : "#ffffff",
-                              }}
-                            >
-                              <Show
-                                when={!hasError()}
-                                fallback={
-                                  <span>{item.ticker.charAt(0)}</span>
-                                }
-                              >
-                                <img
-                                  src={logoUrl()}
-                                  alt={item.ticker}
-                                  class="w-full h-full object-contain p-0.5 bg-white"
-                                  onError={() => setHasError(true)}
-                                />
-                              </Show>
-                            </div>
-                          );
-                        }}
-                      </Show>
+                      <AssetLogo
+                        ticker={item.ticker}
+                        logoUrl={tickerLogos()[item.ticker.toUpperCase()]}
+                        size="sm"
+                        class="w-7 h-7 rounded-lg shadow-xs border border-forest/10"
+                        imageClass="object-contain p-0.5 bg-white"
+                        fallbackType="letter"
+                      />
                       <div class="flex flex-col min-w-0">
                         <span 
                           onClick={(e) => {
@@ -1357,45 +1296,14 @@ export const TradeHistory = (props: TradeHistoryProps) => {
                           {/* Ticker Column with Logo & Company Name */}
                           <td class="py-4 px-4">
                             <div class="flex items-center gap-4 min-w-0">
-                              <Show
-                                when={tickerLogos()[tx.asset_ticker.toUpperCase()]}
-                                fallback={
-                                  <div
-                                    class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0"
-                                    style={{ "background-color": assetColor }}
-                                  >
-                                    {tx.asset_ticker.charAt(0)}
-                                  </div>
-                                }
-                              >
-                                {(logoUrl) => {
-                                  const [hasError, setHasError] = createSignal(false);
-                                  return (
-                                    <div
-                                      class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden shrink-0"
-                                      style={{
-                                        "background-color": hasError()
-                                          ? assetColor
-                                          : "#ffffff",
-                                      }}
-                                    >
-                                      <Show
-                                        when={!hasError()}
-                                        fallback={
-                                          <span>{tx.asset_ticker.charAt(0)}</span>
-                                        }
-                                      >
-                                        <img
-                                          src={logoUrl()}
-                                          alt={tx.asset_ticker}
-                                          class="w-full h-full object-contain p-1 bg-white"
-                                          onError={() => setHasError(true)}
-                                        />
-                                      </Show>
-                                    </div>
-                                  );
-                                }}
-                              </Show>
+                              <AssetLogo
+                                ticker={tx.asset_ticker}
+                                logoUrl={tickerLogos()[tx.asset_ticker.toUpperCase()]}
+                                size="lg"
+                                class="w-10 h-10 rounded-xl shadow-xs border border-forest/10"
+                                imageClass="object-contain p-1 bg-white"
+                                fallbackType="letter"
+                              />
                               <div class="flex flex-col min-w-0">
                                 <span 
                                   onClick={(e) => {

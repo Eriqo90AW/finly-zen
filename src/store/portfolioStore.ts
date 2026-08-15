@@ -1,20 +1,31 @@
 import { createStore, reconcile } from "solid-js/store";
 import { createEffect, onMount, createSignal } from "solid-js";
-import type { Portfolio, PortfolioTransaction, PortfolioAsset, PortfolioHistoryPoint, PortfolioDB } from "../types";
+import type {
+  Portfolio,
+  PortfolioTransaction,
+  PortfolioAsset,
+  PortfolioHistoryPoint,
+  PortfolioDB,
+  PortfolioHoldingDB,
+  PortfolioTransactionDB,
+} from "../types";
 import {
   getPortfolios,
   createPortfolioDB,
   deletePortfolioDB,
   getPortfolioTransactions,
+  getPortfolioHoldings,
   addPortfolioTransaction,
   upsertAsset,
   updatePortfolioCash,
   setPortfolioCashAndInitial,
   fetchMultiStockPrices,
+  fetchUsdRate,
 } from "../data/portfolioData";
-import { getUsdRate } from "../utils/format";
+import { getUsdRate, setUsdExchangeRate } from "../utils/format";
 import { supabase } from "../lib/supabase";
 import { getMarketStatus } from "../utils/marketTime";
+import { getCachedLogo, setCachedLogo, saveCachedLogos, preloadImages } from "../utils/logoCache";
 
 interface PortfolioStore {
   portfolios: Portfolio[];
@@ -71,237 +82,266 @@ export const setActivePortfolioId = (id: string | null) => {
   } catch (e) {}
 };
 
-// Compute standard portfolio aggregates
+// Compute standard portfolio aggregates following the exact mathematical specification
 const computePortfolioState = (
   p: PortfolioDB,
-  txs: any[],
+  holdings: PortfolioHoldingDB[],
+  txs: PortfolioTransactionDB[],
   priceMap: Record<string, any>,
+  fxRate: number,
   dbAssetsMap: Record<string, any> = {}
 ): Portfolio => {
   const assets: PortfolioAsset[] = [];
-  const tickers = Array.from(
-    new Set(
-      txs
-        .map((tx) => tx.asset_ticker.toUpperCase())
-        .filter((ticker) => ticker !== "USD" && ticker !== "IDR")
-    )
+
+  // Source of Truth 1: Initial Capital from the single DEPOSIT row in portfolio_transactions
+  const depositTx = txs.find((t) => t.type === "DEPOSIT");
+  const TOTAL_CAPITAL_IDR = depositTx
+    ? Number(depositTx.qty) * Number(depositTx.fx_rate_to_base || 1)
+    : 0;
+
+  // Source of Truth 2: Positions (qty) from portfolio_holdings view (excluding FIAT and <= 0)
+  const activeHoldings = (holdings || []).filter(
+    (h) =>
+      h.category !== "FIAT" &&
+      h.asset.toUpperCase() !== "IDR" &&
+      h.asset.toUpperCase() !== "USD" &&
+      Number(h.quantity) > 0
   );
 
-  const isUSD = p.base_currency === "USD";
-  const portfolioRate = isUSD ? getUsdRate() : 1;
-
-  tickers.forEach((ticker) => {
-    const assetTxs = txs.filter((t) => t.asset_ticker.toUpperCase() === ticker);
-    let totalShares = 0;
-    let totalBuyQty = 0;
-    let totalCostNative = 0;
-    let totalCostIDR = 0;
-
-    assetTxs.forEach((tx) => {
-      const qty = Number(tx.qty);
-      const price = Number(tx.price_per_unit);
-      const rate = Number(tx.fx_rate_to_base);
-
-      if (tx.type === "BUY") {
-        totalShares += qty;
-        totalBuyQty += qty;
-        totalCostNative += qty * price;
-        totalCostIDR += qty * price * rate;
-      } else if (tx.type === "SELL") {
-        totalShares -= qty;
-      }
-    });
-    
-    // Round totalShares to 8 decimal places to handle floating-point precision errors (e.g. 3.6 - 1.2 - 2.4 = 1.11e-16)
-    totalShares = Math.round(totalShares * 1e8) / 1e8;
-
-    if (totalShares > 0) {
-      const assetCurrency = assetTxs[0]?.settlement_currency || "USD";
-      const assetConversionRate = Number(assetTxs[0]?.fx_rate_to_base) || 1;
-      const averagePriceIDR = totalBuyQty > 0 ? totalCostIDR / totalBuyQty : 0;
-      const averagePriceNative = totalBuyQty > 0 ? totalCostNative / totalBuyQty : 0;
-
-      const { session } = getMarketStatus();
-
-      const prePriceNative =
-        priceMap[ticker]?.pre_market_price ??
-        priceMap[ticker]?.preMarketPrice ??
-        priceMap[ticker]?.fundamentals?.price?.preMarketPrice ??
-        null;
-      const postPriceNative =
-        priceMap[ticker]?.post_market_price ??
-        priceMap[ticker]?.postMarketPrice ??
-        priceMap[ticker]?.fundamentals?.price?.postMarketPrice ??
-        null;
-
-      const regularPriceNative = priceMap[ticker]?.current_price ?? averagePriceNative;
-
-      const activePriceNative = (() => {
-        if (session === "Pre-market" && prePriceNative !== null) {
-          return prePriceNative;
-        } else if (session === "After-hours" && postPriceNative !== null) {
-          return postPriceNative;
-        }
-        return regularPriceNative;
-      })();
-
-      const marketCurrency = priceMap[ticker]?.fundamentals?.price?.currency || (ticker.toUpperCase().endsWith(".JK") ? "IDR" : "USD");
-
-      const livePrice = isUSD
-        ? (marketCurrency === "USD" ? activePriceNative : activePriceNative / getUsdRate())
-        : (marketCurrency === "USD" ? activePriceNative * getUsdRate() : activePriceNative);
-
-      const prePrice = prePriceNative !== null
-        ? (isUSD
-            ? (marketCurrency === "USD" ? prePriceNative : prePriceNative / getUsdRate())
-            : (marketCurrency === "USD" ? prePriceNative * getUsdRate() : prePriceNative))
-        : null;
-
-      const postPrice = postPriceNative !== null
-        ? (isUSD
-            ? (marketCurrency === "USD" ? postPriceNative : postPriceNative / getUsdRate())
-            : (marketCurrency === "USD" ? postPriceNative * getUsdRate() : postPriceNative))
-        : null;
-
-      const averagePrice = isUSD
-        ? (assetCurrency === "USD" ? averagePriceNative : averagePriceNative / getUsdRate())
-        : averagePriceIDR;
-
-      const previousCloseNative =
-        priceMap[ticker]?.fundamentals?.summaryDetail?.previousClose ??
-        priceMap[ticker]?.fundamentals?.price?.regularMarketPreviousClose ??
-        null;
-
-      const previousClose = previousCloseNative !== null
-        ? (isUSD
-            ? (marketCurrency === "USD" ? previousCloseNative : previousCloseNative / getUsdRate())
-            : (marketCurrency === "USD" ? previousCloseNative * getUsdRate() : previousCloseNative))
-        : null;
-
-      const dayChange = previousClose !== null ? totalShares * (livePrice - previousClose) : 0;
-      const dayChangePct = previousClose !== null && previousClose > 0
-        ? ((livePrice - previousClose) / previousClose) * 100
-        : 0;
-
-      const currentValue = totalShares * livePrice;
-      const costBasis = totalShares * averagePrice;
-      const totalGainLoss = currentValue - costBasis;
-
-      // Load target allocation from localStorage if available
-      const savedTargets = localStorage.getItem(`finly_zen_target_allocations_${p.id}`);
-      let targetAllocation = 0;
-      if (savedTargets) {
-        try {
-          const parsed = JSON.parse(savedTargets);
-          targetAllocation = parsed[ticker] || 0;
-        } catch (e) {}
-      }
-
-      const dbAsset = dbAssetsMap[ticker];
-
-      assets.push({
-        id: ticker,
-        ticker,
-        name: (dbAsset?.name && dbAsset.name.toUpperCase() !== ticker.toUpperCase() ? dbAsset.name : undefined)
-          || priceMap[ticker]?.company_name 
-          || priceMap[ticker]?.fundamentals?.price?.longName 
-          || priceMap[ticker]?.fundamentals?.price?.shortName 
-          || priceMap[ticker]?.fundamentals?.summaryProfile?.longName 
-          || ticker,
-        logoUrl: dbAsset?.logo_url || priceMap[ticker]?.logo_url || undefined,
-        currency: assetCurrency,
-        conversionRate: assetConversionRate,
-        currentValue,
-        totalGainLoss,
-        actualAllocation: 0,
-        targetAllocation,
-        totalShares,
-        averagePrice,
-        currentPrice: livePrice,
-        preMarketPrice: prePrice,
-        postMarketPrice: postPrice,
-        previousClose,
-        dayChange,
-        dayChangePct,
+  // Fallback: If portfolio_holdings is empty, derive active positions from transactions
+  const positionMap = new Map<string, { qty: number; icon?: string | null; category?: string }>();
+  if (activeHoldings.length > 0) {
+    activeHoldings.forEach((h) => {
+      positionMap.set(h.asset.toUpperCase(), {
+        qty: Number(h.quantity),
+        icon: h.icon,
+        category: h.category,
       });
-    }
-  });
-
-  const hasFiatTransactions = txs.some(tx => {
-    const ticker = tx.asset_ticker.toUpperCase();
-    return ticker === "USD" || ticker === "IDR";
-  });
-
-  let portfolioCash = 0;
-  let initialCapital = 0;
-
-  if (hasFiatTransactions) {
-    let balanceUSD = 0;
-    let balanceIDR = 0;
-    let investedCapital = 0;
-
-    txs.forEach((tx) => {
-      const ticker = tx.asset_ticker.toUpperCase();
-      const qty = Number(tx.qty);
-      const type = tx.type;
-      const rate = Number(tx.fx_rate_to_base || 1);
-
-      const factor = (type === "DEPOSIT" || type === "BUY") ? 1 : -1;
-
-      if (ticker === "USD") {
-        balanceUSD += qty * factor;
-        if (!tx.linked_transaction_id && (type === "DEPOSIT" || type === "WITHDRAWAL")) {
-          investedCapital += qty * rate * factor;
-        }
-      } else if (ticker === "IDR") {
-        balanceIDR += qty * factor;
-        if (!tx.linked_transaction_id && (type === "DEPOSIT" || type === "WITHDRAWAL")) {
-          investedCapital += qty * rate * factor;
-        }
+    });
+  } else {
+    // Aggregated BUY.qty - SELL.qty from txs
+    const uniqueTickers = Array.from(
+      new Set(
+        txs
+          .map((tx) => tx.asset_ticker.toUpperCase())
+          .filter((t) => t !== "USD" && t !== "IDR")
+      )
+    );
+    uniqueTickers.forEach((ticker) => {
+      const assetTxs = txs.filter((t) => t.asset_ticker.toUpperCase() === ticker);
+      let shares = 0;
+      assetTxs.forEach((t) => {
+        const qty = Number(t.qty);
+        if (t.type === "BUY") shares += qty;
+        else if (t.type === "SELL") shares -= qty;
+      });
+      shares = Math.round(shares * 1e8) / 1e8;
+      if (shares > 0) {
+        positionMap.set(ticker, { qty: shares });
       }
     });
-
-    if (isUSD) {
-      portfolioCash = balanceUSD + (balanceIDR / getUsdRate());
-    } else {
-      portfolioCash = balanceIDR + (balanceUSD * getUsdRate());
-    }
-    initialCapital = investedCapital;
-  } else {
-    portfolioCash = 0;
-    initialCapital = 0;
   }
 
-  const assetsValue = assets.reduce((sum, a) => sum + a.currentValue, 0);
-  const totalValue = portfolioCash + assetsValue;
+  const { session } = getMarketStatus();
+
+  positionMap.forEach((pos, ticker) => {
+    const qty = pos.qty;
+    const isIdx = ticker.endsWith(".JK") || pos.category === "IDX";
+    const isCrypto =
+      ticker.endsWith("-USD") ||
+      ticker === "BTC" ||
+      ticker === "ETH" ||
+      pos.category === "CRYPTO";
+
+    // Source of Truth 3: Cost basis from portfolio_transactions where type = 'BUY'
+    const buyTxs = txs.filter(
+      (t) => t.asset_ticker.toUpperCase() === ticker && t.type === "BUY"
+    );
+    const totalBuyQty = buyTxs.reduce((sum, t) => sum + Number(t.qty), 0);
+    const totalBuyCostIDR = buyTxs.reduce((sum, t) => {
+      const tQty = Number(t.qty);
+      const tPrice = Number(t.price_per_unit);
+      const tRate = Number(t.fx_rate_to_base || 1);
+      return sum + tQty * tPrice * tRate;
+    }, 0);
+
+    const avgCostPerUnitIDR = totalBuyQty > 0 ? totalBuyCostIDR / totalBuyQty : 0;
+    const cost_basis_idr = qty * avgCostPerUnitIDR;
+
+    const assetCurrency = buyTxs[0]?.settlement_currency || (isIdx ? "IDR" : "USD");
+    const assetConversionRate =
+      Number(buyTxs[0]?.fx_rate_to_base) || (assetCurrency === "USD" ? fxRate : 1);
+
+    // Live Market Price lookup from v2-multi-stock
+    const prePriceNative =
+      priceMap[ticker]?.pre_market_price ??
+      priceMap[ticker]?.preMarketPrice ??
+      priceMap[ticker]?.fundamentals?.price?.preMarketPrice ??
+      null;
+    const postPriceNative =
+      priceMap[ticker]?.post_market_price ??
+      priceMap[ticker]?.postMarketPrice ??
+      priceMap[ticker]?.fundamentals?.price?.postMarketPrice ??
+      null;
+    const regularPriceNative =
+      priceMap[ticker]?.current_price ?? (buyTxs[0]?.price_per_unit || 0);
+
+    const activePriceNative = (() => {
+      if (session === "Pre-market" && prePriceNative !== null) return prePriceNative;
+      if (session === "After-hours" && postPriceNative !== null) return postPriceNative;
+      return regularPriceNative;
+    })();
+
+    // Compute Market Value per position:
+    // - US stock: qty * price_usd * fx_usd_idr
+    // - IDX stock (.JK): qty * price_idr (no FX conversion)
+    // - Crypto (BTC-USD, ETH-USD): qty * price_usd * fx_usd_idr
+    let market_val_idr = 0;
+    let livePrice = 0;
+
+    if (isIdx) {
+      market_val_idr = qty * activePriceNative;
+      livePrice = activePriceNative;
+    } else {
+      // US stock or Crypto
+      market_val_idr = qty * activePriceNative * fxRate;
+      livePrice = activePriceNative * fxRate;
+    }
+
+    // Compute P&L per position
+    const unrealized_pnl_idr = market_val_idr - cost_basis_idr;
+
+    // Previous close & 24h Day Change
+    const previousCloseNative =
+      priceMap[ticker]?.fundamentals?.summaryDetail?.previousClose ??
+      priceMap[ticker]?.fundamentals?.price?.regularMarketPreviousClose ??
+      null;
+
+    const previousClose =
+      previousCloseNative !== null
+        ? isIdx
+          ? previousCloseNative
+          : previousCloseNative * fxRate
+        : null;
+
+    const dayChange =
+      previousCloseNative !== null
+        ? isIdx
+          ? qty * (activePriceNative - previousCloseNative)
+          : qty * (activePriceNative - previousCloseNative) * fxRate
+        : 0;
+
+    const dayChangePct =
+      previousCloseNative !== null && previousCloseNative > 0
+        ? ((activePriceNative - previousCloseNative) / previousCloseNative) * 100
+        : 0;
+
+    // Target Allocation from localStorage
+    const savedTargets = localStorage.getItem(`finly_zen_target_allocations_${p.id}`);
+    let targetAllocation = 0;
+    if (savedTargets) {
+      try {
+        const parsed = JSON.parse(savedTargets);
+        targetAllocation = parsed[ticker] || 0;
+      } catch (e) {}
+    }
+
+    const dbAsset = dbAssetsMap[ticker];
+
+    assets.push({
+      id: ticker,
+      ticker,
+      name:
+        (dbAsset?.name && dbAsset.name.toUpperCase() !== ticker.toUpperCase()
+          ? dbAsset.name
+          : undefined) ||
+        priceMap[ticker]?.company_name ||
+        priceMap[ticker]?.fundamentals?.price?.longName ||
+        priceMap[ticker]?.fundamentals?.price?.shortName ||
+        priceMap[ticker]?.fundamentals?.summaryProfile?.longName ||
+        ticker,
+      logoUrl: (() => {
+        const resolved = pos.icon || dbAsset?.logo_url || priceMap[ticker]?.logo_url || getCachedLogo(ticker) || undefined;
+        if (resolved) {
+          setCachedLogo(ticker, resolved);
+        }
+        return resolved;
+      })(),
+      currency: assetCurrency,
+      conversionRate: assetConversionRate,
+      currentValue: market_val_idr,
+      totalGainLoss: unrealized_pnl_idr,
+      actualAllocation: 0,
+      targetAllocation,
+      totalShares: qty,
+      averagePrice: avgCostPerUnitIDR,
+      currentPrice: livePrice,
+      preMarketPrice:
+        prePriceNative !== null
+          ? isIdx
+            ? prePriceNative
+            : prePriceNative * fxRate
+          : null,
+      postMarketPrice:
+        postPriceNative !== null
+          ? isIdx
+            ? postPriceNative
+            : postPriceNative * fxRate
+          : null,
+      previousClose,
+      dayChange,
+      dayChangePct,
+    });
+  });
+
+  // Compute totals
+  const total_cost_basis_idr = assets.reduce(
+    (sum, a) => sum + (a.currentValue - a.totalGainLoss),
+    0
+  );
+  const total_market_value_idr = assets.reduce(
+    (sum, a) => sum + a.currentValue,
+    0
+  );
+  const total_unrealized_pnl = total_market_value_idr - total_cost_basis_idr;
+
+  // Cash (the critical formula)
+  // cash_available_idr = TOTAL_CAPITAL_IDR - total_cost_basis_idr
+  const cash_available_idr = TOTAL_CAPITAL_IDR - total_cost_basis_idr;
+
+  // Total portfolio value:
+  // portfolio_value_idr = cash_available_idr + total_market_value_idr
+  //                     = TOTAL_CAPITAL_IDR + total_unrealized_pnl
+  const portfolio_value_idr = cash_available_idr + total_market_value_idr;
+
+  const allTimeGain = total_unrealized_pnl;
+  const allTimeGainPercentage =
+    TOTAL_CAPITAL_IDR > 0 ? (total_unrealized_pnl / TOTAL_CAPITAL_IDR) * 100 : 0;
 
   // Compute allocations
   const updatedAssets = assets.map((a) => ({
     ...a,
-    actualAllocation: totalValue > 0 ? (a.currentValue / totalValue) * 100 : 0,
+    actualAllocation:
+      portfolio_value_idr > 0 ? (a.currentValue / portfolio_value_idr) * 100 : 0,
   }));
 
-  const allTimeGain = totalValue - initialCapital;
-  const allTimeGainPercentage = initialCapital > 0 ? (allTimeGain / initialCapital) * 100 : 0;
-
-
   const history: PortfolioHistoryPoint[] = [
-    { date: p.created_at || new Date().toISOString(), value: initialCapital },
-    { date: new Date().toISOString(), value: totalValue },
+    { date: p.created_at || new Date().toISOString(), value: TOTAL_CAPITAL_IDR },
+    { date: new Date().toISOString(), value: portfolio_value_idr },
   ];
 
   return {
     id: p.id,
     name: p.name,
-    cash: portfolioCash,
-    initialCapital,
-    totalBuyingPower: portfolioCash,
-    totalValue,
+    cash: cash_available_idr,
+    initialCapital: TOTAL_CAPITAL_IDR,
+    totalBuyingPower: cash_available_idr,
+    totalValue: portfolio_value_idr,
     allTimeGain,
     allTimeGainPercentage,
     assets: updatedAssets,
-    price_currency: portfolioRate,
-    nativeCurrency: isUSD ? 'USD' : 'IDR',
+    price_currency: fxRate,
+    nativeCurrency: "IDR",
     updated_at: p.updated_at,
     transactions: txs.map((tx) => {
       const qty = Number(tx.qty);
@@ -310,14 +350,8 @@ const computePortfolioState = (
       const txCurrency = tx.settlement_currency || "USD";
 
       let pricePerShare = price;
-      if (isUSD) {
-        if (txCurrency !== "USD") {
-          pricePerShare = price / rate;
-        }
-      } else {
-        if (txCurrency === "USD") {
-          pricePerShare = price * rate;
-        }
+      if (txCurrency === "USD") {
+        pricePerShare = price * rate;
       }
 
       return {
@@ -342,17 +376,36 @@ export const loadPortfolios = async () => {
     setPortfolioState("isLoading", true);
   }
   try {
+    // 1. Fetch fresh USD rate first to avoid stale FX rates
+    const freshFxRate = await fetchUsdRate();
+    setUsdExchangeRate(freshFxRate);
+
     const rawPortfolios = await getPortfolios();
     const allTxs: Record<string, any[]> = {};
+    const allHoldings: Record<string, any[]> = {};
     const tickersSet = new Set<string>();
 
     for (const rp of rawPortfolios) {
-      const txs = await getPortfolioTransactions(rp.id);
+      const [txs, holdings] = await Promise.all([
+        getPortfolioTransactions(rp.id),
+        getPortfolioHoldings(rp.id),
+      ]);
       allTxs[rp.id] = txs;
-      txs.forEach((tx) => tickersSet.add(tx.asset_ticker.toUpperCase()));
+      allHoldings[rp.id] = holdings;
+
+      holdings.forEach((h) => {
+        if (h.category !== "FIAT" && h.asset.toUpperCase() !== "IDR" && h.asset.toUpperCase() !== "USD") {
+          tickersSet.add(h.asset.toUpperCase());
+        }
+      });
+      txs.forEach((tx) => {
+        if (tx.asset_ticker.toUpperCase() !== "IDR" && tx.asset_ticker.toUpperCase() !== "USD") {
+          tickersSet.add(tx.asset_ticker.toUpperCase());
+        }
+      });
     }
 
-    // Fetch stock prices once for all tickers
+    // Fetch stock prices once for all active tickers
     const tickers = Array.from(tickersSet);
     const priceRes = await fetchMultiStockPrices(tickers);
     const priceMap: Record<string, any> = {};
@@ -373,8 +426,34 @@ export const loadPortfolios = async () => {
       });
     }
 
+    // Cache and preload all discovered logos
+    const discoveredLogos: Array<{ ticker: string; logoUrl?: string | null }> = [];
+    (priceRes.data || []).forEach((item) => {
+      if (item.logo_url) {
+        discoveredLogos.push({ ticker: item.symbol, logoUrl: item.logo_url });
+      }
+    });
+    if (!dbAssetsError && dbAssets) {
+      dbAssets.forEach((a) => {
+        if (a.logo_url) {
+          discoveredLogos.push({ ticker: a.ticker, logoUrl: a.logo_url });
+        }
+      });
+    }
+    if (discoveredLogos.length > 0) {
+      saveCachedLogos(discoveredLogos);
+      preloadImages(discoveredLogos.map((d) => d.logoUrl));
+    }
+
     const computedPortfolios = rawPortfolios.map((rp) =>
-      computePortfolioState(rp, allTxs[rp.id] || [], priceMap, dbAssetsMap)
+      computePortfolioState(
+        rp,
+        allHoldings[rp.id] || [],
+        allTxs[rp.id] || [],
+        priceMap,
+        freshFxRate,
+        dbAssetsMap
+      )
     );
 
     setPortfolioState("portfolios", reconcile(computedPortfolios));
@@ -391,6 +470,10 @@ export const loadPortfolios = async () => {
 export const refreshPortfolio = async (portfolioId: string) => {
   setPortfolioState("isRefreshing", true);
   try {
+    // 1. Fetch fresh USD rate in the same run to guarantee consistency
+    const freshFxRate = await fetchUsdRate();
+    setUsdExchangeRate(freshFxRate);
+
     const { data: rp, error } = await supabase
       .from("portfolios")
       .select("*")
@@ -399,8 +482,24 @@ export const refreshPortfolio = async (portfolioId: string) => {
 
     if (error) throw error;
 
-    const txs = await getPortfolioTransactions(portfolioId);
-    const tickers = Array.from(new Set(txs.map((tx) => tx.asset_ticker.toUpperCase())));
+    const [txs, holdings] = await Promise.all([
+      getPortfolioTransactions(portfolioId),
+      getPortfolioHoldings(portfolioId),
+    ]);
+
+    const tickersSet = new Set<string>();
+    holdings.forEach((h) => {
+      if (h.category !== "FIAT" && h.asset.toUpperCase() !== "IDR" && h.asset.toUpperCase() !== "USD") {
+        tickersSet.add(h.asset.toUpperCase());
+      }
+    });
+    txs.forEach((tx) => {
+      if (tx.asset_ticker.toUpperCase() !== "IDR" && tx.asset_ticker.toUpperCase() !== "USD") {
+        tickersSet.add(tx.asset_ticker.toUpperCase());
+      }
+    });
+
+    const tickers = Array.from(tickersSet);
     const priceRes = await fetchMultiStockPrices(tickers);
     const priceMap: Record<string, any> = {};
     (priceRes.data || []).forEach((item) => {
@@ -420,7 +519,33 @@ export const refreshPortfolio = async (portfolioId: string) => {
       });
     }
 
-    const computed = computePortfolioState(rp, txs, priceMap, dbAssetsMap);
+    // Cache and preload all discovered logos
+    const discoveredLogos: Array<{ ticker: string; logoUrl?: string | null }> = [];
+    (priceRes.data || []).forEach((item) => {
+      if (item.logo_url) {
+        discoveredLogos.push({ ticker: item.symbol, logoUrl: item.logo_url });
+      }
+    });
+    if (!dbAssetsError && dbAssets) {
+      dbAssets.forEach((a) => {
+        if (a.logo_url) {
+          discoveredLogos.push({ ticker: a.ticker, logoUrl: a.logo_url });
+        }
+      });
+    }
+    if (discoveredLogos.length > 0) {
+      saveCachedLogos(discoveredLogos);
+      preloadImages(discoveredLogos.map((d) => d.logoUrl));
+    }
+
+    const computed = computePortfolioState(
+      rp,
+      holdings,
+      txs,
+      priceMap,
+      freshFxRate,
+      dbAssetsMap
+    );
 
     setPortfolioState("portfolios", (prev) => {
       const index = prev.findIndex((p) => p.id === portfolioId);
