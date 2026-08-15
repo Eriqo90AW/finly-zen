@@ -44,6 +44,20 @@ const Dashboard = () => {
     });
   });
 
+  // All transactions filtered for debt settings (used for multi-period charts like DailySpendChart)
+  const allFilteredTransactions = createMemo(() => {
+    const data = transactions() || [];
+    return data.filter((t) => {
+      if (
+        !state.ui.showRecurringDebt &&
+        t.isRecurring &&
+        t.category?.toLowerCase() === "debt"
+      )
+        return false;
+      return true;
+    });
+  });
+
   // Further filter by selected account for RecentTransactions
   const accountFilteredTransactions = createMemo(() => {
     const selected = state.ui.selectedAccount;
@@ -61,7 +75,7 @@ const Dashboard = () => {
         />
 
         <DailySpendChart
-          transactions={monthlyTransactions()}
+          transactions={allFilteredTransactions()}
           loading={transactions.loading}
           dailyBudget={dailyBudget}
           setDailyBudget={setDailyBudget}

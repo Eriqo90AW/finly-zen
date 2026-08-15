@@ -1,4 +1,4 @@
-import { createSignal, createMemo, Show } from "solid-js";
+import { createSignal, createMemo, createEffect, Show } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { state } from "../../store";
@@ -8,6 +8,15 @@ import { formatRupiah, formatRupiahShort } from "../../utils/format";
 import type { DailySpendChartProps } from "../../types";
 
 export const DailySpendChart = (props: DailySpendChartProps) => {
+  const [dayOffset, setDayOffset] = createSignal(0);
+
+  // Reset offset when month or datePeriod changes
+  createEffect(() => {
+    state.ui.currentMonth;
+    state.ui.datePeriod;
+    setDayOffset(0);
+  });
+
   const chartData = createMemo(() => {
     const data = props.transactions || [];
     const { end: periodEnd } = getDateRange(
@@ -15,9 +24,13 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
       state.ui.datePeriod,
     );
 
-    // Use the period end as the reference, but don't go past today if period includes today
+    // Use the period end as the base reference, but don't go past today if period includes today
     const now = new Date();
-    const referenceDate = periodEnd > now ? now : periodEnd;
+    const baseReferenceDate = periodEnd > now ? now : periodEnd;
+
+    // Apply offset in days
+    const referenceDate = new Date(baseReferenceDate);
+    referenceDate.setDate(referenceDate.getDate() + dayOffset());
 
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(referenceDate);
@@ -147,7 +160,41 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
         `}
       </style>
       <div class="flex items-center justify-between mb-6 mx-3">
-        <h4 class="font-outfit font-bold text-forest">Daily Spend</h4>
+        <div class="flex items-center gap-2">
+          <h4 class="font-outfit font-bold text-forest">Daily Spend</h4>
+          <div class="flex items-center gap-0.5 bg-sage/15 rounded-lg p-0.5 border border-forest/10">
+            <button
+              onClick={() => setDayOffset((prev) => prev - 1)}
+              class="w-6 h-6 rounded-md hover:bg-forest/10 flex items-center justify-center transition-colors text-forest cursor-pointer"
+              title="Previous day (shift 1 day back)"
+              aria-label="Previous day"
+            >
+              <span class="material-icons text-sm">chevron_left</span>
+            </button>
+            <button
+              onClick={() => setDayOffset((prev) => Math.min(0, prev + 1))}
+              disabled={dayOffset() >= 0}
+              class={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
+                dayOffset() >= 0
+                  ? "text-earth/30 cursor-not-allowed"
+                  : "hover:bg-forest/10 text-forest cursor-pointer"
+              }`}
+              title="Next day (shift 1 day forward)"
+              aria-label="Next day"
+            >
+              <span class="material-icons text-sm">chevron_right</span>
+            </button>
+          </div>
+          <Show when={dayOffset() !== 0}>
+            <button
+              onClick={() => setDayOffset(0)}
+              class="text-[10px] font-medium text-forest/70 hover:text-forest bg-forest/5 hover:bg-forest/10 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+              title="Reset to today / latest"
+            >
+              Today
+            </button>
+          </Show>
+        </div>
         <Tooltip content="Click to edit budget">
           <div
             class="text-[10px] font-bold text-earth hover:text-forest uppercase tracking-widest cursor-pointer transition-colors flex items-center gap-1 group/edit"
