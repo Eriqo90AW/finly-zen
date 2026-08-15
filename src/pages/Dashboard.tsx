@@ -15,6 +15,7 @@ import { state, nextMonth, prevMonth } from "../store";
 import { getTransactions } from "../data/expenseData";
 import { getDateRange, isDateInRange } from "../utils/date";
 import { GardenWins } from "../components/screen-dashboard/GardenWins";
+import { TopExpensesAndTargetsCard } from "../components/screen-dashboard/TopExpensesAndTargetsCard";
 import { BudgetPacingChart } from "../components/screen-dashboard/BudgetPacingChart";
 
 const Dashboard = () => {
@@ -82,20 +83,20 @@ const Dashboard = () => {
         />
 
         <div class="col-span-12 flex gap-6 h-[500px]">
-          <div class="w-[30%] h-full">
+          <div class="flex-[3] min-w-0 h-full">
             <ExpenseCategoryCard
-              transactions={monthlyTransactions()}
+              transactions={accountFilteredTransactions()}
               loading={transactions.loading}
             />
           </div>
-          <div class="w-[50%] h-full">
+          <div class="flex-[5] min-w-0 h-full">
             <ActivityCalendar
               transactions={monthlyTransactions()}
               loading={transactions.loading}
               dailyBudget={dailyBudget}
             />
           </div>
-          <div class="w-[20%] h-full">
+          <div class="flex-[2] min-w-0 h-full">
             <GardenWins
               transactions={transactions() || []}
               loading={transactions.loading}
@@ -105,24 +106,23 @@ const Dashboard = () => {
         </div>
 
         <div class="col-span-12 flex gap-6 h-[500px]">
-          <div class="w-[30%] h-full">
+          <div class="flex-[3] min-w-0 h-full">
             <IncomeCategoryCard
-              transactions={monthlyTransactions()}
+              transactions={accountFilteredTransactions()}
               loading={transactions.loading}
             />
           </div>
-          <div class="w-[50%] h-full">
+          <div class="flex-[5] min-w-0 h-full">
             <BudgetPacingChart
               transactions={monthlyTransactions()}
               loading={transactions.loading}
               dailyBudget={dailyBudget}
             />
           </div>
-          <div class="w-[20%] h-full">
-            <GardenWins
-              transactions={transactions() || []}
+          <div class="flex-[2] min-w-0 h-full">
+            <TopExpensesAndTargetsCard
+              transactions={accountFilteredTransactions()}
               loading={transactions.loading}
-              dailyBudget={dailyBudget}
             />
           </div>
         </div>

@@ -88,6 +88,11 @@ export interface TooltipProps {
   overlayBgClass?: string;
 }
 
+export interface TopExpensesAndTargetsProps {
+  transactions: Transaction[];
+  loading?: boolean;
+}
+
 
 
 

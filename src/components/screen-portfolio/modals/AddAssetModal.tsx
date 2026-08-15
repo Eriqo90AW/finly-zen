@@ -666,8 +666,7 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
           width: 4px;
         }
         .custom-scrollbar-thin::-webkit-scrollbar-track {
-          background: rgba(26, 77, 46, 0.05);
-          border-radius: 10px;
+          background: transparent;
         }
         .custom-scrollbar-thin::-webkit-scrollbar-thumb {
           background: rgba(26, 77, 46, 0.35);

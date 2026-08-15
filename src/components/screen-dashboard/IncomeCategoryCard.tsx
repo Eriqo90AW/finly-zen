@@ -160,26 +160,38 @@ export const IncomeCategoryCard = (props: CategoryCardProps) => {
       </div>
 
       <div class="flex-1 overflow-hidden flex flex-col">
-        <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar-thin space-y-4 max-h-[180px]">
+        <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar-thin space-y-3 max-h-[180px]">
           <For each={categoryData().sorted}>
             {(cat) => (
-              <div class="flex items-center justify-between group">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 ring-transparent transition-all duration-300"
-                    style={{ "background-color": cat.color }}
-                  />
-                  <span class="text-sm font-outfit text-earth group-hover:text-forest transition-colors">
-                    {cat.name}
-                  </span>
+              <div class="flex flex-col gap-1.5 group">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div
+                      class="w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 ring-transparent transition-all duration-300 shrink-0"
+                      style={{ "background-color": cat.color }}
+                    />
+                    <span class="text-sm font-outfit text-earth group-hover:text-forest transition-colors truncate">
+                      {cat.name}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-sm font-outfit font-bold text-forest">
+                      {formatRupiah(cat.amount)}
+                    </span>
+                    <span class="text-[11px] font-bold text-earth/60 font-outfit min-w-[32px] text-right">
+                      {cat.pct}%
+                    </span>
+                  </div>
                 </div>
-                <div class="flex flex-col items-end">
-                  <span class="text-sm font-outfit font-bold text-forest">
-                    {formatRupiah(cat.amount)}
-                  </span>
-                  <span class="text-[10px] font-bold text-earth/40 uppercase tracking-wider">
-                    {cat.pct}%
-                  </span>
+                {/* Level Percentage Bar */}
+                <div class="w-full h-1.5 bg-forest/5 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(cat.pct, 100)}%`,
+                      "background-color": cat.color,
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -193,8 +205,7 @@ export const IncomeCategoryCard = (props: CategoryCardProps) => {
           width: 4px;
         }
         .custom-scrollbar-thin::-webkit-scrollbar-track {
-          background: rgba(26, 77, 46, 0.05);
-          border-radius: 10px;
+          background: transparent;
         }
         .custom-scrollbar-thin::-webkit-scrollbar-thumb {
           background: rgba(26, 77, 46, 0.2);

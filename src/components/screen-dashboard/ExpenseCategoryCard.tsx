@@ -105,70 +105,91 @@ export const ExpenseCategoryCard = (props: CategoryCardProps) => {
             </div>
           }
         >
-          <SolidApexCharts
-            options={chartOptions()}
-            series={categoryData().sorted.map((c) => c.amount)}
-            type="donut"
-            height="100%"
-          />
-          {/* Custom donut center overlay */}
-          <div
-            class="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ "padding-bottom": "20px" }}
+          <Show
+            when={categoryData().sorted.length > 0}
+            fallback={
+              <div class="w-full h-full flex items-center justify-center text-earth/50 font-outfit text-sm">
+                No expense transactions this period
+              </div>
+            }
           >
-            <div class="flex flex-col items-center gap-0.5 font-outfit">
-              {/* Net Expense */}
-              <span class="text-[8px] uppercase tracking-widest text-earth/50 font-semibold">
-                Non-Recurring
-              </span>
-              <span class="text-[13px] font-bold text-forest leading-tight">
-                {formatRupiah(categoryData().netExpense)}
-              </span>
-
-              {/* Recurring Expense */}
-              <Show when={categoryData().recurringExpense > 0}>
-                <span class="text-[11px] text-red-500/70 leading-tight flex items-center gap-0.5 mt-0.5">
-                  <span class="material-icons !text-[9px]">add</span>
-                  {formatRupiah(categoryData().recurringExpense)}
+            <SolidApexCharts
+              options={chartOptions()}
+              series={categoryData().sorted.map((c) => c.amount)}
+              type="donut"
+              height="100%"
+            />
+            {/* Custom donut center overlay */}
+            <div
+              class="absolute inset-0 flex items-center justify-center pointer-events-none"
+              style={{ "padding-bottom": "20px" }}
+            >
+              <div class="flex flex-col items-center gap-0.5 font-outfit">
+                {/* Net Expense */}
+                <span class="text-[8px] uppercase tracking-widest text-earth/50 font-semibold">
+                  Non-Recurring
                 </span>
-              </Show>
+                <span class="text-[13px] font-bold text-forest leading-tight">
+                  {formatRupiah(categoryData().netExpense)}
+                </span>
 
-              {/* Divider */}
-              <div class="w-20 h-px bg-forest/25 my-1" />
+                {/* Recurring Expense */}
+                <Show when={categoryData().recurringExpense > 0}>
+                  <span class="text-[11px] text-red-500/70 leading-tight flex items-center gap-0.5 mt-0.5">
+                    <span class="material-icons !text-[9px]">add</span>
+                    {formatRupiah(categoryData().recurringExpense)}
+                  </span>
+                </Show>
 
-              {/* Total Expense */}
-              <span class="text-[10px] uppercase tracking-widest text-earth/80 font-semibold">
-                Total Expense
-              </span>
-              <span class="text-[18px] font-bold text-red-500 leading-tight">
-                {formatRupiah(categoryData().total)}
-              </span>
+                {/* Divider */}
+                <div class="w-20 h-px bg-forest/25 my-1" />
+
+                {/* Total Expense */}
+                <span class="text-[10px] uppercase tracking-widest text-earth/80 font-semibold">
+                  Total Expense
+                </span>
+                <span class="text-[18px] font-bold text-red-500 leading-tight">
+                  {formatRupiah(categoryData().total)}
+                </span>
+              </div>
             </div>
-          </div>
+          </Show>
         </Show>
       </div>
 
       <div class="flex-1 overflow-hidden flex flex-col">
-        <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar-thin space-y-4 max-h-[180px]">
+        <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar-thin space-y-3 max-h-[180px]">
           <For each={categoryData().sorted}>
             {(cat) => (
-              <div class="flex items-center justify-between group">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 ring-transparent transition-all duration-300"
-                    style={{ "background-color": cat.color }}
-                  />
-                  <span class="text-sm font-outfit text-earth group-hover:text-forest transition-colors">
-                    {cat.name}
-                  </span>
+              <div class="flex flex-col gap-1.5 group">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div
+                      class="w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 ring-transparent transition-all duration-300 shrink-0"
+                      style={{ "background-color": cat.color }}
+                    />
+                    <span class="text-sm font-outfit text-earth group-hover:text-forest transition-colors truncate">
+                      {cat.name}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-sm font-outfit font-bold text-forest">
+                      {formatRupiah(cat.amount)}
+                    </span>
+                    <span class="text-[11px] font-bold text-earth/60 font-outfit min-w-[32px] text-right">
+                      {cat.pct}%
+                    </span>
+                  </div>
                 </div>
-                <div class="flex flex-col items-end">
-                  <span class="text-sm font-outfit font-bold text-forest">
-                    {formatRupiah(cat.amount)}
-                  </span>
-                  <span class="text-[10px] font-bold text-earth/40 uppercase tracking-wider">
-                    {cat.pct}%
-                  </span>
+                {/* Level Percentage Bar */}
+                <div class="w-full h-1.5 bg-forest/5 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(cat.pct, 100)}%`,
+                      "background-color": cat.color,
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -182,8 +203,7 @@ export const ExpenseCategoryCard = (props: CategoryCardProps) => {
           width: 4px;
         }
         .custom-scrollbar-thin::-webkit-scrollbar-track {
-          background: rgba(26, 77, 46, 0.05);
-          border-radius: 10px;
+          background: transparent;
         }
         .custom-scrollbar-thin::-webkit-scrollbar-thumb {
           background: rgba(26, 77, 46, 0.2);

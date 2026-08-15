@@ -99,3 +99,18 @@ export const setSelectedAccount = (
   setState("ui", "selectedAccountColor", color);
 };
 
+export const setCategoryBudget = (category: string, limit: number) => {
+  setState("budgets", (prev) => {
+    const idx = prev.findIndex(
+      (b) => b.category.toLowerCase() === category.toLowerCase(),
+    );
+    if (idx >= 0) {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], limit };
+      return updated;
+    } else {
+      return [...prev, { category, limit }];
+    }
+  });
+};
+
