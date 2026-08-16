@@ -1,29 +1,22 @@
 import { createStore, reconcile } from "solid-js/store";
 import { createEffect, onMount } from "solid-js";
 import type { Transaction, AppState } from "../types";
-
+import { DEFAULT_BUDGETS, DEFAULT_CONFIG } from "../config/defaults";
 
 const DEFAULT_STATE: AppState = {
   transactions: [],
-  budgets: [
-    { category: "Food", limit: 3000000 },
-    { category: "Transport", limit: 1000000 },
-    { category: "Entertainment", limit: 1000000 },
-    { category: "Shopping", limit: 2000000 },
-    { category: "Health", limit: 500000 },
-    { category: "Utilities", limit: 1500000 },
-  ],
+  budgets: DEFAULT_BUDGETS,
   goals: [
     { id: "1", name: "Summer Trip", target: 15000000, current: 6000000, emoji: "✈️", date: "2026-08-01" },
     { id: "2", name: "New Laptop", target: 25000000, current: 18000000, emoji: "💻", date: "2026-12-15" },
   ],
   settings: {
-    monthlyLimit: 15000000,
-    userName: "Eriqo",
+    monthlyLimit: DEFAULT_CONFIG.monthlyLimit,
+    userName: DEFAULT_CONFIG.userName,
   },
   ui: {
     currentMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
-    datePeriod: "1-30",
+    datePeriod: DEFAULT_CONFIG.datePeriod,
     sidebarOpen: false,
     insightsOpen: false,
     showAddExpense: false,
@@ -45,6 +38,25 @@ export function setupPersistence() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.budgets)) {
+          const existingCategories = new Set(
+            parsed.budgets.map((b: any) => b.category?.toLowerCase()),
+          );
+          for (const defBudget of DEFAULT_BUDGETS) {
+            if (!existingCategories.has(defBudget.category.toLowerCase())) {
+              parsed.budgets.push({ ...defBudget });
+            }
+          }
+        } else {
+          parsed.budgets = DEFAULT_BUDGETS;
+        }
+
+        if (parsed.ui) {
+          parsed.ui.showAllTime = false;
+          parsed.ui.sidebarOpen = false;
+          parsed.ui.insightsOpen = false;
+          parsed.ui.showAddExpense = false;
+        }
         setState(reconcile(parsed));
       } catch (e) {
         console.error("Failed to load state", e);

@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { DEFAULT_CONFIG } from "../config/defaults";
 import type {
   PortfolioDB,
   PortfolioTransactionDB,
@@ -36,7 +37,7 @@ export async function fetchUsdRate(): Promise<number> {
     return Number(rate);
   } catch (error) {
     console.error("Error fetching USD rate:", error);
-    return Number(import.meta.env.VITE_DEFAULT_USD_RATE) || 17400;
+    return DEFAULT_CONFIG.usdRate;
   }
 }
 

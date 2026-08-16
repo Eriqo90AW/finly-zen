@@ -1,6 +1,7 @@
 import { createSignal, createMemo, Show, For } from "solid-js";
 import { state, setCategoryBudget } from "../../store";
 import { formatRupiah } from "../../utils/format";
+import { getCategoryDefaultTarget, getCategoryFallbackColor } from "../../config/defaults";
 import type { TopExpensesAndTargetsProps } from "../../types";
 
 export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => {
@@ -50,23 +51,12 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
         const budgetObj = state.budgets.find(
           (b) => b.category.toLowerCase() === cat.toLowerCase(),
         );
-        const target = budgetObj?.limit || 0;
+        const target =
+          budgetObj !== undefined
+            ? budgetObj.limit
+            : getCategoryDefaultTarget(cat);
         const spent = spentMap[cat]?.spent || 0;
-        const color =
-          spentMap[cat]?.color ||
-          (cat.toLowerCase() === "food"
-            ? "#F59E0B"
-            : cat.toLowerCase() === "transport"
-            ? "#3B82F6"
-            : cat.toLowerCase() === "entertainment"
-            ? "#8B5CF6"
-            : cat.toLowerCase() === "shopping"
-            ? "#EC4899"
-            : cat.toLowerCase() === "health"
-            ? "#10B981"
-            : cat.toLowerCase() === "utilities"
-            ? "#F97316"
-            : "#1A4D2E");
+        const color = spentMap[cat]?.color || getCategoryFallbackColor(cat);
 
         const pct = target > 0 ? Math.round((spent / target) * 100) : 0;
 
@@ -79,9 +69,10 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
         };
       })
       .sort((a, b) => {
-        // Show categories with active spend or set targets first
+        // Sort by highest target amount first
+        if (b.target !== a.target) return b.target - a.target;
         if (b.spent !== a.spent) return b.spent - a.spent;
-        return b.target - a.target;
+        return a.category.localeCompare(b.category);
       });
 
     return result;
@@ -107,7 +98,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
   return (
     <div class="premium-card p-5 flex flex-col h-full overflow-hidden relative">
       {/* SECTION 1: TOP 3 EXPENSES */}
-      <div class="shrink-0 flex flex-col overflow-hidden pb-2" style={{ "max-height": "45%" }}>
+      <div class="shrink-0 flex flex-col overflow-hidden" style={{ "max-height": "45%" }}>
         <div class="flex items-center justify-between mb-2">
           <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-1.5">
             <span class="material-icons !text-base text-forest">local_fire_department</span>
@@ -147,7 +138,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
             >
               <For each={topExpenses()}>
                 {(tx, idx) => (
-                  <div class="flex items-center justify-between p-1.5 rounded-lg bg-forest/[0.02] hover:bg-forest/[0.06] transition-colors group">
+                  <div class="flex items-center justify-between p-1.5 rounded-lg bg-spring/[0.06] hover:bg-forest/[0.06] transition-colors group">
                     <div class="flex items-center gap-2 min-w-0 pr-2">
                       <span
                         class={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${
@@ -193,10 +184,10 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
       </div>
 
       {/* DIVIDER */}
-      <div class="w-full border-t border-forest/10 my-2 shrink-0" />
+      <div class="w-full border-t border-forest/10 mt-4 mb-2 shrink-0" />
 
       {/* SECTION 2: CATEGORY TARGETS */}
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden pt-1">
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div class="flex items-center justify-between mb-2">
           <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-1.5">
             <span class="material-icons !text-base text-forest">track_changes</span>

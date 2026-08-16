@@ -22,9 +22,23 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   const [accountDropdownOpen, setAccountDropdownOpen] = createSignal(false);
 
   const handleClickOutside = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest(".account-dropdown-container")) {
+    const path = e.composedPath ? e.composedPath() : [];
+    const isInsideAccount = path.some(
+      (el) =>
+        el instanceof HTMLElement &&
+        el.classList.contains("account-dropdown-container"),
+    );
+    const isInsideFilter = path.some(
+      (el) =>
+        el instanceof HTMLElement &&
+        el.classList.contains("filter-dropdown-container"),
+    );
+
+    if (!isInsideAccount) {
       setAccountDropdownOpen(false);
+    }
+    if (!isInsideFilter) {
+      setFiltersOpen(false);
     }
   };
 
@@ -139,10 +153,192 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
     `px-6 py-4 font-semibold cursor-pointer select-none transition-colors hover:text-forest group${key === "amount" ? " text-right" : ""}`;
 
   return (
-    <div class="col-span-12 premium-card overflow-hidden cursor-default">
-      <div class="p-6 border-b border-forest/10 flex items-center justify-between">
+    <div class="col-span-12 premium-card overflow-hidden cursor-default flex flex-col h-[500px]">
+      <div class="p-6 border-b border-forest/10 flex items-center justify-between shrink-0">
         <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
         <div class="flex items-center gap-4">
+          {/* Multi-Select Category Filters Dropdown */}
+          <div class="relative filter-dropdown-container">
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all duration-200 cursor-pointer select-none group/filter hover:shadow-sm"
+              style={{
+                ...(selectedCategories().size > 0
+                  ? {
+                      "background-color": "rgba(82, 194, 120, 0.15)",
+                      "border-color": "rgba(82, 194, 120, 0.35)",
+                    }
+                  : {
+                      "background-color": "rgba(44, 74, 56, 0.05)",
+                      "border-color": "rgba(44, 74, 56, 0.1)",
+                    }),
+              }}
+              onClick={() => setFiltersOpen((v) => !v)}
+              aria-expanded={filtersOpen()}
+            >
+              <span
+                class="material-icons !text-[13px]"
+                style={{
+                  color:
+                    selectedCategories().size > 0
+                      ? "var(--color-forest)"
+                      : "var(--color-mid-green)",
+                }}
+              >
+                filter_list
+              </span>
+              <span
+                class="text-[10px] font-bold uppercase tracking-widest"
+                classList={{
+                  "text-forest font-black": selectedCategories().size > 0,
+                  "text-forest/70": selectedCategories().size === 0,
+                }}
+              >
+                Filters
+              </span>
+              <Show when={selectedCategories().size > 0}>
+                <span
+                  class="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
+                  style={{
+                    "background-color": "var(--color-forest)",
+                    color: "#ffffff",
+                  }}
+                >
+                  {selectedCategories().size}
+                </span>
+              </Show>
+              <span
+                class="material-icons !text-[14px] transition-transform duration-200 text-forest"
+                classList={{
+                  "rotate-180": filtersOpen(),
+                }}
+              >
+                expand_more
+              </span>
+            </button>
+
+            {/* Multi-Select Dropdown Menu */}
+            <Show when={filtersOpen()}>
+              <div
+                class="absolute left-0 mt-1.5 w-60 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-2 z-30 flex flex-col gap-1 animate-slide-down"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div class="flex items-center justify-between px-2 py-1 border-b border-forest/10 mb-0.5">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-forest">
+                    Categories ({uniqueCategories().length})
+                  </span>
+                  <Show
+                    when={selectedCategories().size > 0}
+                    fallback={
+                      <span class="text-[9px] text-earth/50 italic">
+                        All shown
+                      </span>
+                    }
+                  >
+                    <button
+                      type="button"
+                      class="text-[10px] font-bold text-earth/60 hover:text-red-500 transition-colors cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCategories(new Set());
+                      }}
+                    >
+                      Clear
+                    </button>
+                  </Show>
+                </div>
+
+                <div class="max-h-60 overflow-y-auto custom-scrollbar-thin flex flex-col gap-0.5 pr-0.5">
+                  <For each={uniqueCategories()}>
+                    {(cat) => {
+                      const isSelected = () => selectedCategories().has(cat.name);
+                      return (
+                        <button
+                          type="button"
+                          class="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer text-left group"
+                          classList={{
+                            "bg-forest/10 text-forest font-bold": isSelected(),
+                            "text-forest/80 hover:bg-forest/5": !isSelected(),
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCategory(cat.name);
+                          }}
+                        >
+                          <div class="flex items-center gap-2 min-w-0 pointer-events-none">
+                            <div
+                              class="w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors shrink-0"
+                              classList={{
+                                "bg-forest border-forest text-white": isSelected(),
+                                "border-forest/30 bg-white group-hover:border-forest/60":
+                                  !isSelected(),
+                              }}
+                            >
+                              <span
+                                class="material-icons !text-[11px] font-bold transition-opacity"
+                                classList={{
+                                  "opacity-100": isSelected(),
+                                  "opacity-0": !isSelected(),
+                                }}
+                              >
+                                check
+                              </span>
+                            </div>
+                            <div class="flex items-center gap-1.5 min-w-0">
+                              <Show
+                                when={formatIconName(cat.icon)}
+                                fallback={
+                                  <span
+                                    class="w-2 h-2 rounded-full shrink-0"
+                                    style={{
+                                      "background-color":
+                                        cat.color || "var(--color-mid-green)",
+                                    }}
+                                  />
+                                }
+                              >
+                                <span
+                                  class="material-icons !text-[13px] shrink-0"
+                                  style={{
+                                    color: cat.color || "var(--color-forest)",
+                                  }}
+                                >
+                                  {formatIconName(cat.icon)}
+                                </span>
+                              </Show>
+                              <span class="truncate">{cat.name}</span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    }}
+                  </For>
+                </div>
+              </div>
+            </Show>
+          </div>
+
+          <div
+            class="flex items-center gap-2 group cursor-pointer"
+            onClick={() => setShowOnlyRecurring((v) => !v)}
+          >
+            <span
+              class="text-[10px] font-bold uppercase tracking-widest transition-colors"
+              classList={{
+                "text-forest": showOnlyRecurring(),
+                "text-mid-green group-hover:text-forest": !showOnlyRecurring(),
+              }}
+            >
+              Recurring
+            </span>
+            <div class="ios-switch" aria-checked={showOnlyRecurring()}>
+              <div
+                class="ios-switch-thumb"
+                data-state={showOnlyRecurring() ? "checked" : "unchecked"}
+              />
+            </div>
+          </div>
+
           {/* Account Dropdown */}
           <div class="relative account-dropdown-container">
             <button
@@ -224,7 +420,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
 
             {/* Dropdown Menu */}
             <Show when={accountDropdownOpen()}>
-              <div class="absolute left-0 mt-1.5 w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-1 z-30 flex flex-col gap-0.5 animate-slide-down">
+              <div class="absolute right-0 mt-1.5 w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-1 z-30 flex flex-col gap-0.5 animate-slide-down">
                 <For each={availableAccounts()}>
                   {(acc) => {
                     const isSelected = () =>
@@ -269,293 +465,194 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
               </div>
             </Show>
           </div>
-
-          <div
-            class="flex items-center gap-2 group cursor-pointer"
-            onClick={() => setShowOnlyRecurring((v) => !v)}
-          >
-            <span
-              class="text-[10px] font-bold uppercase tracking-widest transition-colors"
-              classList={{
-                "text-forest": showOnlyRecurring(),
-                "text-mid-green group-hover:text-forest": !showOnlyRecurring(),
-              }}
-            >
-              Recurring
-            </span>
-            <div class="ios-switch" aria-checked={showOnlyRecurring()}>
-              <div
-                class="ios-switch-thumb"
-                data-state={showOnlyRecurring() ? "checked" : "unchecked"}
-              />
-            </div>
-          </div>
-
-          <button
-            class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors hover:cursor-pointer"
-            classList={{
-              "text-spring": filtersOpen() || selectedCategories().size > 0,
-              "text-mid-green hover:text-spring":
-                !filtersOpen() && selectedCategories().size === 0,
-            }}
-            onClick={() => setFiltersOpen((v) => !v)}
-          >
-            <span class="material-icons !text-[14px]">filter_list</span>
-            Filters
-            <Show when={selectedCategories().size > 0}>
-              <span
-                class="ml-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
-                style={{
-                  "background-color": "var(--color-spring)",
-                  color: "var(--color-forest)",
-                }}
-              >
-                {selectedCategories().size}
-              </span>
-            </Show>
-          </button>
         </div>
       </div>
-
-      {/* Category Filter Pills */}
-      <Show when={filtersOpen()}>
-        <div class="px-6 py-3 border-b border-forest/10 flex flex-wrap gap-2 animate-slide-down">
-          <button
-            class="px-2.5 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest transition-all border"
-            classList={{
-              "bg-forest text-sage border-forest":
-                selectedCategories().size === 0,
-              "bg-transparent text-earth border-forest/15 hover:border-forest/30":
-                selectedCategories().size > 0,
-            }}
-            onClick={() => setSelectedCategories(new Set())}
-          >
-            All
-          </button>
-          <For each={uniqueCategories()}>
-            {(cat) => {
-              const isActive = () => selectedCategories().has(cat.name);
-              return (
-                <button
-                  class="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest transition-all border cursor-pointer"
-                  classList={{
-                    "border-transparent shadow-sm": isActive(),
-                    "bg-transparent border-forest/15 hover:border-forest/30":
-                      !isActive(),
-                  }}
-                  style={{
-                    ...(isActive()
-                      ? {
-                          "background-color": cat.color
-                            ? `${cat.color}25`
-                            : "rgba(232, 245, 236, 0.5)",
-                          color: cat.color || "var(--color-forest)",
-                          "border-color": cat.color
-                            ? `${cat.color}50`
-                            : "var(--color-spring)",
-                        }
-                      : {
-                          color: cat.color || "var(--color-earth)",
-                        }),
-                  }}
-                  onClick={() => toggleCategory(cat.name)}
+      <Show when={!props.loading && sortedTransactions().length > 0}>
+        <div class="overflow-auto flex-1 min-h-0">
+          <table class="w-full text-left font-outfit relative">
+            <thead class="bg-sage/70 text-earth text-[10px] uppercase tracking-widest sticky top-0 z-10 backdrop-blur-sm shadow-sm">
+              <tr>
+                <th
+                  class={headerClass("name")}
+                  onClick={() => handleSort("name")}
                 >
-                  <Show when={formatIconName(cat.icon)}>
-                    <span class="material-icons !text-[12px]">
-                      {formatIconName(cat.icon)}
-                    </span>
-                  </Show>
-                  {cat.name}
-                </button>
-              );
-            }}
-          </For>
-        </div>
-      </Show>
-      <div class="overflow-auto max-h-[500px]">
-        <table class="w-full text-left font-outfit relative">
-          <thead class="bg-sage/70 text-earth text-[10px] uppercase tracking-widest sticky top-0 z-10 backdrop-blur-sm shadow-sm">
-            <tr>
-              <th
-                class={headerClass("name")}
-                onClick={() => handleSort("name")}
-              >
-                <span class="inline-flex items-center gap-1">
-                  Name
-                  <span
-                    class="material-icons !text-[12px] transition-all"
-                    classList={{
-                      "opacity-100 text-spring": sortKey() === "name",
-                      "opacity-0 group-hover:opacity-50": sortKey() !== "name",
-                    }}
-                  >
-                    {sortArrow("name")}
-                  </span>
-                </span>
-              </th>
-              <th
-                class={headerClass("category")}
-                onClick={() => handleSort("category")}
-              >
-                <span class="inline-flex items-center gap-1">
-                  Category
-                  <span
-                    class="material-icons !text-[12px] transition-all"
-                    classList={{
-                      "opacity-100 text-spring": sortKey() === "category",
-                      "opacity-0 group-hover:opacity-50":
-                        sortKey() !== "category",
-                    }}
-                  >
-                    {sortArrow("category")}
-                  </span>
-                </span>
-              </th>
-              <th
-                class={headerClass("account")}
-                onClick={() => handleSort("account")}
-              >
-                <span class="inline-flex items-center gap-1">
-                  Account
-                  <span
-                    class="material-icons !text-[12px] transition-all"
-                    classList={{
-                      "opacity-100 text-spring": sortKey() === "account",
-                      "opacity-0 group-hover:opacity-50":
-                        sortKey() !== "account",
-                    }}
-                  >
-                    {sortArrow("account")}
-                  </span>
-                </span>
-              </th>
-              <th
-                class={headerClass("date")}
-                onClick={() => handleSort("date")}
-              >
-                <span class="inline-flex items-center gap-1">
-                  Date
-                  <span
-                    class="material-icons !text-[12px] transition-all"
-                    classList={{
-                      "opacity-100 text-spring": sortKey() === "date",
-                      "opacity-0 group-hover:opacity-50": sortKey() !== "date",
-                    }}
-                  >
-                    {sortArrow("date")}
-                  </span>
-                </span>
-              </th>
-              <th
-                class={headerClass("amount")}
-                onClick={() => handleSort("amount")}
-              >
-                <span class="inline-flex items-center gap-1 justify-end">
-                  Amount
-                  <span
-                    class="material-icons !text-[12px] transition-all"
-                    classList={{
-                      "opacity-100 text-spring": sortKey() === "amount",
-                      "opacity-0 group-hover:opacity-50":
-                        sortKey() !== "amount",
-                    }}
-                  >
-                    {sortArrow("amount")}
-                  </span>
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody class="text-sm divide-y divide-forest/5">
-            <For each={sortedTransactions()}>
-              {(t) => (
-                <tr class="group hover:bg-page-bg transition-all">
-                  <td class="px-6 py-4 border-l-3 border-transparent group-hover:border-spring">
-                    <div class="flex flex-col gap-2">
-                      <div class="flex items-center gap-1.5">
-                        <p class="font-semibold text-forest leading-none">
-                          {t.name}
-                        </p>
-                        <Show when={t.isRecurring}>
-                          <span
-                            class="material-icons text-[14px] text-spring"
-                            title="Recurring Transaction"
-                          >
-                            autorenew
-                          </span>
-                        </Show>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-2">
-                      <span
-                        class="pl-2 pr-3 py-1 text-[12px] rounded-md font-medium flex items-center gap-1.5 whitespace-nowrap"
-                        style={{
-                          "background-color": t.categoryColor
-                            ? `${t.categoryColor}15`
-                            : "rgba(232, 245, 236, 0.3)",
-                          color: t.categoryColor || "var(--color-forest)",
-                        }}
-                      >
-                        <Show when={formatIconName(t.categoryIcon)}>
-                          <span class="material-icons !text-[16px] w-4 h-4 flex items-center justify-center">
-                            {formatIconName(t.categoryIcon)}
-                          </span>
-                        </Show>
-                        {t.category}
-                      </span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
+                  <span class="inline-flex items-center gap-1">
+                    Name
                     <span
-                      class="px-2 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
-                      style={{
-                        "background-color": t.accountColor
-                          ? `${t.accountColor}15`
-                          : "rgba(82, 194, 120, 0.1)",
-                        color: t.accountColor || "var(--color-mid-green)",
+                      class="material-icons !text-[12px] transition-all"
+                      classList={{
+                        "opacity-100 text-spring": sortKey() === "name",
+                        "opacity-0 group-hover:opacity-50": sortKey() !== "name",
                       }}
                     >
-                      {t.accountName}
+                      {sortArrow("name")}
                     </span>
-                  </td>
-                  <td class="px-6 py-4 text-earth">
-                    {formatDateDetail(t.date)}
-                  </td>
-                  <td
-                    class="px-6 py-4 text-right font-bold"
-                    classList={{
-                      "text-red-600": t.type?.toLowerCase() === "expense",
-                      "text-green-600": t.type?.toLowerCase() === "income",
-                      "text-forest": !["expense", "income"].includes(
-                        t.type?.toLowerCase() || "",
-                      ),
-                    }}
-                  >
-                    {t.type?.toLowerCase() === "income"
-                      ? "+"
-                      : t.type?.toLowerCase() === "expense"
-                        ? "-"
-                        : ""}
-                    {formatRupiah(t.amount)}
-                  </td>
-                </tr>
-              )}
-            </For>
-          </tbody>
-        </table>
-      </div>
+                  </span>
+                </th>
+                <th
+                  class={headerClass("category")}
+                  onClick={() => handleSort("category")}
+                >
+                  <span class="inline-flex items-center gap-1">
+                    Category
+                    <span
+                      class="material-icons !text-[12px] transition-all"
+                      classList={{
+                        "opacity-100 text-spring": sortKey() === "category",
+                        "opacity-0 group-hover:opacity-50":
+                          sortKey() !== "category",
+                      }}
+                    >
+                      {sortArrow("category")}
+                    </span>
+                  </span>
+                </th>
+                <th
+                  class={headerClass("account")}
+                  onClick={() => handleSort("account")}
+                >
+                  <span class="inline-flex items-center gap-1">
+                    Account
+                    <span
+                      class="material-icons !text-[12px] transition-all"
+                      classList={{
+                        "opacity-100 text-spring": sortKey() === "account",
+                        "opacity-0 group-hover:opacity-50":
+                          sortKey() !== "account",
+                      }}
+                    >
+                      {sortArrow("account")}
+                    </span>
+                  </span>
+                </th>
+                <th
+                  class={headerClass("date")}
+                  onClick={() => handleSort("date")}
+                >
+                  <span class="inline-flex items-center gap-1">
+                    Date
+                    <span
+                      class="material-icons !text-[12px] transition-all"
+                      classList={{
+                        "opacity-100 text-spring": sortKey() === "date",
+                        "opacity-0 group-hover:opacity-50": sortKey() !== "date",
+                      }}
+                    >
+                      {sortArrow("date")}
+                    </span>
+                  </span>
+                </th>
+                <th
+                  class={headerClass("amount")}
+                  onClick={() => handleSort("amount")}
+                >
+                  <span class="inline-flex items-center gap-1 justify-end">
+                    Amount
+                    <span
+                      class="material-icons !text-[12px] transition-all"
+                      classList={{
+                        "opacity-100 text-spring": sortKey() === "amount",
+                        "opacity-0 group-hover:opacity-50":
+                          sortKey() !== "amount",
+                      }}
+                    >
+                      {sortArrow("amount")}
+                    </span>
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="text-sm divide-y divide-forest/5">
+              <For each={sortedTransactions()}>
+                {(t) => (
+                  <tr class="group hover:bg-page-bg transition-all">
+                    <td class="px-6 py-4 border-l-3 border-transparent group-hover:border-spring">
+                      <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-1.5">
+                          <p class="font-semibold text-forest leading-none">
+                            {t.name}
+                          </p>
+                          <Show when={t.isRecurring}>
+                            <span
+                              class="material-icons text-[14px] text-spring"
+                              title="Recurring Transaction"
+                            >
+                              autorenew
+                            </span>
+                          </Show>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="pl-2 pr-3 py-1 text-[12px] rounded-md font-medium flex items-center gap-1.5 whitespace-nowrap"
+                          style={{
+                            "background-color": t.categoryColor
+                              ? `${t.categoryColor}15`
+                              : "rgba(232, 245, 236, 0.3)",
+                            color: t.categoryColor || "var(--color-forest)",
+                          }}
+                        >
+                          <Show when={formatIconName(t.categoryIcon)}>
+                            <span class="material-icons !text-[16px] w-4 h-4 flex items-center justify-center">
+                              {formatIconName(t.categoryIcon)}
+                            </span>
+                          </Show>
+                          {t.category}
+                        </span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span
+                        class="px-2 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
+                        style={{
+                          "background-color": t.accountColor
+                            ? `${t.accountColor}15`
+                            : "rgba(82, 194, 120, 0.1)",
+                          color: t.accountColor || "var(--color-mid-green)",
+                        }}
+                      >
+                        {t.accountName}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-earth">
+                      {formatDateDetail(t.date)}
+                    </td>
+                    <td
+                      class="px-6 py-4 text-right font-bold"
+                      classList={{
+                        "text-red-600": t.type?.toLowerCase() === "expense",
+                        "text-green-600": t.type?.toLowerCase() === "income",
+                        "text-forest": !["expense", "income"].includes(
+                          t.type?.toLowerCase() || "",
+                        ),
+                      }}
+                    >
+                      {t.type?.toLowerCase() === "income"
+                        ? "+"
+                        : t.type?.toLowerCase() === "expense"
+                          ? "-"
+                          : ""}
+                      {formatRupiah(t.amount)}
+                    </td>
+                  </tr>
+                )}
+              </For>
+            </tbody>
+          </table>
+        </div>
+      </Show>
 
       <Show when={props.loading}>
-        <div class="p-12 text-center text-earth/50 animate-pulse">
+        <div class="p-12 text-center text-earth/50 animate-pulse flex-1 flex flex-col items-center justify-center">
           <span class="material-icons text-4xl mb-2">sync</span>
           <p class="text-sm">Fetching your garden data...</p>
         </div>
       </Show>
 
       <Show when={!props.loading && sortedTransactions().length === 0}>
-        <div class="p-12 text-center text-earth/50">
+        <div class="p-12 text-center text-earth/50 flex-1 flex flex-col items-center justify-center">
           <span class="material-icons text-4xl mb-2">eco</span>
           <p class="text-sm">
             No transactions this month. Start tending your garden!

@@ -94,6 +94,7 @@ export const HeroCard = (props: HeroCardProps) => {
         ...acc,
         income: 0,
         expenses: 0,
+        nonRecurringExpenses: 0,
         firstDateTime: Infinity,
       });
     });
@@ -103,20 +104,27 @@ export const HeroCard = (props: HeroCardProps) => {
       const amount = t.amount || 0;
       const type = t.type;
       const accName = t.accountName;
+      const isRecurring = t.isRecurring;
       const time = isAllTime ? new Date(t.date).getTime() : 0;
 
       // Update specific account
       if (accName && statsMap.has(accName)) {
         const s = statsMap.get(accName);
         if (type === "income") s.income += amount;
-        else if (type === "expense") s.expenses += amount;
+        else if (type === "expense") {
+          s.expenses += amount;
+          if (!isRecurring) s.nonRecurringExpenses += amount;
+        }
         if (isAllTime && time < s.firstDateTime) s.firstDateTime = time;
       }
 
       // Update "All Accounts"
       const all = statsMap.get("All Accounts");
       if (type === "income") all.income += amount;
-      else if (type === "expense") all.expenses += amount;
+      else if (type === "expense") {
+        all.expenses += amount;
+        if (!isRecurring) all.nonRecurringExpenses += amount;
+      }
       if (isAllTime && time < all.firstDateTime) all.firstDateTime = time;
     }
 
@@ -143,6 +151,7 @@ export const HeroCard = (props: HeroCardProps) => {
         ...s,
         net,
         dailyAvg: s.expenses / divisor,
+        dailyAvgNonRecurring: s.nonRecurringExpenses / divisor,
       };
     });
   });
@@ -324,35 +333,51 @@ export const HeroCard = (props: HeroCardProps) => {
 
                 <div class="h-px bg-forest/10 w-full" />
 
-                <div class="grid grid-cols-3 gap-8">
-                  <div>
-                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
+                <div class="grid grid-cols-4 gap-4 xl:gap-6">
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest truncate">
                       {state.ui.showAllTime
                         ? "All Time Income"
                         : "Monthly Income"}
                     </p>
-                    <p class="text-xl font-outfit font-semibold text-forest">
+                    <p class="text-lg xl:text-xl font-outfit font-semibold text-forest truncate">
                       {formatRupiah(stats.income)}
                     </p>
                   </div>
-                  <div>
-                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest truncate">
                       {state.ui.showAllTime
                         ? "All Time Expenses"
                         : "Monthly Expenses"}
                     </p>
-                    <p class="text-xl font-outfit font-semibold text-forest">
+                    <p class="text-lg xl:text-xl font-outfit font-semibold text-forest truncate">
                       {formatRupiah(stats.expenses)}
                     </p>
                   </div>
-                  <div>
-                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest">
+                  <div class="min-w-0">
+                    <p
+                      class="text-[10px] font-bold text-earth uppercase tracking-widest truncate"
+                      title="Daily Average (All Expenses)"
+                    >
                       {state.ui.showAllTime
                         ? "All Time Daily Avg"
                         : "Daily Average"}
                     </p>
-                    <p class="text-xl font-outfit font-semibold text-forest">
+                    <p class="text-lg xl:text-xl font-outfit font-semibold text-forest truncate">
                       {formatRupiah(stats.dailyAvg)}
+                    </p>
+                  </div>
+                  <div class="min-w-0">
+                    <p
+                      class="text-[10px] font-bold text-earth uppercase tracking-widest truncate"
+                      title="Daily Average excluding recurring transactions"
+                    >
+                      {state.ui.showAllTime
+                        ? "All Time Daily Avg (Excl. Rec)"
+                        : "Daily Avg (Excl. Rec)"}
+                    </p>
+                    <p class="text-lg xl:text-xl font-outfit font-semibold text-forest truncate">
+                      {formatRupiah(stats.dailyAvgNonRecurring)}
                     </p>
                   </div>
                 </div>

@@ -15,11 +15,12 @@ import { state, nextMonth, prevMonth } from "../store";
 import { getTransactions } from "../data/expenseData";
 import { getDateRange, isDateInRange } from "../utils/date";
 import { GardenWins } from "../components/screen-dashboard/GardenWins";
-import { TopExpensesAndTargetsCard } from "../components/screen-dashboard/TopExpensesAndTargetsCard";
+import { TopExpensesAndTargetsCard } from "../components/screen-dashboard/TopExpensesCard";
 import { BudgetPacingChart } from "../components/screen-dashboard/BudgetPacingChart";
+import { DEFAULT_CONFIG } from "../config/defaults";
 
 const Dashboard = () => {
-  const [dailyBudget, setDailyBudget] = createSignal(300000);
+  const [dailyBudget, setDailyBudget] = createSignal(DEFAULT_CONFIG.dailyBudget);
 
   // Supabase Resources
   const [transactions] = createResource(getTransactions);
