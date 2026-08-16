@@ -8,9 +8,10 @@ import {
   onCleanup,
   untrack,
 } from "solid-js";
-import { state, toggleShowAllTime, toggleRecurringDebt, setSelectedAccount } from "../../store";
+import { state, toggleShowAllTime, setSelectedAccount } from "../../store";
 import { formatRupiah } from "../../utils/format";
-import { getDateRange } from "../../utils/date";
+import { getDateRange, isDateInRange } from "../../utils/date";
+import { isTransferTransaction } from "../../utils/transferUtils";
 import type { HeroCardProps } from "../../types";
 
 export const HeroCard = (props: HeroCardProps) => {
@@ -64,14 +65,16 @@ export const HeroCard = (props: HeroCardProps) => {
   // Calculate stats for all accounts in one pass
   const allStats = createMemo(() => {
     const isAllTime = state.ui.showAllTime;
-    const dataSource = isAllTime
-      ? props.allTransactions
-      : props.monthlyTransactions;
-    const accList = accounts();
     const { start, end } = getDateRange(
       state.ui.currentMonth,
       state.ui.datePeriod,
     );
+    const dataSource = isAllTime
+      ? props.allTransactions
+      : (props.allTransactions || []).filter((t) =>
+          isDateInRange(t.date, start, end),
+        );
+    const accList = accounts();
     const now = new Date();
 
     // Pre-calculate monthly divisor
@@ -101,6 +104,9 @@ export const HeroCard = (props: HeroCardProps) => {
 
     // Single pass aggregation for performance
     for (const t of dataSource) {
+      const isTransfer = isTransferTransaction(t);
+      if (isTransfer) continue;
+
       const amount = t.amount || 0;
       const type = t.type;
       const accName = t.accountName;
@@ -268,18 +274,6 @@ export const HeroCard = (props: HeroCardProps) => {
           }`}
         >
           {state.ui.showAllTime ? "Showing All Time" : "Showing This Month"}
-        </button>
-        <button
-          onClick={toggleRecurringDebt}
-          class={`cursor-pointer text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
-            state.ui.showRecurringDebt
-              ? "text-forest font-black"
-              : "text-forest/30 hover:text-forest/60"
-          }`}
-        >
-          {state.ui.showRecurringDebt
-            ? "Showing Recurring Debt"
-            : "Hiding Recurring Debt"}
         </button>
       </div>
 

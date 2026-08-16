@@ -2,6 +2,7 @@ import { createSignal, createMemo, Show, For } from "solid-js";
 import { state, setCategoryBudget } from "../../store";
 import { formatRupiah } from "../../utils/format";
 import { getCategoryDefaultTarget, getCategoryFallbackColor } from "../../config/defaults";
+import { isTransferTransaction } from "../../utils/transferUtils";
 import type { TopExpensesAndTargetsProps } from "../../types";
 
 export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => {
@@ -11,14 +12,13 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
   } | null>(null);
   const [editInputVal, setEditInputVal] = createSignal("");
 
-  // 1. Top 3 Most Expensive Expense Transactions (excluding recurring debt, account filtered)
+  // 1. Top 3 Most Expensive Expense Transactions (excluding internal transfers, account filtered)
   const topExpenses = createMemo(() => {
     const data = props.transactions || [];
     return data
       .filter((t) => {
         if (t.type !== "expense") return false;
-        // Exclude recurring debt
-        if (t.isRecurring && t.category?.toLowerCase() === "debt") return false;
+        if (isTransferTransaction(t)) return false;
         return true;
       })
       .sort((a, b) => b.amount - a.amount)
@@ -28,7 +28,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
   // 2. Category Targets & Period Spends
   const categoryTargets = createMemo(() => {
     const data = props.transactions || [];
-    const expenseData = data.filter((t) => t.type === "expense");
+    const expenseData = data.filter((t) => t.type === "expense" && !isTransferTransaction(t));
 
     // Calculate actual spent per category in this period
     const spentMap: Record<string, { spent: number; color?: string }> = {};
@@ -46,7 +46,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
     ]);
 
     const result = Array.from(allCategories)
-      .filter((cat) => cat.toLowerCase() !== "debt" || state.ui.showRecurringDebt)
+      .filter((cat) => cat.toLowerCase() !== "debt")
       .map((cat) => {
         const budgetObj = state.budgets.find(
           (b) => b.category.toLowerCase() === cat.toLowerCase(),

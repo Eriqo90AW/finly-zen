@@ -82,7 +82,11 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
       { name: string; icon?: string; color?: string }
     >();
     for (const t of props.transactions) {
-      if (t.category && !map.has(t.category)) {
+      if (
+        t.category &&
+        t.category.toLowerCase() !== "debt" &&
+        !map.has(t.category)
+      ) {
         map.set(t.category, {
           name: t.category,
           icon: t.categoryIcon,

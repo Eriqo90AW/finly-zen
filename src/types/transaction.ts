@@ -43,3 +43,28 @@ export type Transaction = {
   note: string;
   isRecurring?: boolean;
 };
+
+export interface AddTransferParams {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  note?: string;
+  createdAt?: Date;
+  userId?: string;
+}
+
+export interface TransferRecord {
+  id: string;
+  transactionIds: string[];
+  fromAccountId?: string;
+  fromAccountName: string;
+  fromAccountColor?: string;
+  toAccountId?: string;
+  toAccountName: string;
+  toAccountColor?: string;
+  amount: number;
+  date: string;
+  note?: string;
+  isRecurring: boolean;
+}
+

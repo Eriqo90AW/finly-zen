@@ -6,6 +6,7 @@ import FileDownloadIcon from "@suid/icons-material/FileDownloadOutlined";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { formatRupiah } from "../utils/format";
+import { isTransferTransaction } from "../utils/transferUtils";
 
 const Transactions = () => {
   const [filter, setFilter] = createSignal("");
@@ -13,15 +14,17 @@ const Transactions = () => {
 
   const transactionsByDate = createMemo(() => {
     const groups: Record<string, typeof state.transactions> = {};
-    (state.transactions || []).forEach((t) => {
-      const date = new Date(t.date).toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "short",
-        day: "numeric",
+    (state.transactions || [])
+      .filter((t) => !isTransferTransaction(t))
+      .forEach((t) => {
+        const date = new Date(t.date).toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        });
+        if (!groups[date]) groups[date] = [];
+        groups[date].push(t);
       });
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(t);
-    });
     return Object.entries(groups).reverse();
   });
 

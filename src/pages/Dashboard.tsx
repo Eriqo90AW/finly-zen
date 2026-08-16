@@ -18,6 +18,7 @@ import { GardenWins } from "../components/screen-dashboard/GardenWins";
 import { TopExpensesAndTargetsCard } from "../components/screen-dashboard/TopExpensesCard";
 import { BudgetPacingChart } from "../components/screen-dashboard/BudgetPacingChart";
 import { DEFAULT_CONFIG } from "../config/defaults";
+import { isTransferTransaction } from "../utils/transferUtils";
 
 const Dashboard = () => {
   const [dailyBudget, setDailyBudget] = createSignal(DEFAULT_CONFIG.dailyBudget);
@@ -25,7 +26,7 @@ const Dashboard = () => {
   // Supabase Resources
   const [transactions] = createResource(getTransactions);
 
-  // Filtered transactions for the selected period
+  // Filtered transactions for the selected period (excludes internal transfers)
   const monthlyTransactions = createMemo(() => {
     const data = transactions() || [];
     const { start, end } = getDateRange(
@@ -36,26 +37,16 @@ const Dashboard = () => {
     return data.filter((t) => {
       const inDate = isDateInRange(t.date, start, end);
       if (!inDate) return false;
-      if (
-        !state.ui.showRecurringDebt &&
-        t.isRecurring &&
-        t.category?.toLowerCase() === "debt"
-      )
-        return false;
+      if (isTransferTransaction(t)) return false;
       return true;
     });
   });
 
-  // All transactions filtered for debt settings (used for multi-period charts like DailySpendChart)
+  // All transactions filtered for non-transfers (used for multi-period charts like DailySpendChart)
   const allFilteredTransactions = createMemo(() => {
     const data = transactions() || [];
     return data.filter((t) => {
-      if (
-        !state.ui.showRecurringDebt &&
-        t.isRecurring &&
-        t.category?.toLowerCase() === "debt"
-      )
-        return false;
+      if (isTransferTransaction(t)) return false;
       return true;
     });
   });

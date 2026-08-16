@@ -8,6 +8,7 @@ import WhatshotIcon from "@suid/icons-material/Whatshot";
 import EnergySavingsLeafIcon from "@suid/icons-material/EnergySavingsLeaf";
 import EmojiEventsIcon from "@suid/icons-material/EmojiEventsOutlined";
 import LightbulbIcon from "@suid/icons-material/LightbulbOutlined";
+import { isTransferTransaction } from "../../utils/transferUtils";
 import type { GardenWinsProps } from "../../types";
 
 export const GardenWins = (props: GardenWinsProps) => {
@@ -34,6 +35,8 @@ export const GardenWins = (props: GardenWinsProps) => {
     const totalExpensesForInsights: Record<string, number> = {};
 
     transactions.forEach((t) => {
+      if (isTransferTransaction(t)) return;
+
       const dateKey = new Date(t.date).toISOString().split("T")[0];
 
       if (!t.isRecurring) {
@@ -45,13 +48,6 @@ export const GardenWins = (props: GardenWinsProps) => {
       if (t.type === "expense") {
         totalExpensesForInsights[dateKey] =
           (totalExpensesForInsights[dateKey] || 0) + t.amount;
-
-        if (
-          !state.ui.showRecurringDebt &&
-          t.isRecurring &&
-          t.category?.toLowerCase() === "debt"
-        )
-          return;
         netSpendForInsights[dateKey] =
           (netSpendForInsights[dateKey] || 0) + t.amount;
       } else if (t.type === "income" && !t.isRecurring) {
@@ -157,17 +153,9 @@ export const GardenWins = (props: GardenWinsProps) => {
     let curMonthTotal = 0;
     let prevMonthTotal = 0;
 
-    const isRecurringDebtExcluded = (t: any) => {
-      return (
-        !state.ui.showRecurringDebt &&
-        t.isRecurring &&
-        t.category?.toLowerCase() === "debt"
-      );
-    };
-
     transactions.forEach((t) => {
       if (t.type !== "expense") return;
-      if (isRecurringDebtExcluded(t)) return;
+      if (isTransferTransaction(t)) return;
 
       if (isDateInRange(t.date, currentPeriod.start, currentPeriod.end)) {
         curMonthTotal += t.amount;

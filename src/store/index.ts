@@ -21,7 +21,6 @@ const DEFAULT_STATE: AppState = {
     insightsOpen: false,
     showAddExpense: false,
     showAllTime: false,
-    showRecurringDebt: false,
     selectedAccount: null,
     selectedAccountColor: null,
   },
@@ -56,6 +55,7 @@ export function setupPersistence() {
           parsed.ui.sidebarOpen = false;
           parsed.ui.insightsOpen = false;
           parsed.ui.showAddExpense = false;
+          delete parsed.ui.showRecurringDebt;
         }
         setState(reconcile(parsed));
       } catch (e) {
@@ -97,10 +97,6 @@ export const prevMonth = () => {
 
 export const toggleShowAllTime = () => {
   setState("ui", "showAllTime", (s) => !s);
-};
-
-export const toggleRecurringDebt = () => {
-  setState("ui", "showRecurringDebt", (s) => !s);
 };
 
 export const setSelectedAccount = (
