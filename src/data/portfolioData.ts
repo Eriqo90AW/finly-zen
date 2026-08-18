@@ -16,7 +16,7 @@ const USER_ID = "a4d800bd-e779-4e7b-8982-2cab3d10035b";
 
 export async function fetchUsdRate(): Promise<number> {
   const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const URL = "https://ltjpsxlnxpjivoxgmmxn.supabase.co/functions/v1/usd-rate";
+  const URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/usd-rate`;
 
   try {
     const response = await fetch(URL, {
@@ -45,7 +45,7 @@ export async function fetchMultiStockPrices(symbols: string[]): Promise<MultiSto
   if (symbols.length === 0) return { data: [] };
 
   const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const URL = "https://ltjpsxlnxpjivoxgmmxn.supabase.co/functions/v1/v2-multi-stock";
+  const URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v2-multi-stock`;
 
   try {
     const response = await fetch(URL, {

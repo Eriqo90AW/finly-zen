@@ -4,7 +4,7 @@ export async function searchTickers(query: string): Promise<TickerSearchResult[]
   if (!query.trim()) return [];
 
   const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const SUPABASE_URL = `https://ltjpsxlnxpjivoxgmmxn.supabase.co/functions/v1/search-ticker?query=${encodeURIComponent(query)}`;
+  const SUPABASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-ticker?query=${encodeURIComponent(query)}`;
 
   try {
     const response = await fetch(SUPABASE_URL, {
@@ -31,7 +31,7 @@ export async function searchTickers(query: string): Promise<TickerSearchResult[]
 
 export async function fetchStockData(ticker: string): Promise<StockData> {
   const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const SUPABASE_URL = "https://ltjpsxlnxpjivoxgmmxn.supabase.co/functions/v1/v2-fetch-ticker";
+  const SUPABASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v2-fetch-ticker`;
 
   const response = await fetch(SUPABASE_URL, {
     method: "POST",

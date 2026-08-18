@@ -244,7 +244,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                       class="text-[10px] font-bold text-earth/60 hover:text-red-500 transition-colors cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedCategories(new Set());
+                        setSelectedCategories(new Set<string>());
                       }}
                     >
                       Clear

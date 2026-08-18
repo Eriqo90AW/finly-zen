@@ -198,7 +198,7 @@ const allTickers: string[] = Object.keys(distinctCompanies as Record<string, str
 
 async function fetchFreshDividends(): Promise<DividendEntry[]> {
   const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const SUPABASE_URL = "https://ltjpsxlnxpjivoxgmmxn.supabase.co/functions/v1/fetch-dividends";
+  const SUPABASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-dividends`;
 
   // Ensure tickers are formatted with .JK for Yahoo Finance lookup in Edge Function
   const formattedTickers = allTickers.map((t) => (t.endsWith(".JK") ? t : `${t}.JK`));

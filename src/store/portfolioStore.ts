@@ -178,17 +178,19 @@ const computePortfolioState = (
       priceMap[ticker]?.preMarketPrice ??
       priceMap[ticker]?.fundamentals?.price?.preMarketPrice ??
       null;
-    const postPriceNative =
-      priceMap[ticker]?.post_market_price ??
-      priceMap[ticker]?.postMarketPrice ??
-      priceMap[ticker]?.fundamentals?.price?.postMarketPrice ??
+    const afterPriceNative =
+      priceMap[ticker]?.after_hours_price ??
+      priceMap[ticker]?.afterHoursPrice ??
+      priceMap[ticker]?.fundamentals?.price?.afterHoursPrice ??
       null;
     const regularPriceNative =
-      priceMap[ticker]?.current_price ?? (buyTxs[0]?.price_per_unit || 0);
+      priceMap[ticker]?.active_price ??
+      priceMap[ticker]?.current_price ??
+      (buyTxs[0]?.price_per_unit || 0);
 
     const activePriceNative = (() => {
       if (session === "Pre-market" && prePriceNative !== null) return prePriceNative;
-      if (session === "After-hours" && postPriceNative !== null) return postPriceNative;
+      if (session === "After-hours" && afterPriceNative !== null) return afterPriceNative;
       return regularPriceNative;
     })();
 
@@ -282,11 +284,11 @@ const computePortfolioState = (
             ? prePriceNative
             : prePriceNative * fxRate
           : null,
-      postMarketPrice:
-        postPriceNative !== null
+      afterHoursPrice:
+        afterPriceNative !== null
           ? isIdx
-            ? postPriceNative
-            : postPriceNative * fxRate
+            ? afterPriceNative
+            : afterPriceNative * fxRate
           : null,
       previousClose,
       dayChange,
@@ -614,10 +616,9 @@ export const addTransactionToPortfolio = async (
         symbol: txParams.ticker,
         success: true,
         logo_url: "",
-        current_price: txParams.pricePerUnit,
+        active_price: txParams.pricePerUnit,
         pre_market_price: null,
-        post_market_price: null,
-        extended_hours_price: txParams.pricePerUnit,
+        after_hours_price: null,
         fundamentals: {
           summaryDetail: {},
           summaryProfile: {},

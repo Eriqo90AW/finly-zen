@@ -110,10 +110,10 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
         return asset.preMarketPrice;
       } else if (
         session === "After-hours" &&
-        asset.postMarketPrice != null &&
-        !isNaN(asset.postMarketPrice)
+        asset.afterHoursPrice != null &&
+        !isNaN(asset.afterHoursPrice)
       ) {
-        return asset.postMarketPrice;
+        return asset.afterHoursPrice;
       }
       return asset.currentPrice ?? 0;
     };
@@ -471,10 +471,10 @@ export const PortfolioAssetsList = (props: PortfolioAssetsListProps) => {
                       return asset.preMarketPrice;
                     } else if (
                       session === "After-hours" &&
-                      asset.postMarketPrice != null &&
-                      !isNaN(asset.postMarketPrice)
+                      asset.afterHoursPrice != null &&
+                      !isNaN(asset.afterHoursPrice)
                     ) {
-                      return asset.postMarketPrice;
+                      return asset.afterHoursPrice;
                     }
                     return asset.currentPrice ?? 0;
                   })();

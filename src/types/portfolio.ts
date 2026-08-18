@@ -29,7 +29,7 @@ export interface PortfolioAsset {
   averagePrice: number;
   currentPrice: number;
   preMarketPrice: number | null;
-  postMarketPrice: number | null;
+  afterHoursPrice: number | null;
   previousClose: number | null;
   dayChange: number;
   dayChangePct: number;
@@ -114,10 +114,17 @@ export interface MultiStockItem {
   symbol: string;
   success: boolean;
   logo_url: string;
-  current_price: number;
+  active_price: number;
+  current_price?: number;
+  market_state?: string;
+  is_extended_hours?: boolean;
+  regular_market_price?: number;
   pre_market_price: number | null;
-  post_market_price: number | null;
-  extended_hours_price: number;
+  after_hours_price: number | null;
+  pre_market_change_percent?: number | null;
+  after_hours_change_percent?: number | null;
+  regular_change_percent?: number | null;
+  extended_hours_price?: number;
   fundamentals: {
     summaryDetail: Record<string, any>;
     summaryProfile: Record<string, any>;

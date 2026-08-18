@@ -167,7 +167,9 @@ const TopBar = () => {
                           <div class="flex items-center gap-3 mt-1">
                             <span class="text-sm font-outfit font-bold text-forest">
                               {formatUSD(
-                                currentStockData()?.valuation.extended_hours_price || 0,
+                                currentStockData()?.valuation.active_price ||
+                                currentStockData()?.valuation.current_price ||
+                                0,
                               )}
                             </span>
                             <span class="text-[10px] text-earth font-medium">

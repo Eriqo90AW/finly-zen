@@ -17,10 +17,17 @@ export interface CorporateAction {
 export interface Valuation {
   market_cap: number;
   enterprise_value: number;
-  current_price: number;
-  pre_market_price: number;
-  post_market_price: number;
-  extended_hours_price: number;
+  market_state?: string;
+  is_extended_hours?: boolean;
+  active_price: number;
+  current_price?: number;
+  regular_market_price?: number;
+  pre_market_price?: number | null;
+  after_hours_price?: number | null;
+  pre_market_change_percent?: number | null;
+  after_hours_change_percent?: number | null;
+  regular_change_percent?: number | null;
+  extended_hours_price?: number;
   price_diff_percentage: number;
   pe_ttm: number;
   pe_forward: number;

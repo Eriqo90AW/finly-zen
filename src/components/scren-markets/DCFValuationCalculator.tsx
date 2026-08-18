@@ -184,7 +184,7 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
     const equityValue = enterpriseValue + cash - debt;
 
     const marketCap = props.data.fundamentals?.summaryDetail?.marketCap || props.data.valuation?.market_cap || 0;
-    const currentPrice = props.data.valuation?.current_price || 1;
+    const currentPrice = props.data.valuation?.active_price || props.data.valuation?.current_price || 1;
     const shares = props.data.fundamentals?.summaryDetail?.marketCap
       ? (marketCap / currentPrice)
       : (props.data.advanced_ratios?.shares_outstanding || 1);
@@ -296,7 +296,7 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
     ];
   });
 
-  const isUndervalued = () => projections().intrinsicValue > (props.data.valuation?.current_price || 0);
+  const isUndervalued = () => projections().intrinsicValue > (props.data.valuation?.active_price || props.data.valuation?.current_price || 0);
   const verdictColor = () => isUndervalued() ? "text-fin-green bg-fin-green/10 border-fin-green/20" : "text-fin-red bg-fin-red/10 border-fin-red/20";
   const verdictText = () => isUndervalued() ? "Undervalued" : "Overvalued";
 
@@ -579,7 +579,7 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
             </div>
             <div class="mt-3 flex items-center justify-between border-t border-forest/5 pt-2 text-[11px]">
               <span class="text-earth">Current Price</span>
-              <span class="font-bold text-forest">{formatUSD(props.data.valuation?.current_price)}</span>
+              <span class="font-bold text-forest">{formatUSD(props.data.valuation?.active_price ?? props.data.valuation?.current_price)}</span>
             </div>
           </div>
 

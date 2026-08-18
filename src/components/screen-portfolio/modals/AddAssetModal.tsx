@@ -192,8 +192,8 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
       const response = await fetchMultiStockPrices([symbol]);
       if (response && response.data && response.data.length > 0) {
         const item = response.data[0];
-        if (item.success && item.current_price !== undefined) {
-          setPrice(item.current_price);
+        if (item.success && (item.active_price !== undefined || item.current_price !== undefined)) {
+          setPrice(item.active_price ?? item.current_price ?? 0);
         }
       }
     } catch (err) {

@@ -16,7 +16,10 @@ export interface PriceAlertModalProps {
 }
 
 export const PriceAlertModal = (props: PriceAlertModalProps) => {
-  const currentPrice = () => props.stockData.valuation.extended_hours_price;
+  const currentPrice = () =>
+    props.stockData.valuation.active_price ??
+    props.stockData.valuation.current_price ??
+    0;
   const ticker = () => props.stockData.ticker.toUpperCase();
   const companyName = () => props.stockData.company_name;
 

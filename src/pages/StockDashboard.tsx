@@ -105,7 +105,7 @@ const StockDashboard = () => {
     const data = stockData();
     if (data) {
       setCurrentStockData(data);
-      const price = data.valuation?.extended_hours_price ?? data.valuation?.current_price ?? 0;
+      const price = data.valuation?.active_price ?? data.valuation?.current_price ?? 0;
       const newlyTriggered = checkAlerts(data.ticker, price);
       if (newlyTriggered.length > 0) {
         setActiveToasts((prev) => [...prev, ...newlyTriggered]);
