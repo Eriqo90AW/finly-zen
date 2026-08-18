@@ -7,7 +7,54 @@ import { PriceAlertModal } from "./modals/PriceAlertModal";
 export const StockHero = (props: StockHeroProps) => {
   const d = () => props.data;
   const status = () => props.marketStatus;
-  const diff = () => d().valuation?.price_diff_percentage ?? 0;
+  const diff = () => {
+    const valuation = d().valuation;
+    if (!valuation) return 0;
+
+    const state = valuation.market_state?.toUpperCase();
+
+    if (state === "PRE" || state === "PREPRE") {
+      if (valuation.pre_market_change_percent != null) {
+        return valuation.pre_market_change_percent / 100;
+      }
+    } else if (state === "POST" || state === "POSTPOST" || state === "AFTER" || state === "AFTER_HOURS") {
+      if (valuation.after_hours_change_percent != null) {
+        return valuation.after_hours_change_percent / 100;
+      }
+    } else if (state === "REGULAR") {
+      if (valuation.regular_change_percent != null) {
+        return valuation.regular_change_percent / 100;
+      }
+    } else if (state === "CLOSED") {
+      if (valuation.is_extended_hours) {
+        if (valuation.pre_market_change_percent != null) return valuation.pre_market_change_percent / 100;
+        if (valuation.after_hours_change_percent != null) return valuation.after_hours_change_percent / 100;
+      }
+      if (valuation.regular_change_percent != null) return valuation.regular_change_percent / 100;
+      if (valuation.after_hours_change_percent != null) return valuation.after_hours_change_percent / 100;
+      if (valuation.pre_market_change_percent != null) return valuation.pre_market_change_percent / 100;
+    } else if (!state) {
+      if (status()?.session === "Pre-market" && valuation.pre_market_change_percent != null) {
+        return valuation.pre_market_change_percent / 100;
+      }
+      if (status()?.session === "After-hours" && valuation.after_hours_change_percent != null) {
+        return valuation.after_hours_change_percent / 100;
+      }
+      if (valuation.regular_change_percent != null) {
+        return valuation.regular_change_percent / 100;
+      }
+    }
+
+    // Fallbacks
+    if (valuation.regular_change_percent != null) {
+      return valuation.regular_change_percent / 100;
+    }
+    if (valuation.price_diff_percentage != null) {
+      return valuation.price_diff_percentage;
+    }
+
+    return 0;
+  };
   const isPositive = () => diff() >= 0;
 
   const [isModalOpen, setIsModalOpen] = createSignal(false);
@@ -113,9 +160,16 @@ export const StockHero = (props: StockHeroProps) => {
         {/* Right Side: Financial Stats */}
         <div class="flex items-center gap-6 lg:gap-10 bg-forest/[0.02] p-5 lg:p-4 rounded-2xl border border-forest/5 w-full lg:w-auto justify-between lg:justify-start">
           <div class="flex flex-col items-start">
-            <p class="text-[9px] font-bold text-earth/60 uppercase tracking-widest mb-1.5">
-              Price Action
-            </p>
+            <div class="flex items-center gap-1.5 mb-1.5">
+              <p class="text-[9px] font-bold text-earth/60 uppercase tracking-widest">
+                Price Action
+              </p>
+              <Show when={d().valuation?.market_state && d().valuation.market_state !== "REGULAR"}>
+                <span class="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-forest/5 text-forest/70 border border-forest/10">
+                  {d().valuation.market_state}
+                </span>
+              </Show>
+            </div>
             <div class="flex items-center gap-3">
               <div class="flex flex-col items-start min-w-32">
                 <div class="flex items-center gap-3">
