@@ -358,6 +358,8 @@ export default function QuickPortfolio() {
         cash: 0,
         market: { stocks: 0, idx: 0, crypto: 0, cash: 0 },
         cost: { stocks: 0, idx: 0, crypto: 0, cash: 0 },
+        marketValues: { stocks: 0, idx: 0, crypto: 0, cash: 0 },
+        costValues: { stocks: 0, idx: 0, crypto: 0, cash: 0 },
         drift: { stocks: 0, idx: 0, crypto: 0, cash: 0 },
       };
     }
@@ -401,6 +403,8 @@ export default function QuickPortfolio() {
       cash: mktCash,
       market: { stocks: mktStocks, idx: mktIdx, crypto: mktCrypto, cash: mktCash },
       cost: { stocks: costStocks, idx: costIdx, crypto: costCrypto, cash: costCash },
+      marketValues: { stocks: stocksMkt, idx: idxMkt, crypto: cryptoMkt, cash },
+      costValues: { stocks: stocksCost, idx: idxCost, crypto: cryptoCost, cash },
       drift: {
         stocks: mktStocks - costStocks,
         idx: mktIdx - costIdx,

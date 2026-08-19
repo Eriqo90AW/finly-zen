@@ -16,6 +16,8 @@ interface QuickPortfolioChartsProps {
     cash: number;
     market?: { stocks: number; idx: number; crypto: number; cash: number };
     cost?: { stocks: number; idx: number; crypto: number; cash: number };
+    marketValues: { stocks: number; idx: number; crypto: number; cash: number };
+    costValues: { stocks: number; idx: number; crypto: number; cash: number };
     drift?: { stocks: number; idx: number; crypto: number; cash: number };
   };
   allocationView: AllocationView;
@@ -58,14 +60,14 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
     };
   });
 
-  const detailDonutOptions = createMemo((): ApexOptions => ({
+  const createDonutOptions = (labels: string[], colors: string[]): ApexOptions => ({
     chart: {
       type: "donut",
       animations: { enabled: false },
       dropShadow: { enabled: false },
     },
-    labels: props.detailAllocations.map((item) => item.ticker),
-    colors: props.detailAllocations.map((item) => item.color),
+    labels,
+    colors,
     legend: { show: false },
     dataLabels: { enabled: false },
     stroke: { show: false },
@@ -80,7 +82,14 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
         },
       },
     },
-  }));
+  });
+
+  const detailDonutOptions = createMemo(() =>
+    createDonutOptions(
+      props.detailAllocations.map((item) => item.ticker),
+      props.detailAllocations.map((item) => item.color),
+    )
+  );
 
   const detailDonutSeries = createMemo(() =>
     props.detailAllocations.map((item) =>
@@ -88,11 +97,47 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
     )
   );
 
+  const categoryDonutOptions = createMemo(() =>
+    createDonutOptions(
+      ["Stocks", "IDX", "Crypto", "Cash"],
+      [categoryColors.stocks, categoryColors.idx, categoryColors.crypto, categoryColors.cash],
+    )
+  );
+
+  const categoryDonutSeries = createMemo(() => {
+    const allocations = activeCategoryAllocations();
+    return [allocations.stocks, allocations.idx, allocations.crypto, allocations.cash];
+  });
+
+  const categoryAllocationItems = createMemo(() => {
+    const market = props.allocations.market || {
+      stocks: props.allocations.stocks,
+      idx: props.allocations.idx,
+      crypto: props.allocations.crypto,
+      cash: props.allocations.cash,
+    };
+    const cost = props.allocations.cost || market;
+    const marketValues = props.allocations.marketValues;
+    const costValues = props.allocations.costValues;
+    const drift = props.allocations.drift || { stocks: 0, idx: 0, crypto: 0, cash: 0 };
+
+    return [
+      { ticker: "Stocks", percentage: market.stocks, costPercentage: cost.stocks, marketValue: marketValues.stocks, costValue: costValues.stocks, drift: drift.stocks, color: categoryColors.stocks },
+      { ticker: "IDX", percentage: market.idx, costPercentage: cost.idx, marketValue: marketValues.idx, costValue: costValues.idx, drift: drift.idx, color: categoryColors.idx },
+      { ticker: "Crypto", percentage: market.crypto, costPercentage: cost.crypto, marketValue: marketValues.crypto, costValue: costValues.crypto, drift: drift.crypto, color: categoryColors.crypto },
+      { ticker: "Cash", percentage: market.cash, costPercentage: cost.cash, marketValue: marketValues.cash, costValue: costValues.cash, drift: drift.cash, color: categoryColors.cash },
+    ].sort((a, b) => {
+      const aValue = allocBasis() === "cost" ? a.costPercentage : a.percentage;
+      const bValue = allocBasis() === "cost" ? b.costPercentage : b.percentage;
+      return bValue - aValue;
+    });
+  });
+
   return (
     <div class="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-5">
       {/* Asset Allocation Card */}
-      <div class="bg-card-bg rounded-premium p-6 border border-forest/10 shadow-premium flex flex-col group transition-all min-h-[280px]">
-        <div class="flex items-center justify-between mb-4 gap-2 shrink-0">
+      <div class="bg-card-bg rounded-premium p-6 border border-forest/10 shadow-premium flex flex-col group transition-all h-[280px] overflow-hidden">
+        <div class="flex items-center justify-between mb-4 gap-2 shrink-0 flex-wrap">
           <div class="flex items-center gap-2">
             <span class="material-icons text-forest !text-xl">pie_chart</span>
             <h3 class="text-xs sm:text-sm font-outfit font-bold text-forest uppercase tracking-wider shrink-0">
@@ -100,12 +145,12 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
             </h3>
           </div>
           
-          <div class="flex items-center gap-2">
+          <div class="flex items-center justify-end gap-2 flex-wrap">
             {/* Market vs Cost basis pill toggle */}
-            <div class="flex bg-sage/30 p-0.5 rounded-lg border border-forest/10 shrink-0">
+            <div class="flex bg-sage/50 p-1 rounded-xl border border-forest/10 shrink-0">
               <button
                 onClick={() => setAllocBasis("market")}
-                class="px-2 py-0.5 rounded-md text-[8.5px] font-outfit font-bold uppercase tracking-wider cursor-pointer border-0 transition-all"
+                class="px-2.5 py-1 rounded-lg text-[9px] font-outfit font-bold uppercase tracking-wider cursor-pointer border-0 transition-all"
                 classList={{
                   "bg-forest text-white shadow-xs": allocBasis() === "market",
                   "text-earth hover:text-forest": allocBasis() !== "market",
@@ -115,7 +160,7 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
               </button>
               <button
                 onClick={() => setAllocBasis("cost")}
-                class="px-2 py-0.5 rounded-md text-[8.5px] font-outfit font-bold uppercase tracking-wider cursor-pointer border-0 transition-all"
+                class="px-2.5 py-1 rounded-lg text-[9px] font-outfit font-bold uppercase tracking-wider cursor-pointer border-0 transition-all"
                 classList={{
                   "bg-forest text-white shadow-xs": allocBasis() === "cost",
                   "text-earth hover:text-forest": allocBasis() !== "cost",
@@ -155,8 +200,8 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
           when={props.allocationView === "category"}
           fallback={
             /* Detail view: ApexCharts donut + scrollable ticker list with Market, Cost & Drift */
-            <div class="flex-1 min-h-0 flex flex-col justify-between">
-              <div class="relative h-[95px] shrink-0 mb-1">
+            <div class="flex-1 min-h-0 grid grid-cols-2 gap-4">
+              <div class="relative min-w-0 min-h-0 h-full">
                 <SolidApexCharts
                   options={detailDonutOptions()}
                   series={detailDonutSeries()}
@@ -173,7 +218,7 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
                 </div>
               </div>
 
-              <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar-thin -mr-1 pr-1 space-y-1">
+              <div class="min-w-0 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar-thin -mr-1 pr-1 space-y-1">
                 <For each={props.detailAllocations}>
                   {(item) => {
                     const drift = item.drift ?? 0;
@@ -215,7 +260,11 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
                             </span>
                           </div>
                           <span class="text-[9px] font-semibold text-earth/70 truncate max-w-[100px]">
-                            {props.formatVal(item.value)}
+                            {props.formatVal(
+                              allocBasis() === "cost"
+                                ? (item.costBasis ?? item.value)
+                                : item.value
+                            )}
                           </span>
                         </div>
                       </div>
@@ -226,122 +275,74 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
             </div>
           }
         >
-          {/* Category view: CSS conic donut + legend with Market, Cost & Drift */}
-          <div class="flex-1 min-h-0 flex flex-col justify-between">
-            <div class="flex-1 min-h-0 flex items-center justify-center relative py-1">
-              <div
-                class="w-24 h-24 rounded-full relative transition-all duration-300"
-                style={{
-                  background: `conic-gradient(
-                    ${categoryColors.stocks} 0% ${activeCategoryAllocations().stocks}%,
-                    ${categoryColors.idx} ${activeCategoryAllocations().stocks}% ${activeCategoryAllocations().stocks + activeCategoryAllocations().idx}%,
-                    ${categoryColors.crypto} ${activeCategoryAllocations().stocks + activeCategoryAllocations().idx}% ${activeCategoryAllocations().stocks + activeCategoryAllocations().idx + activeCategoryAllocations().crypto}%,
-                    ${categoryColors.cash} ${activeCategoryAllocations().stocks + activeCategoryAllocations().idx + activeCategoryAllocations().crypto}% 100%
-                  )`,
-                  "mask-image": "radial-gradient(transparent 55%, black 56%)",
-                  "-webkit-mask-image": "radial-gradient(transparent 55%, black 56%)",
-                }}
+          {/* Category view: ApexCharts donut + scrollable category list with Market, Cost & Drift */}
+          <div class="flex-1 min-h-0 grid grid-cols-2 gap-4">
+            <div class="relative min-w-0 min-h-0 h-full">
+              <SolidApexCharts
+                options={categoryDonutOptions()}
+                series={categoryDonutSeries()}
+                type="donut"
+                height="100%"
               />
-              <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span class="font-outfit text-[9px] text-earth uppercase font-semibold">
-                  {allocBasis() === "market" ? "Mkt Value" : "Cost Basis"}
-                </span>
-                <span class="font-outfit text-sm text-forest font-bold">100%</span>
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div class="flex flex-col items-center font-outfit">
+                  <span class="text-[8px] text-earth uppercase font-semibold">
+                    {allocBasis() === "market" ? "Mkt Value" : "Cost Basis"}
+                  </span>
+                  <span class="text-xs text-forest font-bold">100%</span>
+                </div>
               </div>
             </div>
 
-            <div class="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-earth shrink-0 font-outfit">
-              {/* Stocks */}
-              <div class="flex items-center justify-between p-1.5 rounded-lg bg-sage/20 border border-forest/5">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <div class="w-2 h-2 rounded-full bg-[#1a4d2e] shrink-0" />
-                  <span class="font-bold text-near-black text-[11px]">Stocks</span>
-                </div>
-                <div class="flex items-center gap-1 shrink-0">
-                  <span class="font-bold text-[11px] text-forest">
-                    {props.allocations.market?.stocks.toFixed(1) ?? props.allocations.stocks.toFixed(1)}%
-                  </span>
-                  <span
-                    class={`text-[8px] px-1 py-0.25 rounded-full font-bold font-mono ${
-                      (props.allocations.drift?.stocks ?? 0) >= 0
-                        ? "bg-emerald-500/10 text-emerald-700"
-                        : "bg-rose-500/10 text-rose-600"
-                    }`}
-                  >
-                    {(props.allocations.drift?.stocks ?? 0) >= 0 ? "+" : ""}
-                    {(props.allocations.drift?.stocks ?? 0).toFixed(1)}%
-                  </span>
-                </div>
-              </div>
+            <div class="min-w-0 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar-thin -mr-1 pr-1 space-y-1">
+              <For each={categoryAllocationItems()}>
+                {(item) => {
+                  const isPos = item.drift >= 0;
+                  const selectedPercentage = () =>
+                    allocBasis() === "market" ? item.percentage : item.costPercentage;
 
-              {/* IDX */}
-              <div class="flex items-center justify-between p-1.5 rounded-lg bg-sage/20 border border-forest/5">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <div class="w-2 h-2 rounded-full bg-[#52c278] shrink-0" />
-                  <span class="font-bold text-near-black text-[11px]">IDX</span>
-                </div>
-                <div class="flex items-center gap-1 shrink-0">
-                  <span class="font-bold text-[11px] text-forest">
-                    {props.allocations.market?.idx.toFixed(1) ?? props.allocations.idx.toFixed(1)}%
-                  </span>
-                  <span
-                    class={`text-[8px] px-1 py-0.25 rounded-full font-bold font-mono ${
-                      (props.allocations.drift?.idx ?? 0) >= 0
-                        ? "bg-emerald-500/10 text-emerald-700"
-                        : "bg-rose-500/10 text-rose-600"
-                    }`}
-                  >
-                    {(props.allocations.drift?.idx ?? 0) >= 0 ? "+" : ""}
-                    {(props.allocations.drift?.idx ?? 0).toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-
-              {/* Crypto */}
-              <div class="flex items-center justify-between p-1.5 rounded-lg bg-sage/20 border border-forest/5">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <div class="w-2 h-2 rounded-full bg-[#2d7d46] shrink-0" />
-                  <span class="font-bold text-near-black text-[11px]">Crypto</span>
-                </div>
-                <div class="flex items-center gap-1 shrink-0">
-                  <span class="font-bold text-[11px] text-forest">
-                    {props.allocations.market?.crypto.toFixed(1) ?? props.allocations.crypto.toFixed(1)}%
-                  </span>
-                  <span
-                    class={`text-[8px] px-1 py-0.25 rounded-full font-bold font-mono ${
-                      (props.allocations.drift?.crypto ?? 0) >= 0
-                        ? "bg-emerald-500/10 text-emerald-700"
-                        : "bg-rose-500/10 text-rose-600"
-                    }`}
-                  >
-                    {(props.allocations.drift?.crypto ?? 0) >= 0 ? "+" : ""}
-                    {(props.allocations.drift?.crypto ?? 0).toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-
-              {/* Cash */}
-              <div class="flex items-center justify-between p-1.5 rounded-lg bg-sage/20 border border-forest/5">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <div class="w-2 h-2 rounded-full bg-[#cbd5e1] shrink-0" />
-                  <span class="font-bold text-near-black text-[11px]">Cash</span>
-                </div>
-                <div class="flex items-center gap-1 shrink-0">
-                  <span class="font-bold text-[11px] text-forest">
-                    {props.allocations.market?.cash.toFixed(1) ?? props.allocations.cash.toFixed(1)}%
-                  </span>
-                  <span
-                    class={`text-[8px] px-1 py-0.25 rounded-full font-bold font-mono ${
-                      (props.allocations.drift?.cash ?? 0) >= 0
-                        ? "bg-emerald-500/10 text-emerald-700"
-                        : "bg-rose-500/10 text-rose-600"
-                    }`}
-                  >
-                    {(props.allocations.drift?.cash ?? 0) >= 0 ? "+" : ""}
-                    {(props.allocations.drift?.cash ?? 0).toFixed(1)}%
-                  </span>
-                </div>
-              </div>
+                  return (
+                    <div class="flex items-center justify-between group hover:bg-sage/40 px-2 py-1 rounded-lg transition-all">
+                      <div class="flex items-center gap-2 min-w-0 flex-1 mr-1">
+                        <div
+                          class="w-1.5 h-6 rounded-full shrink-0"
+                          style={{ "background-color": item.color }}
+                        />
+                        <div class="flex flex-col min-w-0 overflow-hidden">
+                          <span class="text-xs font-outfit font-bold text-near-black group-hover:text-forest transition-colors leading-tight truncate">
+                            {item.ticker}
+                          </span>
+                          <div class="flex items-center gap-1.5 text-[9px] text-earth/70 font-mono mt-0.5">
+                            <span>{item.percentage.toFixed(1)}%</span>
+                            <span>·</span>
+                            <span>{item.costPercentage.toFixed(1)}% Cost</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex flex-col items-end shrink-0 gap-0.5">
+                        <div class="flex items-center gap-1.5 font-outfit font-bold">
+                          <span class="text-xs text-forest">{selectedPercentage().toFixed(1)}%</span>
+                          <span
+                            class={`text-[8.5px] px-1.5 py-0.25 rounded-full font-bold font-mono ${
+                              isPos
+                                ? "bg-emerald-500/10 text-emerald-700"
+                                : "bg-rose-500/10 text-rose-600"
+                            }`}
+                            title="Allocation Drift (Market % − Cost %)"
+                          >
+                            {isPos ? "+" : ""}{item.drift.toFixed(1)}%
+                          </span>
+                        </div>
+                        <span class="text-[9px] font-semibold text-earth/70 truncate max-w-[100px]">
+                          {props.formatVal(
+                            allocBasis() === "cost" ? item.costValue : item.marketValue
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }}
+              </For>
             </div>
           </div>
         </Show>
@@ -449,4 +450,3 @@ export const QuickPortfolioCharts = (props: QuickPortfolioChartsProps) => {
     </div>
   );
 };
-
