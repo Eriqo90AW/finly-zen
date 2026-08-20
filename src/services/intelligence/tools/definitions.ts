@@ -152,9 +152,13 @@ export const FINLY_TOOLS: OpenAIToolDefinition[] = [
 export const MARKET_QUANT_TOOLS: OpenAIToolDefinition[] = [
   listPortfoliosTool,
   getPortfolioHoldingsTool,
+  listAccountsTool,
+  listCategoriesTool,
   listTransactionsTool,
   spendingSummaryTool,
   getBudgetsAndGoalsTool,
+  proposeAddTransactionTool,
+  proposeAddTransferTool,
 ];
 
 export const ALL_TOOLS: OpenAIToolDefinition[] = [

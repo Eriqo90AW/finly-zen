@@ -326,10 +326,17 @@ export function formatContextForPrompt(ctx: UserContext): string {
 
   lines.push(
     "",
+    "Database Tools (Maps 1:1 to frontend Supabase calls):",
+    "- To save a new expense or income: call `propose_add_transaction` with `name`, `amount`, `type` ('expense'|'income'), and `account_name` / `category_name` matching the accounts/categories listed above.",
+    "- To transfer between accounts: call `propose_add_transfer` with `from_account_name`, `to_account_name`, and `amount`.",
+    "- To look up transactions or calculate spending: call `list_transactions` or `spending_summary`.",
+    "- To check investments: call `list_portfolios` or `get_portfolio_holdings`.",
+    "",
     "Rules:",
     `- You are assisting ${ctx.userName} on the "${ctx.currentPage.name}" screen. The Active Screen Pre-Injected Snapshot contains real, live data for this screen (including prices, day change percentages, P&L, holdings, or transactions). Always use this data first.`,
+    "- Formulate your internal calculations, deductions, and step-by-step reasoning inside <think>...</think> tags before writing your final response or invoking tools.",
     "- Amounts are in Indonesian Rupiah (IDR) unless stated otherwise.",
-    "- For writes (e.g. adding transactions or transfers), use propose_* tools; the user must confirm before data is saved.",
+    "- When the user asks you to log, record, add, or transfer money, call the corresponding tool immediately. The frontend will present a confirmation card to the user with the exact details to save to Supabase.",
   );
 
   return lines.join("\n");

@@ -13,12 +13,52 @@ import type {
 } from "../../../types/intelligence";
 import { formatRupiah } from "../../../utils/format";
 
+const MAX_TRANSACTION_AMOUNT = 100_000_000_000; // 100 Billion IDR
+const MAX_STRING_LENGTH = 255;
+
 function parseArgs(raw: string): Record<string, unknown> {
   try {
-    return JSON.parse(raw || "{}") as Record<string, unknown>;
+    const parsed = JSON.parse(raw || "{}");
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    // Prevent prototype pollution
+    delete (parsed as Record<string, unknown>).__proto__;
+    delete (parsed as Record<string, unknown>).constructor;
+    delete (parsed as Record<string, unknown>).prototype;
+    return parsed as Record<string, unknown>;
   } catch {
     return {};
   }
+}
+
+function sanitizeAmount(value: unknown): number | null {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value) || isNaN(value) || value <= 0 || value > MAX_TRANSACTION_AMOUNT) {
+      return null;
+    }
+    return Math.round(value * 100) / 100;
+  }
+  if (typeof value === "string") {
+    const parsed = parseFloat(value.replace(/[^0-9.-]+/g, ""));
+    if (!Number.isFinite(parsed) || isNaN(parsed) || parsed <= 0 || parsed > MAX_TRANSACTION_AMOUNT) {
+      return null;
+    }
+    return Math.round(parsed * 100) / 100;
+  }
+  return null;
+}
+
+function sanitizeText(value: unknown, maxLength = MAX_STRING_LENGTH): string {
+  if (typeof value !== "string") return "";
+  // Strip control chars and trim
+  return value.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, maxLength);
+}
+
+function parseValidDate(value: unknown): number | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
 }
 
 function resolveAccountId(
@@ -26,10 +66,16 @@ function resolveAccountId(
   accountId?: unknown,
   accountName?: unknown,
 ): string | null {
-  if (typeof accountId === "string" && accountId) return accountId;
-  if (typeof accountName === "string" && accountName) {
+  const cleanId = typeof accountId === "string" ? accountId.trim() : null;
+  if (cleanId) {
+    const match = ctx.accounts.find((a) => a.id === cleanId);
+    if (match) return match.id;
+  }
+
+  const cleanName = typeof accountName === "string" ? accountName.trim().toLowerCase() : null;
+  if (cleanName) {
     const match = ctx.accounts.find(
-      (a) => a.name.toLowerCase() === accountName.toLowerCase(),
+      (a) => a.name.trim().toLowerCase() === cleanName,
     );
     return match?.id ?? null;
   }
@@ -41,10 +87,16 @@ function resolveCategoryId(
   categoryId?: unknown,
   categoryName?: unknown,
 ): string | null {
-  if (typeof categoryId === "string" && categoryId) return categoryId;
-  if (typeof categoryName === "string" && categoryName) {
+  const cleanId = typeof categoryId === "string" ? categoryId.trim() : null;
+  if (cleanId) {
+    const match = ctx.categories.find((c) => c.id === cleanId);
+    if (match) return match.id;
+  }
+
+  const cleanName = typeof categoryName === "string" ? categoryName.trim().toLowerCase() : null;
+  if (cleanName) {
     const match = ctx.categories.find(
-      (c) => c.name.toLowerCase() === categoryName.toLowerCase(),
+      (c) => c.name.trim().toLowerCase() === cleanName,
     );
     return match?.id ?? null;
   }
@@ -56,12 +108,16 @@ function resolvePortfolioId(
   portfolioId?: unknown,
   portfolioName?: unknown,
 ): string | null {
-  if (typeof portfolioId === "string" && portfolioId) {
-    return ctx.portfolios.some((p) => p.id === portfolioId) ? portfolioId : null;
+  const cleanId = typeof portfolioId === "string" ? portfolioId.trim() : null;
+  if (cleanId) {
+    const match = ctx.portfolios.find((p) => p.id === cleanId);
+    if (match) return match.id;
   }
-  if (typeof portfolioName === "string" && portfolioName) {
+
+  const cleanName = typeof portfolioName === "string" ? portfolioName.trim().toLowerCase() : null;
+  if (cleanName) {
     const match = ctx.portfolios.find(
-      (p) => p.name.toLowerCase() === portfolioName.toLowerCase(),
+      (p) => p.name.trim().toLowerCase() === cleanName,
     );
     return match?.id ?? null;
   }
@@ -73,18 +129,24 @@ function filterTransactions(
   args: Record<string, unknown>,
   ctx: UserContext,
 ) {
-  let result = transactions;
+  // Only expose transactions associated with user's scoped accounts
+  const allowedAccountNames = new Set(ctx.accounts.map((a) => a.name.toLowerCase()));
+  let result = transactions.filter(
+    (t) => t.accountName && allowedAccountNames.has(t.accountName.toLowerCase()),
+  );
 
   const accountId = resolveAccountId(ctx, args.account_id, args.account_name);
   if (accountId) {
     const account = ctx.accounts.find((a) => a.id === accountId);
     if (account) {
-      result = result.filter((t) => t.accountName === account.name);
+      result = result.filter(
+        (t) => t.accountName?.toLowerCase() === account.name.toLowerCase(),
+      );
     }
   }
 
-  if (typeof args.category === "string" && args.category) {
-    const cat = args.category.toLowerCase();
+  if (typeof args.category === "string" && args.category.trim()) {
+    const cat = args.category.trim().toLowerCase();
     result = result.filter((t) => t.category?.toLowerCase() === cat);
   }
 
@@ -92,18 +154,19 @@ function filterTransactions(
     result = result.filter((t) => t.type === args.type);
   }
 
-  if (typeof args.date_from === "string" && args.date_from) {
-    const from = new Date(args.date_from).getTime();
-    result = result.filter((t) => new Date(t.date).getTime() >= from);
+  const fromTime = parseValidDate(args.date_from);
+  if (fromTime !== null) {
+    result = result.filter((t) => new Date(t.date).getTime() >= fromTime);
   }
 
-  if (typeof args.date_to === "string" && args.date_to) {
-    const to = new Date(args.date_to).getTime();
-    result = result.filter((t) => new Date(t.date).getTime() <= to);
+  const toTime = parseValidDate(args.date_to);
+  if (toTime !== null) {
+    result = result.filter((t) => new Date(t.date).getTime() <= toTime);
   }
 
-  const limit =
-    typeof args.limit === "number" ? Math.min(Math.max(args.limit, 1), 50) : 20;
+  const rawLimit = typeof args.limit === "number" ? args.limit : 20;
+  const limit = Math.min(Math.max(Number.isFinite(rawLimit) ? Math.floor(rawLimit) : 20, 1), 50);
+
   return result.slice(0, limit).map((t) => ({
     id: t.id,
     name: t.name,
@@ -221,25 +284,34 @@ export async function executeTool(
     }
 
     case "propose_add_transaction": {
+      const name = sanitizeText(args.name, 100);
+      const amount = sanitizeAmount(args.amount);
+      const rawType = typeof args.type === "string" ? args.type.trim().toLowerCase() : "";
+      const type = rawType === "income" ? "income" : rawType === "expense" ? "expense" : null;
+
+      if (!name || name.length < 1) {
+        return { kind: "result", data: { error: "A valid transaction description is required (1-100 chars)." } };
+      }
+      if (amount === null) {
+        return { kind: "result", data: { error: "Invalid amount. Must be a positive finite number up to 100B IDR." } };
+      }
+      if (!type) {
+        return { kind: "result", data: { error: "Invalid transaction type. Must be 'expense' or 'income'." } };
+      }
+
       const accountId = resolveAccountId(ctx, args.account_id, args.account_name);
       const categoryId = resolveCategoryId(ctx, args.category_id, args.category_name);
-      const name = typeof args.name === "string" ? args.name : "";
-      const amount = typeof args.amount === "number" ? args.amount : 0;
-      const type = args.type === "income" ? "income" : "expense";
 
-      if (!name || amount <= 0) {
-        return { kind: "result", data: { error: "Invalid name or amount" } };
-      }
       if (!accountId) {
-        return { kind: "result", data: { error: "Account not found" } };
+        return { kind: "result", data: { error: "Account not found or access denied." } };
       }
       if (!categoryId) {
-        return { kind: "result", data: { error: "Category not found" } };
+        return { kind: "result", data: { error: "Category not found or access denied." } };
       }
 
       const account = ctx.accounts.find((a) => a.id === accountId);
       const category = ctx.categories.find((c) => c.id === categoryId);
-      const note = typeof args.note === "string" ? args.note : undefined;
+      const note = sanitizeText(args.note, 255) || undefined;
       const isRecurring = args.is_recurring === true;
 
       const pendingAction: PendingAction = {
@@ -277,17 +349,17 @@ export async function executeTool(
         args.to_account_id,
         args.to_account_name,
       );
-      const amount = typeof args.amount === "number" ? args.amount : 0;
-      const note = typeof args.note === "string" ? args.note : undefined;
+      const amount = sanitizeAmount(args.amount);
+      const note = sanitizeText(args.note, 255) || undefined;
 
       if (!fromAccountId || !toAccountId) {
-        return { kind: "result", data: { error: "Source or destination account not found" } };
+        return { kind: "result", data: { error: "Source or destination account not found or access denied." } };
       }
       if (fromAccountId === toAccountId) {
-        return { kind: "result", data: { error: "Accounts must be different" } };
+        return { kind: "result", data: { error: "Source and destination accounts must be different." } };
       }
-      if (amount <= 0) {
-        return { kind: "result", data: { error: "Invalid amount" } };
+      if (amount === null) {
+        return { kind: "result", data: { error: "Invalid transfer amount. Must be a positive finite number." } };
       }
 
       const fromAccount = ctx.accounts.find((a) => a.id === fromAccountId);

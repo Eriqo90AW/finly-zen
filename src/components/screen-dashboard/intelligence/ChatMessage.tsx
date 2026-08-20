@@ -16,6 +16,12 @@ const ChatMessage = (props: Props) => {
     }
   });
 
+  const sanitizedContent = () => {
+    const raw = props.message.content || "";
+    // Strip markdown image tags to prevent tracking-pixel / image-based exfiltration
+    return raw.replace(/!\[.*?\]\(.*?\)/g, "[Image removed for security]");
+  };
+
   return (
     <Show when={props.message.role === "user" || props.message.role === "assistant"}>
       <div class={`flex ${isUser() ? "justify-end" : "justify-start"}`}>
@@ -67,7 +73,7 @@ const ChatMessage = (props: Props) => {
             }
           >
             <div>
-              {props.message.content}
+              {sanitizedContent()}
               <Show when={props.message.isStreaming}>
                 <span class="inline-block w-1.5 h-3 ml-0.5 bg-current opacity-60 animate-pulse" />
               </Show>

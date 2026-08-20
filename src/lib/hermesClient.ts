@@ -109,7 +109,10 @@ export async function createChatCompletion(
     messages: apiMessages,
     stream: Boolean(stream),
   };
-  if (tools?.length) body.tools = tools;
+  if (tools?.length) {
+    body.tools = tools;
+    body.tool_choice = "auto";
+  }
 
   const response = await fetch(buildUrl(), {
     method: "POST",
@@ -138,7 +141,70 @@ export async function createChatCompletion(
     return parseStreamingResponse(response.body, callbacks);
   }
 
-  return response.json() as Promise<ChatCompletionResponse>;
+  const result = (await response.json()) as ChatCompletionResponse;
+  return extractXmlToolCallsFromResponse(result);
+}
+
+const OPENING_THINK_TAGS = [
+  "<think>",
+  "<thinking>",
+  "<scratchpad>",
+  "<reasoning>",
+  "<inner_monologue>",
+  "<thought>",
+];
+
+const CLOSING_THINK_TAGS = [
+  "</think>",
+  "</thinking>",
+  "</scratchpad>",
+  "</reasoning>",
+  "</inner_monologue>",
+  "</thought>",
+];
+
+function extractXmlToolCallsFromResponse(
+  response: ChatCompletionResponse,
+): ChatCompletionResponse {
+  const message = response.choices?.[0]?.message;
+  if (!message?.content) return response;
+
+  const content = message.content;
+  const toolCallRegex = /<tool_call>([\s\S]*?)<\/tool_call>/gi;
+  let match: RegExpExecArray | null;
+  const extractedCalls: NonNullable<ChatMessage["tool_calls"]> = message.tool_calls ? [...message.tool_calls] : [];
+  let cleanedContent = content;
+
+  while ((match = toolCallRegex.exec(content)) !== null) {
+    const rawJson = match[1].trim();
+    try {
+      const parsed = JSON.parse(rawJson) as { name?: string; arguments?: unknown };
+      if (parsed.name) {
+        extractedCalls.push({
+          id: `call_${crypto.randomUUID().slice(0, 8)}`,
+          type: "function",
+          function: {
+            name: parsed.name,
+            arguments:
+              typeof parsed.arguments === "string"
+                ? parsed.arguments
+                : JSON.stringify(parsed.arguments || {}),
+          },
+        });
+      }
+      cleanedContent = cleanedContent.replace(match[0], "").trim();
+    } catch {
+      // Malformed JSON inside tool_call tag, leave as is
+    }
+  }
+
+  if (extractedCalls.length > 0) {
+    message.tool_calls = extractedCalls;
+    message.content = cleanedContent || null;
+    response.choices[0].finish_reason = "tool_calls";
+  }
+
+  return response;
 }
 
 async function parseStreamingResponse(
@@ -150,11 +216,101 @@ async function parseStreamingResponse(
   let buffer = "";
   let content = "";
   let reasoning = "";
-  let insideThinkTag = false;
+  let insideReasoningTag = false;
+  let textStreamBuffer = "";
   const toolCalls = new Map<
     number,
     { id: string; type: "function"; function: { name: string; arguments: string } }
   >();
+
+  const processTextChunk = (incomingText: string) => {
+    textStreamBuffer += incomingText;
+
+    while (textStreamBuffer.length > 0) {
+      if (!insideReasoningTag) {
+        // Look for any opening thinking tag
+        const lowerBuf = textStreamBuffer.toLowerCase();
+        let earliestTagIndex = -1;
+        let matchedTag = "";
+
+        for (const tag of OPENING_THINK_TAGS) {
+          const idx = lowerBuf.indexOf(tag);
+          if (idx !== -1 && (earliestTagIndex === -1 || idx < earliestTagIndex)) {
+            earliestTagIndex = idx;
+            matchedTag = tag;
+          }
+        }
+
+        if (earliestTagIndex !== -1) {
+          // Output content before the tag
+          const beforeTag = textStreamBuffer.slice(0, earliestTagIndex);
+          if (beforeTag) {
+            content += beforeTag;
+            callbacks?.onToken?.(beforeTag);
+          }
+          textStreamBuffer = textStreamBuffer.slice(earliestTagIndex + matchedTag.length);
+          insideReasoningTag = true;
+        } else {
+          // Check if buffer ends with a potential opening bracket or partial tag
+          const lastLt = textStreamBuffer.lastIndexOf("<");
+          if (lastLt !== -1 && textStreamBuffer.length - lastLt < 20) {
+            // Keep the potential tag prefix in buffer for the next chunk
+            const safeText = textStreamBuffer.slice(0, lastLt);
+            if (safeText) {
+              content += safeText;
+              callbacks?.onToken?.(safeText);
+            }
+            textStreamBuffer = textStreamBuffer.slice(lastLt);
+            break;
+          } else {
+            content += textStreamBuffer;
+            callbacks?.onToken?.(textStreamBuffer);
+            textStreamBuffer = "";
+          }
+        }
+      } else {
+        // Look for any closing thinking tag
+        const lowerBuf = textStreamBuffer.toLowerCase();
+        let earliestTagIndex = -1;
+        let matchedTag = "";
+
+        for (const tag of CLOSING_THINK_TAGS) {
+          const idx = lowerBuf.indexOf(tag);
+          if (idx !== -1 && (earliestTagIndex === -1 || idx < earliestTagIndex)) {
+            earliestTagIndex = idx;
+            matchedTag = tag;
+          }
+        }
+
+        if (earliestTagIndex !== -1) {
+          // Output reasoning before the closing tag
+          const beforeTag = textStreamBuffer.slice(0, earliestTagIndex);
+          if (beforeTag) {
+            reasoning += beforeTag;
+            callbacks?.onReasoningToken?.(beforeTag);
+          }
+          textStreamBuffer = textStreamBuffer.slice(earliestTagIndex + matchedTag.length);
+          insideReasoningTag = false;
+        } else {
+          // Check if buffer ends with a potential closing bracket or partial tag
+          const lastLt = textStreamBuffer.lastIndexOf("<");
+          if (lastLt !== -1 && textStreamBuffer.length - lastLt < 20) {
+            const safeText = textStreamBuffer.slice(0, lastLt);
+            if (safeText) {
+              reasoning += safeText;
+              callbacks?.onReasoningToken?.(safeText);
+            }
+            textStreamBuffer = textStreamBuffer.slice(lastLt);
+            break;
+          } else {
+            reasoning += textStreamBuffer;
+            callbacks?.onReasoningToken?.(textStreamBuffer);
+            textStreamBuffer = "";
+          }
+        }
+      }
+    }
+  };
 
   try {
     while (true) {
@@ -176,43 +332,22 @@ async function parseStreamingResponse(
           const delta = chunk.choices?.[0]?.delta;
           if (!delta) continue;
 
-          // 1. Dedicated reasoning field (DeepSeek / Hermes)
-          const rawReasoning = delta.reasoning_content || delta.reasoning;
+          // 1. Dedicated reasoning field from OpenAI-compatible gateways
+          const rawReasoning =
+            delta.reasoning_content ||
+            delta.reasoning ||
+            (delta as { thought?: string }).thought;
           if (rawReasoning) {
             reasoning += rawReasoning;
             callbacks?.onReasoningToken?.(rawReasoning);
           }
 
-          // 2. Main content (with inline <think> tags fallback parsing)
+          // 2. Incremental content with multi-tag reasoning extraction
           if (delta.content) {
-            let chunkText = delta.content;
-
-            if (chunkText.includes("<think>")) {
-              insideThinkTag = true;
-              chunkText = chunkText.replace("<think>", "");
-            }
-
-            if (insideThinkTag) {
-              if (chunkText.includes("</think>")) {
-                const parts = chunkText.split("</think>");
-                reasoning += parts[0];
-                callbacks?.onReasoningToken?.(parts[0]);
-                insideThinkTag = false;
-                const rest = parts[1] || "";
-                if (rest) {
-                  content += rest;
-                  callbacks?.onToken?.(rest);
-                }
-              } else {
-                reasoning += chunkText;
-                callbacks?.onReasoningToken?.(chunkText);
-              }
-            } else {
-              content += chunkText;
-              callbacks?.onToken?.(chunkText);
-            }
+            processTextChunk(delta.content);
           }
 
+          // 3. Structured tool calls
           if (delta.tool_calls) {
             for (const tc of delta.tool_calls) {
               const existing = toolCalls.get(tc.index);
@@ -238,27 +373,40 @@ async function parseStreamingResponse(
         }
       }
     }
+
+    // Flush any remaining buffered stream text
+    if (textStreamBuffer) {
+      if (insideReasoningTag) {
+        reasoning += textStreamBuffer;
+        callbacks?.onReasoningToken?.(textStreamBuffer);
+      } else {
+        content += textStreamBuffer;
+        callbacks?.onToken?.(textStreamBuffer);
+      }
+      textStreamBuffer = "";
+    }
   } finally {
     callbacks?.onDone?.();
   }
 
-  // Clean up any inline think/thought tags that were not caught during incremental streaming
-  if (content.includes("<think>") && content.includes("</think>")) {
-    const match = content.match(/<think>([\s\S]*?)<\/think>/);
-    if (match) {
-      reasoning = (reasoning ? reasoning + "\n" + match[1] : match[1]).trim();
-      content = content.replace(/<think>[\s\S]*?<\/think>/, "").trim();
-    }
-  } else if (content.includes("<thought>") && content.includes("</thought>")) {
-    const match = content.match(/<thought>([\s\S]*?)<\/thought>/);
-    if (match) {
-      reasoning = (reasoning ? reasoning + "\n" + match[1] : match[1]).trim();
-      content = content.replace(/<thought>[\s\S]*?<\/thought>/, "").trim();
+  // Clean up any stray XML reasoning tags that might remain in final content
+  for (let i = 0; i < OPENING_THINK_TAGS.length; i++) {
+    const openTag = OPENING_THINK_TAGS[i];
+    const closeTag = CLOSING_THINK_TAGS[i];
+    const regex = new RegExp(`${openTag}([\\s\\S]*?)${closeTag}`, "gi");
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(content)) !== null) {
+      const extracted = match[1].trim();
+      if (extracted) {
+        reasoning = (reasoning ? reasoning + "\n" + extracted : extracted).trim();
+      }
+      content = content.replace(match[0], "").trim();
     }
   }
 
   const toolCallsArray = Array.from(toolCalls.values()).filter((tc) => tc.id);
-  return {
+
+  const initialResponse: ChatCompletionResponse = {
     id: "stream",
     choices: [
       {
@@ -273,4 +421,7 @@ async function parseStreamingResponse(
       },
     ],
   };
+
+  // Extract any XML <tool_call> tags that may have been sent inside content
+  return extractXmlToolCallsFromResponse(initialResponse);
 }

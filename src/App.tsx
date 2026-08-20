@@ -24,6 +24,7 @@ const App = (props: ParentProps) => {
   });
 
   const shouldHideAddButton = () => 
+    state.ui.insightsOpen ||
     location.pathname.startsWith("/stock") || 
     location.pathname.startsWith("/markets") ||
     location.pathname.startsWith("/portfolio") ||
