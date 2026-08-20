@@ -569,7 +569,7 @@ const TopBar = () => {
 
         <button
           onClick={() => setState("ui", "insightsOpen", !state.ui.insightsOpen)}
-          class={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
+          class={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
             state.ui.insightsOpen
               ? "bg-forest text-white"
               : "bg-sage/50 text-forest hover:bg-sage"

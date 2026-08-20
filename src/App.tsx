@@ -3,7 +3,9 @@ import MainLayout from "./components/layout/MainLayout";
 import { state, setState, setupPersistence } from "./store";
 import { setupPortfolioPersistence } from "./store/portfolioStore";
 import { setupPriceAlertPersistence } from "./store/priceAlertStore";
+import { setupIntelligencePersistence } from "./store/intelligenceStore";
 import { fetchUsdRate } from "./data/portfolioData";
+import { resolveUserId } from "./lib/userContext";
 import { setUsdRateOnce } from "./utils/format";
 import AddIcon from "@suid/icons-material/Add";
 import { useLocation } from "@solidjs/router";
@@ -12,9 +14,11 @@ const App = (props: ParentProps) => {
   setupPersistence();
   setupPortfolioPersistence();
   setupPriceAlertPersistence();
+  setupIntelligencePersistence();
   const location = useLocation();
 
   onMount(async () => {
+    await resolveUserId();
     const rate = await fetchUsdRate();
     setUsdRateOnce(rate);
   });

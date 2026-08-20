@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { resolveUserId } from "../lib/userContext";
 import { DEFAULT_CONFIG } from "../config/defaults";
 import type {
   PortfolioDB,
@@ -9,8 +10,6 @@ import type {
   MultiStockResponse,
   AssetType,
 } from "../types";
-
-const USER_ID = "a4d800bd-e779-4e7b-8982-2cab3d10035b";
 
 // --- API Calls ---
 
@@ -72,10 +71,11 @@ export async function fetchMultiStockPrices(symbols: string[]): Promise<MultiSto
 // --- DB Operations ---
 
 export async function getPortfolios(): Promise<PortfolioDB[]> {
+  const userId = await resolveUserId();
   const { data, error } = await supabase
     .from("portfolios")
     .select("*")
-    .eq("user_id", USER_ID)
+    .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -87,13 +87,14 @@ export async function getPortfolios(): Promise<PortfolioDB[]> {
 }
 
 export async function createPortfolioDB(name: string, initialCapital: number, priceCurrency: number): Promise<PortfolioDB> {
+  const userId = await resolveUserId();
   const isUSD = priceCurrency > 1;
   const baseCurrency = isUSD ? "USD" : "IDR";
 
   const { data, error } = await supabase
     .from("portfolios")
     .insert({
-      user_id: USER_ID,
+      user_id: userId,
       name,
       base_currency: baseCurrency,
     })

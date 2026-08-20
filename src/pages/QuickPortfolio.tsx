@@ -33,7 +33,7 @@ import { ConfirmDeleteAssetModal } from "../components/screen-quick-portfolio/Co
 import { CategoryPnLCard, type CategoryPnLItem } from "../components/screen-quick-portfolio/CategoryPnLCard";
 import { DailyMoversCard } from "../components/screen-quick-portfolio/DailyMoversCard";
 
-const USER_ID = "a4d800bd-e779-4e7b-8982-2cab3d10035b";
+import { getUserIdSync } from "../lib/userContext";
 
 const parseLocaleFloat = (valString: string): number => {
   const sanitized = valString.replace(/,/g, ".");
@@ -194,7 +194,7 @@ export default function QuickPortfolio() {
         const { data: newP, error: createError } = await supabase
           .from("portfolios")
           .insert({
-            user_id: USER_ID,
+            user_id: getUserIdSync(),
             name: "Quick Portfolio",
             base_currency: "IDR",
           })
