@@ -1,4 +1,5 @@
 import { supabase } from "../../../lib/supabase";
+import { resolveUserId } from "../../../lib/userContext";
 import { MonthlyPerformance, DailySummary, Trade } from "../data/types";
 
 function generateEmptyMonth(monthStr: string): DailySummary[] {
@@ -42,18 +43,25 @@ function generateEmptyPerformance(monthStr: string): MonthlyPerformance {
  * directly from executed trades in Supabase.
  */
 export async function getMonthlyPerformance(month: string): Promise<MonthlyPerformance> {
+  const userId = await resolveUserId();
   const [year, monthNum] = month.split("-").map(Number);
   const lastDay = new Date(year, monthNum, 0).getDate();
   const startDate = `${month}-01`;
   const endDate = `${month}-${String(lastDay).padStart(2, "0")}`;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('trading_journal')
     .select('*')
     .eq('record_type', 'EXECUTED')
     .gte('trade_date', startDate)
     .lte('trade_date', endDate)
     .order('trade_date', { ascending: true });
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching monthly performance:", error);
@@ -122,11 +130,18 @@ export async function getMonthlyPerformance(month: string): Promise<MonthlyPerfo
  * directly from executed trades in Supabase.
  */
 export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
-  const { data, error } = await supabase
+  const userId = await resolveUserId();
+  let query = supabase
     .from('trading_journal')
     .select('*')
     .eq('record_type', 'EXECUTED')
     .order('trade_date', { ascending: true });
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching all-time performance:", error);
@@ -212,17 +227,24 @@ export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
  * Fetches all daily summaries for a specific month from Supabase.
  */
 export async function getDailySummaries(month: string): Promise<DailySummary[]> {
+  const userId = await resolveUserId();
   const [year, monthNum] = month.split("-").map(Number);
   const lastDay = new Date(year, monthNum, 0).getDate();
   const startDate = `${month}-01`;
   const endDate = `${month}-${String(lastDay).padStart(2, "0")}`;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('trading_journal')
     .select('*')
     .gte('trade_date', startDate)
     .lte('trade_date', endDate)
     .order('trade_date', { ascending: true });
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching daily summaries:", error);
@@ -254,11 +276,18 @@ export async function getDailySummaries(month: string): Promise<DailySummary[]> 
  * Fetches a single daily summary with its detailed trades from Supabase.
  */
 export async function getDailySummary(date: string): Promise<DailySummary | undefined> {
-  const { data, error } = await supabase
+  const userId = await resolveUserId();
+  let query = supabase
     .from('trading_journal')
     .select('*')
     .eq('trade_date', date)
     .order('created_at', { ascending: true });
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching daily summary:", error);
@@ -295,10 +324,12 @@ export async function getDailySummary(date: string): Promise<DailySummary | unde
  * Saves a new trade entry to Supabase.
  */
 export async function saveTrade(date: string, trade: Partial<Trade>): Promise<void> {
-  // Ensure the trade date is correctly set
+  const userId = await resolveUserId();
+  // Ensure the trade date and user_id are correctly set
   const payload = {
     ...trade,
-    trade_date: date
+    trade_date: date,
+    user_id: userId,
   };
 
   const { error } = await supabase

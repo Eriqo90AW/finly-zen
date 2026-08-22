@@ -788,4 +788,17 @@ export const setupPortfolioPersistence = () => {
   // Legacy function. LocalStorage persistence removed in favor of direct Supabase DB storage.
 };
 
+export const resetPortfolioState = () => {
+  setPortfolioState(
+    reconcile({
+      portfolios: [],
+      activePortfolioId: null,
+      currencyView: "IDR",
+      isLoading: false,
+      isRefreshing: false,
+      hasLoadedBefore: false,
+    })
+  );
+};
+
 export const [quickPortfolioSearch, setQuickPortfolioSearch] = createSignal("");

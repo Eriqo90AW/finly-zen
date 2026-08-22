@@ -42,7 +42,12 @@ export function setupIntelligencePersistence() {
           const cleaned: Record<string, ChatMessage[]> = {};
           for (const [k, msgs] of Object.entries(parsed.profileMessages)) {
             cleaned[k] = Array.isArray(msgs)
-              ? msgs.filter((m) => m.role !== "tool")
+              ? msgs
+                  .filter((m) => m.role === "user" || m.role === "assistant")
+                  .map((m) => {
+                    const { tool_calls, isStreaming, isOcrProcessing, ...rest } = m;
+                    return rest as ChatMessage;
+                  })
               : [];
           }
           setIntelligenceState(
@@ -65,7 +70,11 @@ export function setupIntelligencePersistence() {
       if (legacySaved) {
         const legacyParsed = JSON.parse(legacySaved) as { messages?: ChatMessage[] };
         if (Array.isArray(legacyParsed.messages)) {
-          setIntelligenceState("profileMessages", "finly", legacyParsed.messages);
+          setIntelligenceState(
+            "profileMessages",
+            "finly",
+            legacyParsed.messages.filter((m) => m.role === "user" || m.role === "assistant"),
+          );
         }
       }
     } catch (e) {
@@ -74,12 +83,19 @@ export function setupIntelligencePersistence() {
   });
 
   createEffect(() => {
+    const sanitizeForPersistence = (m: ChatMessage): ChatMessage => {
+      const { tool_calls, isStreaming, isOcrProcessing, ...rest } = m;
+      return rest as ChatMessage;
+    };
+
     const persistable = {
       activeProfile: intelligenceState.activeProfile,
       profileMessages: Object.fromEntries(
         Object.entries(intelligenceState.profileMessages).map(([p, msgs]) => [
           p,
-          msgs.filter((m) => m.role === "user" || m.role === "assistant"),
+          msgs
+            .filter((m) => (m.role === "user" || m.role === "assistant") && Boolean(m.content?.trim() || m.imageBase64))
+            .map(sanitizeForPersistence),
         ]),
       ),
     };

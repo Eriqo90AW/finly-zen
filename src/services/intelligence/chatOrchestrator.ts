@@ -1,5 +1,6 @@
 import { createChatCompletion, isHermesConfigured } from "../../lib/hermesClient";
 import { buildUserContext, formatContextForPrompt } from "../../lib/userContext";
+import { extractTextFromImage } from "../../lib/ocrService";
 import {
   TOOL_LABELS,
   executeTool,
@@ -20,6 +21,11 @@ import {
   updateMessage,
 } from "../../store/intelligenceStore";
 import type { ChatCompletionResponse, ChatToolCall } from "../../types/intelligence";
+
+export interface ImageAttachment {
+  base64: string;
+  fileName: string;
+}
 
 const MAX_TOOL_ROUNDS = 5;
 
@@ -44,6 +50,13 @@ export async function confirmPendingAction(): Promise<void> {
   try {
     const result = await action.execute();
     resolvePendingAction(JSON.stringify({ success: true, data: result }));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("finly:data-changed", {
+          detail: { source: "ai", tool: action.toolName },
+        }),
+      );
+    }
   } catch (e) {
     const message = e instanceof Error ? e.message : "Action failed";
     resolvePendingAction(JSON.stringify({ success: false, error: message }));
@@ -156,9 +169,10 @@ async function runAgentLoop(
 export async function sendIntelligenceMessage(
   text: string,
   pathname?: string,
+  attachment?: ImageAttachment,
 ): Promise<void> {
   const trimmed = text.trim();
-  if (!trimmed) return;
+  if (!trimmed && !attachment) return;
 
   const currentPath =
     pathname || (typeof window !== "undefined" ? window.location.pathname : "/");
@@ -177,12 +191,47 @@ export async function sendIntelligenceMessage(
   setIntelligenceError(null);
   setStreaming(true);
 
-  addMessage(model, {
-    id: createMessageId(),
-    role: "user",
-    content: trimmed,
-    createdAt: Date.now(),
-  });
+  const userMessageId = createMessageId();
+
+  if (attachment) {
+    addMessage(model, {
+      id: userMessageId,
+      role: "user",
+      content: trimmed || `[Attached image: ${attachment.fileName}]`,
+      imageBase64: attachment.base64,
+      imageFileName: attachment.fileName,
+      isOcrProcessing: true,
+      createdAt: Date.now(),
+    });
+
+    setActiveToolLabel("Scanning image text (OCR)");
+
+    let ocrText = "";
+    try {
+      const ocrResult = await extractTextFromImage(attachment.base64);
+      ocrText = ocrResult.rawText;
+    } catch (ocrErr) {
+      console.warn("[OCR] Error extracting text:", ocrErr);
+    } finally {
+      setActiveToolLabel(null);
+    }
+
+    const ocrSnippet = ocrText
+      ? `[Uploaded Receipt / Image: ${attachment.fileName}]\nExtracted Text (OCR):\n"""\n${ocrText}\n"""\n\n${trimmed ? `User Note: ${trimmed}` : "Please parse this receipt and propose adding the transaction if valid details (merchant, amount, etc.) are present."}`
+      : (trimmed || `[Uploaded Image: ${attachment.fileName} - No text could be extracted]`);
+
+    updateMessage(model, userMessageId, {
+      isOcrProcessing: false,
+      content: ocrSnippet,
+    });
+  } else {
+    addMessage(model, {
+      id: userMessageId,
+      role: "user",
+      content: trimmed,
+      createdAt: Date.now(),
+    });
+  }
 
   try {
     const systemPrompt = formatContextForPrompt(ctx);

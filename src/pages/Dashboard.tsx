@@ -4,6 +4,8 @@ import {
   createResource,
   createEffect,
   createMemo,
+  onMount,
+  onCleanup,
 } from "solid-js";
 import { RecentTransactions } from "../components/screen-dashboard/RecentTransactions";
 import { ActivityCalendar } from "../components/screen-dashboard/ActivityCalendar";
@@ -24,7 +26,17 @@ const Dashboard = () => {
   const [dailyBudget, setDailyBudget] = createSignal(DEFAULT_CONFIG.dailyBudget);
 
   // Supabase Resources
-  const [transactions] = createResource(getTransactions);
+  const [transactions, { refetch }] = createResource(getTransactions);
+
+  onMount(() => {
+    const handleDataChanged = () => {
+      refetch();
+    };
+    window.addEventListener("finly:data-changed", handleDataChanged);
+    onCleanup(() => {
+      window.removeEventListener("finly:data-changed", handleDataChanged);
+    });
+  });
 
   // Filtered transactions for the selected period (excludes internal transfers)
   const monthlyTransactions = createMemo(() => {

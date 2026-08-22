@@ -19,6 +19,9 @@ export interface ChatMessage {
   name?: string;
   createdAt: number;
   isStreaming?: boolean;
+  imageBase64?: string;
+  imageFileName?: string;
+  isOcrProcessing?: boolean;
 }
 
 export interface OpenAIToolDefinition {

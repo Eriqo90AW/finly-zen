@@ -1,3 +1,4 @@
+import { supabase } from "./supabase";
 import { getAccounts, getCategories, getTransactions } from "../data/expenseData";
 import { getPortfolios } from "../data/portfolioData";
 import { state } from "../store";
@@ -42,8 +43,22 @@ export interface UserContext {
 
 let cachedUserId: string | null = null;
 
+export function setCachedUserId(id: string | null): void {
+  cachedUserId = id;
+}
+
 export async function resolveUserId(): Promise<string> {
   if (cachedUserId) return cachedUserId;
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.user?.id) {
+      cachedUserId = data.session.user.id;
+      return data.session.user.id;
+    }
+  } catch (err) {
+    console.error("Error fetching session in resolveUserId:", err);
+  }
 
   const accounts = await getAccounts();
   const fromAccount = accounts.find((a) => a.user_id)?.user_id;

@@ -26,14 +26,24 @@ const DEFAULT_STATE: AppState = {
   },
 };
 
-const STORE_KEY = "finly_zen_state_v2";
+import { getUserIdSync } from "../lib/userContext";
+
+export function getStoreKey(userId?: string): string {
+  const uid = userId || getUserIdSync();
+  return uid ? `finly_zen_state_${uid}` : "finly_zen_state_v2";
+}
 
 export const [state, setState] = createStore<AppState>(DEFAULT_STATE);
+
+export function resetAppState() {
+  setState(reconcile(DEFAULT_STATE));
+}
 
 // Persistence Layer
 export function setupPersistence() {
   onMount(() => {
-    const saved = localStorage.getItem(STORE_KEY);
+    const key = getStoreKey();
+    const saved = localStorage.getItem(key);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -66,7 +76,8 @@ export function setupPersistence() {
 
   createEffect(() => {
     const { transactions, ...persistable } = state;
-    localStorage.setItem(STORE_KEY, JSON.stringify(persistable));
+    const key = getStoreKey();
+    localStorage.setItem(key, JSON.stringify(persistable));
   });
 }
 

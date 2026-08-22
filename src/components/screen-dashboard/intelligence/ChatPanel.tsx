@@ -41,8 +41,8 @@ const ChatPanel = () => {
     queueMicrotask(scrollToBottom);
   });
 
-  const handleSend = (text: string) => {
-    sendIntelligenceMessage(text, location.pathname);
+  const handleSend = (text: string, attachment?: { base64: string; fileName: string }) => {
+    sendIntelligenceMessage(text, location.pathname, attachment);
   };
 
   return (

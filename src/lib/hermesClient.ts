@@ -353,7 +353,7 @@ async function parseStreamingResponse(
               const existing = toolCalls.get(tc.index);
               if (!existing) {
                 toolCalls.set(tc.index, {
-                  id: tc.id || "",
+                  id: tc.id || `call_${crypto.randomUUID().slice(0, 8)}`,
                   type: "function",
                   function: {
                     name: tc.function?.name || "",
@@ -404,7 +404,16 @@ async function parseStreamingResponse(
     }
   }
 
-  const toolCallsArray = Array.from(toolCalls.values()).filter((tc) => tc.id);
+  const toolCallsArray = Array.from(toolCalls.values())
+    .filter((tc) => Boolean(tc.function?.name && tc.function.name.trim()))
+    .map((tc) => ({
+      ...tc,
+      id: tc.id || `call_${crypto.randomUUID().slice(0, 8)}`,
+    }));
+
+  if (import.meta.env.DEV && toolCallsArray.length > 0) {
+    console.debug("[HermesClient] Parsed streaming tool calls:", toolCallsArray);
+  }
 
   const initialResponse: ChatCompletionResponse = {
     id: "stream",

@@ -8,6 +8,7 @@ interface Props {
 const ChatMessage = (props: Props) => {
   const isUser = () => props.message.role === "user";
   const [isReasoningOpen, setIsReasoningOpen] = createSignal(false);
+  const [isOcrOpen, setIsOcrOpen] = createSignal(false);
 
   // Auto-expand reasoning while it is actively streaming if no content yet
   createEffect(() => {
@@ -15,6 +16,26 @@ const ChatMessage = (props: Props) => {
       setIsReasoningOpen(true);
     }
   });
+
+  const parsedUserMessage = () => {
+    const raw = props.message.content || "";
+    const ocrMatch = raw.match(/Extracted Text \(OCR\):\n"""\n([\s\S]*?)\n"""/);
+    const userNoteMatch = raw.match(/User Note:\s*([\s\S]*)$/);
+
+    if (ocrMatch) {
+      return {
+        hasOcr: true,
+        ocrText: ocrMatch[1].trim(),
+        userNote: userNoteMatch ? userNoteMatch[1].trim() : "",
+      };
+    }
+
+    return {
+      hasOcr: false,
+      ocrText: "",
+      userNote: raw,
+    };
+  };
 
   const sanitizedContent = () => {
     const raw = props.message.content || "";
@@ -32,7 +53,56 @@ const ChatMessage = (props: Props) => {
               : "bg-white border border-forest/10 text-forest rounded-bl-md shadow-premium"
           }`}
         >
-          {/* Collapsible Reasoning Trace */}
+          {/* User Image Attachment */}
+          <Show when={isUser() && props.message.imageBase64}>
+            <div class="space-y-1.5">
+              <div class="rounded-xl overflow-hidden border border-white/20 max-w-[220px] max-h-48 bg-black/10">
+                <img
+                  src={props.message.imageBase64}
+                  alt={props.message.imageFileName || "Uploaded receipt"}
+                  class="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* OCR Scanning Progress Indicator */}
+              <Show when={props.message.isOcrProcessing}>
+                <div class="flex items-center gap-1.5 text-[11px] text-white/90 bg-white/15 px-2.5 py-1 rounded-lg w-fit">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping" />
+                  <span>Scanning receipt text…</span>
+                </div>
+              </Show>
+
+              {/* Collapsible Extracted OCR Text for User */}
+              <Show when={!props.message.isOcrProcessing && parsedUserMessage().hasOcr}>
+                <div class="rounded-xl border border-white/20 bg-white/10 overflow-hidden text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setIsOcrOpen(!isOcrOpen())}
+                    class="w-full px-2.5 py-1 flex items-center justify-between text-white/80 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <div class="flex items-center gap-1 font-medium text-[10px]">
+                      <span class="material-icons text-xs text-white/70">receipt_long</span>
+                      <span>Extracted Receipt Text</span>
+                    </div>
+                    <span
+                      class="material-icons text-xs transition-transform duration-200"
+                      classList={{ "rotate-180": isOcrOpen() }}
+                    >
+                      expand_more
+                    </span>
+                  </button>
+
+                  <Show when={isOcrOpen()}>
+                    <div class="px-2.5 py-1.5 text-white/90 font-mono text-[10px] leading-tight border-t border-white/10 whitespace-pre-wrap bg-black/20 max-h-36 overflow-y-auto custom-scrollbar">
+                      {parsedUserMessage().ocrText}
+                    </div>
+                  </Show>
+                </div>
+              </Show>
+            </div>
+          </Show>
+
+          {/* Collapsible Reasoning Trace (Assistant) */}
           <Show when={props.message.reasoning}>
             <div class="rounded-xl border border-forest/10 bg-forest/[0.03] overflow-hidden text-[11px]">
               <button
@@ -47,7 +117,10 @@ const ChatMessage = (props: Props) => {
                     <span class="w-1.5 h-1.5 rounded-full bg-forest animate-ping ml-1" />
                   </Show>
                 </div>
-                <span class="material-icons text-xs transition-transform duration-200" classList={{ "rotate-180": isReasoningOpen() }}>
+                <span
+                  class="material-icons text-xs transition-transform duration-200"
+                  classList={{ "rotate-180": isReasoningOpen() }}
+                >
                   expand_more
                 </span>
               </button>
@@ -73,7 +146,9 @@ const ChatMessage = (props: Props) => {
             }
           >
             <div>
-              {sanitizedContent()}
+              {isUser() && parsedUserMessage().hasOcr
+                ? (parsedUserMessage().userNote || "Analyze receipt")
+                : sanitizedContent()}
               <Show when={props.message.isStreaming}>
                 <span class="inline-block w-1.5 h-3 ml-0.5 bg-current opacity-60 animate-pulse" />
               </Show>

@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { formatHexColor } from "../utils/format";
+import { resolveUserId, getUserIdSync } from "../lib/userContext";
 import type {
   Transaction,
   Category,
@@ -11,10 +12,17 @@ import type {
 } from "../types";
 
 export async function getTransactions() {
-  const { data, error } = await supabase
+  const userId = await resolveUserId();
+  let query = supabase
     .from("view_transactions_detailed")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching transactions:", error);
@@ -40,10 +48,17 @@ export async function getTransactions() {
 }
 
 export async function getCategories() {
-  const { data, error } = await supabase
+  const userId = await resolveUserId();
+  let query = supabase
     .from("categories")
     .select("*")
     .order("name", { ascending: true });
+
+  if (userId) {
+    query = query.or(`user_id.eq.${userId},user_id.is.null`);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching categories:", error);
@@ -56,10 +71,17 @@ export async function getCategories() {
 }
 
 export async function getAccounts() {
-  const { data, error } = await supabase
+  const userId = await resolveUserId();
+  let query = supabase
     .from("accounts")
     .select("*")
     .order("name", { ascending: true });
+
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching accounts:", error);
@@ -71,13 +93,94 @@ export async function getAccounts() {
   })) as Account[];
 }
 
+export async function createDefaultUserData(
+  userId: string,
+  initialBalance: number = 0,
+  selectedCategoryNames?: string[]
+): Promise<{ accountId: string }> {
+  // 1. Create default "Main" account
+  const { data: newAccount, error: accError } = await supabase
+    .from("accounts")
+    .insert({
+      user_id: userId,
+      name: "Main",
+      color: "#1a4d2e",
+    })
+    .select("id")
+    .single();
+
+  if (accError) {
+    console.error("Error creating default account:", accError);
+    throw new Error(`Failed to create Main account: ${accError.message}`);
+  }
+
+  // 2. Default starter categories definitions
+  const standardCategories = [
+    { name: "Food & Dining", icon: "restaurant", color: "#d47b5a" },
+    { name: "Transport", icon: "directions_car", color: "#52c278" },
+    { name: "Bills & Utilities", icon: "receipt_long", color: "#6366f1" },
+    { name: "Shopping", icon: "shopping_bag", color: "#f43f5e" },
+    { name: "Investments", icon: "trending_up", color: "#1a4d2e" },
+    { name: "Health & Wellness", icon: "favorite", color: "#a78bfa" },
+    { name: "Salary", icon: "payments", color: "#10b981" },
+    { name: "Debt", icon: "swap_horiz", color: "#80631d" },
+  ];
+
+  const categoriesToInsert = standardCategories
+    .filter((cat) => {
+      if (cat.name === "Debt" || cat.name === "Salary") return true; // always include utility categories
+      if (!selectedCategoryNames || selectedCategoryNames.length === 0) return true;
+      return selectedCategoryNames.includes(cat.name);
+    })
+    .map((cat) => ({
+      user_id: userId,
+      name: cat.name,
+      icon: cat.icon,
+      color: cat.color,
+    }));
+
+  const { error: catError } = await supabase
+    .from("categories")
+    .insert(categoriesToInsert);
+
+  if (catError) {
+    console.error("Error creating default categories:", catError);
+  }
+
+  // 3. If initial balance > 0, log an initial balance transaction
+  if (initialBalance > 0 && newAccount?.id) {
+    // Find Salary or Income category
+    const { data: cats } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("name", "Salary")
+      .maybeSingle();
+
+    await supabase.from("transactions").insert({
+      user_id: userId,
+      account_id: newAccount.id,
+      category_id: cats?.id || null,
+      name: "Initial Balance",
+      amount: initialBalance,
+      type: "income",
+      is_recurring: false,
+      note: "Starting balance on Main account",
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  return { accountId: newAccount.id };
+}
+
 export async function addTransaction(
   params: AddTransactionParams,
 ): Promise<TransactionDetailModel> {
   try {
+    const userId = params.userId || (await resolveUserId());
     const data = {
       account_id: params.accountId,
-      user_id: params.userId,
+      user_id: userId,
       name: params.name,
       type: params.type,
       amount: params.amount,
