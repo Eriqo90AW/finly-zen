@@ -1,12 +1,15 @@
-import { createMemo, Show } from "solid-js";
+import { createSignal, createMemo, Show } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { state } from "../../store";
 import { getDateRange } from "../../utils/date";
 import { formatRupiah, formatRupiahShort } from "../../utils/format";
+import { Tooltip } from "../modules/Tooltip";
+import { EditDailyBudgetModal } from "./modules/EditDailyBudgetModal";
 import type { BudgetPacingChartProps } from "../../types";
 
 export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
+  const [isEditBudgetOpen, setIsEditBudgetOpen] = createSignal(false);
   const chartData = createMemo(() => {
     const { start, end } = getDateRange(
       state.ui.currentMonth,
@@ -291,27 +294,35 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
   };
 
   return (
-    <div class="premium-card px-3 py-6 flex flex-col relative h-full">
-      <div class="flex items-center justify-between mb-6 mx-3">
-        <div>
-          <h4 class="font-outfit font-bold text-forest text-lg">
+    <div class="premium-card p-4 sm:p-6 flex flex-col relative h-full">
+      <div class="flex items-start justify-between gap-3 mb-4 sm:mb-6">
+        <div class="min-w-0">
+          <h4 class="font-outfit font-bold text-forest text-base sm:text-lg">
             Expense Pacing
           </h4>
-          <p class="text-xs text-earth/60">
+          <p class="text-[11px] sm:text-xs text-earth/60">
             Cumulative spending vs monthly target
           </p>
         </div>
-        <div class="text-right">
-          <div class="text-[10px] font-bold text-earth uppercase tracking-widest">
-            Target Budget
+        <Tooltip content="Click to edit budget">
+          <div
+            class="text-right cursor-pointer group/target transition-colors shrink-0 ml-auto"
+            onClick={() => setIsEditBudgetOpen(true)}
+          >
+            <div class="text-[9px] sm:text-[10px] font-bold text-earth group-hover/target:text-forest uppercase tracking-widest flex items-center justify-end gap-1">
+              <span class="material-icons text-[10px] opacity-0 group-hover/target:opacity-100 transition-opacity">
+                edit
+              </span>
+              <span>Target Budget</span>
+            </div>
+            <div class="text-xs sm:text-sm font-bold text-forest group-hover/target:text-mid-green transition-colors">
+              {formatRupiah(chartData()[chartData().length - 1]?.target || 0)}
+            </div>
           </div>
-          <div class="text-sm font-bold text-forest">
-            {formatRupiah(chartData()[chartData().length - 1]?.target || 0)}
-          </div>
-        </div>
+        </Tooltip>
       </div>
 
-      <div class="flex-1 min-h-[250px]">
+      <div class="flex-1 min-h-[220px] sm:min-h-[250px]">
         <Show
           when={!props.loading}
           fallback={
@@ -357,6 +368,19 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
           />
         </Show>
       </div>
+
+      <EditDailyBudgetModal
+        isOpen={isEditBudgetOpen()}
+        onClose={() => setIsEditBudgetOpen(false)}
+        currentBudget={props.dailyBudget()}
+        onSave={(newBudget) => {
+          if (props.setDailyBudget) {
+            props.setDailyBudget(newBudget);
+          }
+        }}
+        title="Edit Target Budget"
+        subtitle="Set your target daily budget. Cumulative monthly target pacing updates automatically."
+      />
     </div>
   );
 };

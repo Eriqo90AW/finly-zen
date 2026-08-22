@@ -83,22 +83,22 @@ export default function MarketCapList() {
   return (
     <div class="flex-1 flex flex-col gap-6 w-full pb-12 animate-fade-in-up">
       {/* Top Header */}
-      <div class="flex justify-between items-end">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
           <div class="flex items-center gap-2 text-earth text-xs font-bold uppercase tracking-wider mb-1">
             <span class="material-icons !text-base text-forest">bar_chart</span>
             Markets & Fundamentals
           </div>
-          <h2 class="font-headline-xl text-3xl font-bold text-forest">
-            Market Cap & Fundamentals Multiples
+          <h2 class="text-2xl sm:text-3xl font-bold text-forest font-cormorant">
+            Market Cap & Multiples
           </h2>
-          <p class="font-body-md text-sm text-earth mt-1">
+          <p class="text-xs sm:text-sm text-earth mt-1">
             Comprehensive market rankings, valuation multiples (P/E, P/S, P/B, EV/EBITDA), and financial profitability metrics.
           </p>
         </div>
 
         {/* Currency Switcher */}
-        <div class="flex p-1 bg-sage/30 rounded-2xl border border-forest/10 shadow-inner">
+        <div class="flex p-1 bg-sage/30 rounded-2xl border border-forest/10 shadow-inner self-start sm:self-auto shrink-0">
           <button
             onClick={() => setCurrencyView("IDR")}
             class="px-3 py-1.5 rounded-xl font-outfit text-xs font-bold transition-all cursor-pointer border-0"
@@ -123,7 +123,7 @@ export default function MarketCapList() {
       </div>
 
       {/* Universe Tabs */}
-      <div class="flex items-center gap-2 border-b border-forest/10 pb-2">
+      <div class="flex items-center gap-2 border-b border-forest/10 pb-2 overflow-x-auto custom-scrollbar-thin">
         <button
           onClick={() => setActiveTab("NASDAQ100")}
           class="px-4 py-2 rounded-xl text-xs font-outfit font-bold transition-all border-0 cursor-pointer flex items-center gap-1.5"

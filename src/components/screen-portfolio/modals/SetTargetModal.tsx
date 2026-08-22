@@ -1,4 +1,5 @@
 import { createSignal, Show, createEffect } from "solid-js";
+import { Portal } from "solid-js/web";
 import { setAssetTargetAllocation, portfolioState } from "../../../store/portfolioStore";
 
 interface SetTargetAllocationModalProps {
@@ -48,16 +49,17 @@ export const SetTargetAllocationModal = (
 
   return (
     <Show when={props.isOpen}>
-      <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 transition-opacity duration-300 p-6"
-        onClick={props.onClose}
-      >
+      <Portal>
         <div
-          class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
+          class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs transition-opacity duration-300 p-4 sm:p-6 animate-fade-in"
+          onClick={props.onClose}
         >
-          <div class="absolute top-0 left-0 w-full h-1 bg-spring"></div>
-          <h3 class="text-2xl font-cormorant text-forest font-bold mb-2">
+          <div
+            class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[90dvh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div class="absolute top-0 left-0 w-full h-1 bg-spring"></div>
+            <h3 class="text-2xl font-cormorant text-forest font-bold mb-2">
             Set Target Allocation
           </h3>
           <p class="text-earth text-sm mb-6">
@@ -112,6 +114,7 @@ export const SetTargetAllocationModal = (
           </form>
         </div>
       </div>
-    </Show>
+    </Portal>
+  </Show>
   );
 };

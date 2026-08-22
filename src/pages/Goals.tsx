@@ -12,8 +12,8 @@ const PlantCard = (props: { goal: typeof state.goals[0] }) => {
   const plantScale = () => 0.4 + (percent() / 100) * 0.6;
 
   return (
-    <div class="premium-card p-8 bg-white flex flex-col items-center group overflow-hidden">
-      <div class="relative w-32 h-40 mb-6 flex items-end justify-center">
+    <div class="premium-card p-4 sm:p-6 lg:p-8 bg-white flex flex-col items-center group overflow-hidden">
+      <div class="relative w-28 h-36 sm:w-32 sm:h-40 mb-4 sm:mb-6 flex items-end justify-center">
         {/* Pot */}
         <div class="absolute bottom-0 w-16 h-12 bg-earth/20 rounded-t-sm rounded-b-xl border-t-4 border-earth/30 z-10" />
         
@@ -39,10 +39,10 @@ const PlantCard = (props: { goal: typeof state.goals[0] }) => {
         </div>
       </div>
 
-      <div class="w-full text-center space-y-1 mb-6">
+      <div class="w-full text-center space-y-1 mb-4 sm:mb-6">
          <div class="flex items-center justify-center gap-2">
-            <span class="text-xl">{props.goal.emoji}</span>
-            <h4 class="text-xl font-outfit font-bold text-forest">{props.goal.name}</h4>
+            <span class="text-lg sm:text-xl">{props.goal.emoji}</span>
+            <h4 class="text-lg sm:text-xl font-outfit font-bold text-forest">{props.goal.name}</h4>
          </div>
          <p class="text-xs text-earth">Targeting {formatRupiah(props.goal.target)}</p>
       </div>
@@ -62,7 +62,7 @@ const PlantCard = (props: { goal: typeof state.goals[0] }) => {
 
       <button 
         onClick={() => updateGoal(props.goal.id, 500000)}
-        class="mt-8 w-full py-3 bg-sage/30 text-forest font-outfit font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-forest hover:text-white transition-all group/btn"
+        class="mt-6 sm:mt-8 w-full py-3 bg-sage/30 text-forest font-outfit font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-forest hover:text-white transition-all group/btn cursor-pointer"
       >
         <LocalDrinkIcon class="w-4 h-4 text-mid-green group-hover/btn:text-white" />
         Water it (+{formatRupiah(500000)})
@@ -73,20 +73,20 @@ const PlantCard = (props: { goal: typeof state.goals[0] }) => {
 
 const Goals = () => {
   return (
-    <div class="space-y-8 animate-fade-in-up">
-      <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-cormorant text-forest">Savings Garden</h2>
-        <p class="text-sm font-outfit text-earth">Nurture your dreams and watch them grow.</p>
+    <div class="space-y-6 sm:space-y-8 animate-fade-in-up">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+        <h2 class="text-2xl sm:text-3xl font-cormorant text-forest">Savings Garden</h2>
+        <p class="text-xs sm:text-sm font-outfit text-earth">Nurture your dreams and watch them grow.</p>
       </div>
 
-      <div class="grid grid-cols-3 gap-8 pb-20">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 pb-20">
         <For each={state.goals}>
           {(goal) => <PlantCard goal={goal} />}
         </For>
 
         {/* Add New Goal Card */}
-        <div class="premium-card p-8 bg-transparent border-2 border-dashed border-forest/20 flex flex-col items-center justify-center text-forest/40 hover:border-forest/40 hover:text-forest transition-all cursor-pointer group">
-          <div class="w-16 h-16 rounded-full bg-forest/5 flex items-center justify-center mb-4 transition-transform">
+        <div class="premium-card p-6 sm:p-8 bg-transparent border-2 border-dashed border-forest/20 flex flex-col items-center justify-center text-forest/40 hover:border-forest/40 hover:text-forest transition-all cursor-pointer group min-h-[280px]">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-forest/5 flex items-center justify-center mb-4 transition-transform">
              <AddIcon sx={{ fontSize: 32 }} />
           </div>
           <p class="font-outfit font-bold text-sm uppercase tracking-widest">New Seed</p>

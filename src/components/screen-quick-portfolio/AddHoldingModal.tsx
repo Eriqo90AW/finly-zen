@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+import { Portal } from "solid-js/web";
 
 interface AddHoldingModalProps {
   isOpen: boolean;
@@ -21,14 +22,15 @@ interface AddHoldingModalProps {
 export const AddHoldingModal = (props: AddHoldingModalProps) => {
   return (
     <Show when={props.isOpen}>
-      <div 
-        onClick={props.onClose}
-        class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-sm p-6 animate-fade-in"
-      >
+      <Portal>
         <div 
-          onClick={(e) => e.stopPropagation()}
-          class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative flex flex-col border border-forest/10 overflow-hidden"
+          onClick={props.onClose}
+          class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs p-4 sm:p-6 animate-fade-in"
         >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative flex flex-col border border-forest/10 overflow-hidden max-h-[90dvh] overflow-y-auto"
+          >
           <div class="absolute top-0 left-0 w-full h-1.5 bg-forest"></div>
           <div class="flex items-center justify-between mb-5">
             <div>
@@ -152,7 +154,8 @@ export const AddHoldingModal = (props: AddHoldingModalProps) => {
           </form>
         </div>
       </div>
-    </Show>
+    </Portal>
+  </Show>
   );
 };
 

@@ -71,6 +71,7 @@ export interface BudgetPacingChartProps {
   transactions: Transaction[];
   loading: boolean;
   dailyBudget: () => number;
+  setDailyBudget?: (val: number) => void;
 }
 
 

@@ -95,10 +95,10 @@ export const IncomeCategoryCard = (props: CategoryCardProps) => {
   };
 
   return (
-    <div class="premium-card p-6 flex flex-col h-full overflow-hidden">
-      <h4 class="font-outfit font-bold text-forest mb-6">Income Categories</h4>
+    <div class="premium-card p-4 sm:p-6 flex flex-col h-full overflow-hidden">
+      <h4 class="font-outfit font-bold text-forest mb-4">Income Categories</h4>
 
-      <div class="relative h-[250px] mb-4">
+      <div class="relative h-[220px] sm:h-[250px] mb-4">
         <Show
           when={!props.loading}
           fallback={

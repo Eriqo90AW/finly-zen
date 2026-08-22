@@ -1,4 +1,5 @@
 import { createSignal, Show, For } from "solid-js";
+import { Portal } from "solid-js/web";
 import { createPortfolio } from "../../../store/portfolioStore";
 import {
   formatNumericInput,
@@ -51,14 +52,15 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
 
   return (
     <Show when={props.isOpen}>
-      <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 transition-opacity duration-300 p-6"
-        onClick={props.onClose}
-      >
+      <Portal>
         <div
-          class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
+          class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs transition-opacity duration-300 p-4 sm:p-6"
+          onClick={props.onClose}
         >
+          <div
+            class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[90dvh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Colored Top Line Modal */}
           <div class="absolute top-0 left-0 w-full h-1 bg-forest"></div>
           <h3 class="text-2xl font-cormorant text-forest font-bold mb-6">
@@ -202,6 +204,7 @@ export const CreatePortfolioModal = (props: CreatePortfolioModalProps) => {
           </form>
         </div>
       </div>
-    </Show>
+    </Portal>
+  </Show>
   );
 };

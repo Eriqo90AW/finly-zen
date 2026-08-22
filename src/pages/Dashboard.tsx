@@ -71,36 +71,41 @@ const Dashboard = () => {
   });
 
   return (
-    <div class="space-y-8 animate-fade-in-up">
+    <div class="space-y-6 sm:space-y-8 animate-fade-in-up">
       <div class="bento-grid">
-        <HeroCard
-          allTransactions={transactions() || []}
-          monthlyTransactions={monthlyTransactions()}
-          loading={transactions.loading}
-        />
+        <div class="col-span-1 sm:col-span-2 lg:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+          <div class="col-span-1 lg:col-span-8 min-w-0 flex flex-col">
+            <HeroCard
+              allTransactions={transactions() || []}
+              monthlyTransactions={monthlyTransactions()}
+              loading={transactions.loading}
+            />
+          </div>
+          <div class="col-span-1 lg:col-span-4 min-w-0 flex flex-col">
+            <DailySpendChart
+              transactions={allFilteredTransactions()}
+              loading={transactions.loading}
+              dailyBudget={dailyBudget}
+              setDailyBudget={setDailyBudget}
+            />
+          </div>
+        </div>
 
-        <DailySpendChart
-          transactions={allFilteredTransactions()}
-          loading={transactions.loading}
-          dailyBudget={dailyBudget}
-          setDailyBudget={setDailyBudget}
-        />
-
-        <div class="col-span-12 flex gap-6 h-[500px]">
-          <div class="flex-[3] min-w-0 h-full">
+        <div class="col-span-1 sm:col-span-2 lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 lg:gap-6">
+          <div class="col-span-1 sm:col-span-1 lg:col-span-3 min-w-0 min-h-[300px] lg:h-[500px]">
             <ExpenseCategoryCard
               transactions={accountFilteredTransactions()}
               loading={transactions.loading}
             />
           </div>
-          <div class="flex-[5] min-w-0 h-full">
+          <div class="col-span-1 sm:col-span-1 lg:col-span-6 min-w-0 min-h-[300px] lg:h-[500px]">
             <ActivityCalendar
               transactions={monthlyTransactions()}
               loading={transactions.loading}
               dailyBudget={dailyBudget}
             />
           </div>
-          <div class="flex-[2] min-w-0 h-full">
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 min-w-0 min-h-[260px] lg:h-[500px]">
             <GardenWins
               transactions={transactions() || []}
               loading={transactions.loading}
@@ -109,21 +114,22 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div class="col-span-12 flex gap-6 h-[500px]">
-          <div class="flex-[3] min-w-0 h-full">
+        <div class="col-span-1 sm:col-span-2 lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 lg:gap-6">
+          <div class="col-span-1 sm:col-span-1 lg:col-span-3 min-w-0 min-h-[300px] lg:h-[500px]">
             <IncomeCategoryCard
               transactions={accountFilteredTransactions()}
               loading={transactions.loading}
             />
           </div>
-          <div class="flex-[5] min-w-0 h-full">
+          <div class="col-span-1 sm:col-span-1 lg:col-span-6 min-w-0 min-h-[300px] lg:h-[500px]">
             <BudgetPacingChart
               transactions={monthlyTransactions()}
               loading={transactions.loading}
               dailyBudget={dailyBudget}
+              setDailyBudget={setDailyBudget}
             />
           </div>
-          <div class="flex-[2] min-w-0 h-full">
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 min-w-0 min-h-[260px] lg:h-[500px]">
             <TopExpensesAndTargetsCard
               transactions={accountFilteredTransactions()}
               loading={transactions.loading}
@@ -132,11 +138,13 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Transactions Table */}
-        <RecentTransactions
-          transactions={accountFilteredTransactions()}
-          allTransactions={transactions() || []}
-          loading={transactions.loading}
-        />
+        <div class="col-span-1 sm:col-span-2 lg:col-span-12">
+          <RecentTransactions
+            transactions={accountFilteredTransactions()}
+            allTransactions={transactions() || []}
+            loading={transactions.loading}
+          />
+        </div>
       </div>
     </div>
   );

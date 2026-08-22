@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+import { Portal } from "solid-js/web";
 import type { TransferRecord } from "../../../types";
 import { formatRupiah } from "../../../utils/format";
 import ArrowForwardIcon from "@suid/icons-material/ArrowForwardOutlined";
@@ -16,10 +17,11 @@ export const ConfirmDeleteTransferModal = (
 ) => {
   return (
     <Show when={props.isOpen && props.transfer}>
-      <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs transition-opacity duration-300 p-6"
-        onClick={props.onClose}
-      >
+      <Portal>
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs transition-opacity duration-300 p-4 sm:p-6 animate-fade-in"
+          onClick={props.onClose}
+        >
         <div
           class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-200"
           onClick={(e) => e.stopPropagation()}
@@ -87,6 +89,7 @@ export const ConfirmDeleteTransferModal = (
           </div>
         </div>
       </div>
-    </Show>
+    </Portal>
+  </Show>
   );
 };

@@ -96,9 +96,9 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
   };
 
   return (
-    <div class="premium-card p-5 flex flex-col h-full overflow-hidden relative">
-      {/* SECTION 1: TOP 3 EXPENSES */}
-      <div class="shrink-0 flex flex-col overflow-hidden" style={{ "max-height": "45%" }}>
+    <div class="premium-card p-4 sm:p-6 flex flex-col h-full cursor-default min-h-[300px]">
+      {/* 1. Top 3 Expensive Single Transactions */}
+      <div class="flex flex-col shrink-0">
         <div class="flex items-center justify-between mb-2">
           <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-1.5">
             <span class="material-icons !text-base text-forest">local_fire_department</span>
@@ -119,11 +119,11 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
           </Show>
         </div>
 
-        <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar-thin space-y-1.5 min-h-0">
+        <div class="space-y-1.5">
           <Show
             when={!props.loading}
             fallback={
-              <div class="h-20 flex items-center justify-center text-xs text-earth/40 font-outfit">
+              <div class="py-4 flex items-center justify-center text-xs text-earth/40 font-outfit">
                 Loading...
               </div>
             }
@@ -131,7 +131,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
             <Show
               when={topExpenses().length > 0}
               fallback={
-                <div class="h-20 flex items-center justify-center text-xs text-earth/50 font-outfit">
+                <div class="py-3 flex items-center justify-center text-xs text-earth/50 font-outfit">
                   No expense transactions
                 </div>
               }
@@ -184,7 +184,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
       </div>
 
       {/* DIVIDER */}
-      <div class="w-full border-t border-forest/10 mt-4 mb-2 shrink-0" />
+      <div class="w-full border-t border-forest/10 my-3 shrink-0" />
 
       {/* SECTION 2: CATEGORY TARGETS */}
       <div class="flex-1 flex flex-col min-h-0 overflow-hidden">

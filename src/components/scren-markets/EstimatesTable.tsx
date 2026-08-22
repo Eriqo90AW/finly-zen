@@ -35,9 +35,9 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
 
   return (
     <div class="premium-card overflow-hidden hover:cursor-default">
-      <div class="p-6 border-b border-forest/5 flex items-center justify-between bg-sage/5">
+      <div class="p-4 sm:p-6 border-b border-forest/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-sage/5">
         <div>
-          <h4 class="font-outfit font-bold text-forest text-lg">Earnings Estimates</h4>
+          <h4 class="font-outfit font-bold text-forest text-base sm:text-lg">Earnings Estimates</h4>
           <p class="text-xs text-earth/60">Forward-looking analyst projections & revisions</p>
         </div>
         <div class="flex gap-2">
@@ -52,8 +52,8 @@ export const EstimatesTable = (props: EstimatesTableProps) => {
         </div>
       </div>
       
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full min-w-[600px] text-left border-collapse">
           <thead>
             <tr class="bg-forest/5">
               <th class="py-3 pl-4 pr-2 text-[10px] font-bold text-earth uppercase tracking-widest w-[180px]">Metric</th>

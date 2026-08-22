@@ -255,7 +255,7 @@ const AddExpenseSlideOver = () => {
 
   return (
     <div
-      class="fixed inset-0 z-50 flex justify-end"
+      class="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end"
       classList={{
         "pointer-events-auto": state.ui.showAddExpense,
         "pointer-events-none": !state.ui.showAddExpense,
@@ -271,20 +271,23 @@ const AddExpenseSlideOver = () => {
         onClick={() => setState("ui", "showAddExpense", false)}
       />
 
-      {/* Panel */}
+      {/* Panel: Bottom Sheet on Mobile, Slide-over on sm/desktop */}
       <div
-        class="relative w-full max-w-[440px] h-screen bg-white flex flex-col will-change-transform contain-content shadow-2xl"
+        class="relative w-full sm:max-w-[440px] max-h-[92dvh] sm:max-h-none sm:h-dvh bg-white flex flex-col will-change-transform contain-content shadow-2xl rounded-t-3xl sm:rounded-t-none"
         style={{
           transform: state.ui.showAddExpense
             ? "translate3d(0, 0, 0)"
-            : "translate3d(100%, 0, 0)",
+            : "translate3d(0, 100%, 0)",
           transition: "transform 450ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
+        {/* Mobile Pull Indicator */}
+        <div class="w-12 h-1.5 bg-forest/10 rounded-full mx-auto mt-3 sm:hidden" />
+
         {/* Header */}
-        <div class="px-8 py-6 flex items-center justify-between border-b border-forest/5">
-          <div class="space-y-1">
-            <h3 class="text-2xl font-cormorant font-bold text-forest">
+        <div class="px-5 sm:px-8 py-4 sm:py-6 flex items-center justify-between border-b border-forest/5">
+          <div class="space-y-0.5 sm:space-y-1">
+            <h3 class="text-xl sm:text-2xl font-cormorant font-bold text-forest">
               {type() === "transfer" ? "Inter-Account Transfer" : "New Transaction"}
             </h3>
             <p class="text-[10px] font-bold text-earth uppercase tracking-widest">

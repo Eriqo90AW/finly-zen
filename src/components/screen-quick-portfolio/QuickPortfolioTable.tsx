@@ -503,10 +503,10 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
 
   return (
     <section class="bg-card-bg rounded-premium border border-forest/10 shadow-premium flex flex-col overflow-hidden">
-      {/* Table Header Control Bar */}
-      <div class="p-4 sm:p-5 border-b border-forest/10 flex flex-wrap justify-between items-center gap-3 bg-white/70 backdrop-blur-sm">
-        {/* Left Side: Add Holding & Search */}
-        <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
+      {/* Table Toolbar & Search */}
+      <div class="p-3 sm:p-4 border-b border-forest/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-white/50 backdrop-blur-sm">
+        {/* Left Side: Add Holding Button + Search Bar */}
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           <button 
             onClick={props.onStartAddHolding}
             class="bg-forest text-white font-outfit text-xs font-bold h-[30px] px-3.5 rounded-full flex items-center gap-1.5 hover:bg-mid-green transition-all shadow-xs hover:-translate-y-0.5 cursor-pointer border-0 outline-none select-none active:scale-95 shrink-0"
@@ -515,7 +515,7 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
             Add Holding
           </button>
           
-          <div class="relative w-48 sm:w-56 lg:w-60 flex items-center">
+          <div class="relative flex-1 sm:w-56 lg:w-60 flex items-center">
             <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-earth !text-base pointer-events-none">search</span>
             <input 
               type="text" 
@@ -528,9 +528,9 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
         </div>
 
         {/* Right Side: Pill Filters placed to the left of Show FX Rate, then Show FX Rate & Copy JSON */}
-        <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full md:w-auto">
           {/* Asset Type Filter Pills */}
-          <div class="flex items-center gap-1 bg-sage/25 p-1 rounded-full border border-forest/10 overflow-x-auto no-scrollbar">
+          <div class="flex items-center gap-1 bg-sage/25 p-1 rounded-full border border-forest/10 overflow-x-auto no-scrollbar max-w-full">
             <For each={filterCategories()}>
               {(cat) => {
                 const isSelected = () => selectedAssetType() === cat.id;
@@ -592,8 +592,8 @@ export const QuickPortfolioTable = (props: QuickPortfolioTableProps) => {
       </div>
 
       {/* Spreadsheet Grid Table */}
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse whitespace-nowrap">
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full min-w-[860px] text-left border-collapse whitespace-nowrap">
           <thead class="bg-sage/20 border-b border-forest/5 text-[11px] text-earth">
             <tr class="group/header">
               <th class="px-6 py-3 font-semibold uppercase tracking-wider w-1/4">

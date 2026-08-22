@@ -1,4 +1,5 @@
 import { A, useLocation } from "@solidjs/router";
+import { Show } from "solid-js";
 import DashboardIcon from "@suid/icons-material/DashboardOutlined";
 import ReceiptIcon from "@suid/icons-material/ReceiptLongOutlined";
 import AccountBalanceWalletIcon from "@suid/icons-material/AccountBalanceWalletOutlined";
@@ -9,25 +10,42 @@ import PieChartIcon from "@suid/icons-material/PieChartOutlined";
 import PaymentsIcon from "@suid/icons-material/PaymentsOutlined";
 import TableChartIcon from "@suid/icons-material/TableChartOutlined";
 import CalendarMonthIcon from "@suid/icons-material/CalendarMonthOutlined";
-
 import FormatListNumberedIcon from "@suid/icons-material/FormatListNumberedOutlined";
+import CloseIcon from "@suid/icons-material/Close";
 
-const Sidebar = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar = (props: SidebarProps) => {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside class="w-[220px] h-screen bg-white border-r border-forest/10 flex flex-col shrink-0">
+    <aside class="w-full lg:w-[220px] h-dvh bg-white border-r border-forest/10 flex flex-col shrink-0">
       {/* Logo */}
-      <div class="p-8 flex items-center gap-3">
-        <div class="w-10 h-10 bg-forest rounded-xl flex items-center justify-center text-white">
-          <span class="material-icons text-2xl">eco</span>
+      <div class="p-6 lg:p-8 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-forest rounded-xl flex items-center justify-center text-white shrink-0">
+            <span class="material-icons text-2xl">eco</span>
+          </div>
+          <h1 class="text-2xl font-cormorant text-forest tracking-tight">Finly Zen</h1>
         </div>
-        <h1 class="text-2xl font-cormorant text-forest tracking-tight">Finly Zen</h1>
+
+        {/* Mobile Close Button */}
+        <Show when={props.onClose}>
+          <button
+            onClick={props.onClose}
+            class="lg:hidden p-1.5 rounded-lg text-earth hover:text-forest hover:bg-sage/40 transition-colors"
+            aria-label="Close sidebar"
+          >
+            <CloseIcon class="w-5 h-5" />
+          </button>
+        </Show>
       </div>
 
       {/* Nav Links */}
-      <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
+      <nav class="flex-1 px-4 space-y-2 mt-2 overflow-y-auto custom-scrollbar pb-8">
         <div class="px-4 mb-2 text-[10px] font-bold uppercase tracking-widest text-earth/60">Expense Tracker</div>
         <A href="/" end class={`nav-link ${isActive("/") ? "active" : ""}`}>
           <DashboardIcon />

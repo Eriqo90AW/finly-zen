@@ -29,15 +29,15 @@ const Dividend = () => {
   });
 
   return (
-    <div class="max-w-[1400px] mx-auto h-[calc(100vh-8rem)] animate-fade-in-up relative">
+    <div class="max-w-[1400px] mx-auto min-h-[calc(100dvh-10rem)] lg:h-[calc(100dvh-8rem)] animate-fade-in-up relative pb-12 lg:pb-0">
       <Show when={isDividendsRefreshing()}>
         <div class="absolute top-0 right-0 z-50 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sage/40 text-earth text-[10px] font-bold uppercase tracking-wider">
           <span class="material-icons !text-[12px] animate-spin">sync</span>
           Syncing
         </div>
       </Show>
-      <div class="grid grid-cols-3 gap-6 h-[calc(100%)]">
-        <div class="col-span-2 h-full min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:h-[calc(100%)]">
+        <div class="col-span-1 lg:col-span-2 min-h-0">
           <Calendar
             year={selectedYear()}
             selectedDate={selectedDate()}
@@ -56,7 +56,7 @@ const Dividend = () => {
           />
         </div>
 
-        <div class="col-span-1 h-full min-h-0">
+        <div class="col-span-1 min-h-0">
           <DividendListCard
             selectedDate={selectedDate()}
             onClearDate={() => setSelectedDate(null)}

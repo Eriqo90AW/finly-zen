@@ -81,9 +81,9 @@ export const Register = () => {
   };
 
   return (
-    <div class="min-h-screen bg-page-bg flex flex-col md:flex-row">
+    <div class="min-h-dvh bg-page-bg flex flex-col md:flex-row">
       {/* Left Editorial Panel */}
-      <div class="hidden md:flex md:w-5/12 lg:w-1/2 bg-forest text-white p-12 lg:p-16 flex-col justify-between relative overflow-hidden">
+      <div class="hidden md:flex md:w-5/12 lg:w-1/2 bg-forest text-white p-8 lg:p-16 flex-col justify-between relative overflow-hidden">
         <div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />
         <div class="absolute right-10 top-10 w-40 h-40 rounded-full bg-spring/10 pointer-events-none" />
 
@@ -116,12 +116,12 @@ export const Register = () => {
       </div>
 
       {/* Right Form Panel */}
-      <div class="flex-1 flex items-center justify-center p-6 sm:p-12">
-        <div class="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 border border-forest/10 shadow-2xl">
+      <div class="flex-1 flex items-center justify-center p-4 sm:p-8 lg:p-12">
+        <div class="w-full max-w-md bg-white rounded-3xl p-6 sm:p-10 border border-forest/10 shadow-2xl">
           {/* Mobile Logo */}
-          <div class="md:hidden flex items-center gap-3 mb-6">
-            <div class="w-9 h-9 bg-forest rounded-xl flex items-center justify-center text-white">
-              <span class="material-icons text-xl">eco</span>
+          <div class="md:hidden flex items-center gap-2.5 mb-6">
+            <div class="w-8 h-8 bg-forest rounded-xl flex items-center justify-center text-white">
+              <span class="material-icons text-lg">eco</span>
             </div>
             <span class="text-xl font-cormorant font-bold text-forest">Finly Zen</span>
           </div>

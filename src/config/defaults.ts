@@ -38,7 +38,7 @@ export const DEFAULT_BUDGETS: Budget[] = [
 export const DEFAULT_CONFIG = {
   dailyBudget: parseEnvNumber(import.meta.env.VITE_DEFAULT_DAILY_BUDGET, 300000),
   monthlyLimit: parseEnvNumber(import.meta.env.VITE_DEFAULT_MONTHLY_LIMIT, 9100000),
-  userName: import.meta.env.VITE_DEFAULT_USER_NAME || "Eriqo",
+  userName: import.meta.env.VITE_DEFAULT_USER_NAME || "User",
   usdRate: parseEnvNumber(import.meta.env.VITE_DEFAULT_USD_RATE, 18000),
   datePeriod: (import.meta.env.VITE_DEFAULT_DATE_PERIOD as DatePeriod) || "1-30",
   ai: {

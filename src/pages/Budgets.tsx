@@ -89,14 +89,14 @@ const Budgets = () => {
   ];
 
   return (
-    <div class="space-y-8 animate-fade-in-up">
-      <h2 class="text-3xl font-cormorant text-forest">Monthly Growth & Budgets</h2>
+    <div class="space-y-6 sm:space-y-8 animate-fade-in-up">
+      <h2 class="text-2xl sm:text-3xl font-cormorant text-forest">Monthly Growth & Budgets</h2>
       
       {/* Overview Chart */}
-      <div class="premium-card p-8 bg-white h-[350px]">
-        <div class="flex items-center justify-between mb-8">
+      <div class="premium-card p-4 sm:p-6 lg:p-8 bg-white min-h-[300px] lg:h-[350px]">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
            <div>
-              <h3 class="text-lg font-outfit font-bold text-forest">Performance vs Target</h3>
+              <h3 class="text-base sm:text-lg font-outfit font-bold text-forest">Performance vs Target</h3>
               <p class="text-xs text-earth">Tracking all categories for April 2026</p>
            </div>
            <div class="flex gap-4">
@@ -110,13 +110,13 @@ const Budgets = () => {
               </div>
            </div>
         </div>
-        <div class="h-[220px]">
+        <div class="h-[200px] sm:h-[220px]">
            <SolidApexCharts options={overallOptions} series={budgetActualSeries} type="line" height="100%" />
         </div>
       </div>
 
       {/* Category Grid */}
-      <div class="grid grid-cols-3 gap-6 pb-20">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 pb-20">
         <For each={state.budgets}>
           {(b) => (
             <CategoryCard 

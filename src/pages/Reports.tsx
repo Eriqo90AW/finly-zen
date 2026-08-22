@@ -45,14 +45,14 @@ const Reports = () => {
   ];
 
   return (
-    <div class="space-y-8 animate-fade-in-up pb-20">
-      <h2 class="text-3xl font-cormorant text-forest">Cultivation Reports</h2>
+    <div class="space-y-6 sm:space-y-8 animate-fade-in-up pb-20">
+      <h2 class="text-2xl sm:text-3xl font-cormorant text-forest">Cultivation Reports</h2>
 
-      <div class="grid grid-cols-12 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
         {/* Stacked History */}
-        <div class="col-span-8 premium-card p-8 bg-white h-[400px]">
-          <h4 class="font-outfit font-bold text-forest mb-6">6-Month Spending Structure</h4>
-          <div class="h-[300px]">
+        <div class="col-span-1 lg:col-span-8 premium-card p-4 sm:p-6 lg:p-8 bg-white min-h-[320px] lg:h-[400px]">
+          <h4 class="font-outfit font-bold text-forest mb-4 sm:mb-6">6-Month Spending Structure</h4>
+          <div class="h-[240px] sm:h-[300px]">
              <SolidApexCharts 
               options={stackedBarOptions} 
               series={[
@@ -67,12 +67,12 @@ const Reports = () => {
         </div>
 
         {/* Top Merchants */}
-        <div class="col-span-4 premium-card p-8 bg-white flex flex-col">
-          <h4 class="font-outfit font-bold text-forest mb-6">Top Merchants</h4>
-          <div class="flex-1 space-y-6">
+        <div class="col-span-1 lg:col-span-4 premium-card p-4 sm:p-6 lg:p-8 bg-white flex flex-col">
+          <h4 class="font-outfit font-bold text-forest mb-4 sm:mb-6">Top Merchants</h4>
+          <div class="flex-1 space-y-4 sm:space-y-6">
             <For each={merchants}>
               {(m) => (
-                <div class="space-y-2">
+                <div class="space-y-1.5 sm:space-y-2">
                   <div class="flex justify-between text-xs font-outfit">
                     <span class="font-bold text-forest">{m.name}</span>
                     <span class="text-earth">{formatRupiah(m.amount)}</span>
@@ -90,9 +90,9 @@ const Reports = () => {
         </div>
 
         {/* Cash Flow */}
-        <div class="col-span-7 premium-card p-8 bg-white h-[350px]">
-          <h4 class="font-outfit font-bold text-forest mb-6">Net Cash Flow</h4>
-          <div class="h-[250px]">
+        <div class="col-span-1 lg:col-span-7 premium-card p-4 sm:p-6 lg:p-8 bg-white min-h-[300px] lg:h-[350px]">
+          <h4 class="font-outfit font-bold text-forest mb-4 sm:mb-6">Net Cash Flow</h4>
+          <div class="h-[220px] sm:h-[250px]">
              <SolidApexCharts 
               options={cashFlowOptions} 
               series={[{ name: 'Net Flow', data: [1200, -200, 800, 450, 1100, 900] }]} 
@@ -103,10 +103,10 @@ const Reports = () => {
         </div>
 
         {/* Category Radar */}
-        <div class="col-span-5 premium-card p-8 bg-white h-[350px]">
-          <h4 class="font-outfit font-bold text-forest mb-2">Category Comparison</h4>
-          <p class="text-[10px] text-earth uppercase tracking-widest mb-4">This Month vs Last</p>
-          <div class="h-[220px]">
+        <div class="col-span-1 lg:col-span-5 premium-card p-4 sm:p-6 lg:p-8 bg-white min-h-[300px] lg:h-[350px]">
+          <h4 class="font-outfit font-bold text-forest mb-1 sm:mb-2">Category Comparison</h4>
+          <p class="text-[9px] sm:text-[10px] text-earth uppercase tracking-widest mb-3 sm:mb-4">This Month vs Last</p>
+          <div class="h-[200px] sm:h-[220px]">
              <SolidApexCharts 
               options={radarOptions} 
               series={[

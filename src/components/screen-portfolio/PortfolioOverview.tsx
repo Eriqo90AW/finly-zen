@@ -22,20 +22,20 @@ export const PortfolioOverview = () => {
 
   return (
     <>
-      <div class="flex justify-between items-center mb-10">
+      <div class="flex justify-between items-center mb-6 sm:mb-10">
         <div class="pl-2">
-          <h1 class="text-4xl font-cormorant text-forest font-bold tracking-tight mb-1">
+          <h1 class="text-2xl sm:text-4xl font-cormorant text-forest font-bold tracking-tight mb-1">
             My Portfolios
           </h1>
-          <p class="text-earth font-outfit tracking-wide uppercase text-[10px] font-bold">
+          <p class="text-earth font-outfit tracking-wide uppercase text-[9px] sm:text-[10px] font-bold">
             Select or create a portfolio to begin
           </p>
         </div>
       </div>
 
       <div class="premium-card overflow-hidden">
-        <div class="px-8 py-6 border-b border-forest/5 flex justify-between items-center bg-white/50 backdrop-blur-sm">
-          <h4 class="font-outfit font-bold text-forest text-lg">
+        <div class="px-4 sm:px-8 py-4 sm:py-6 border-b border-forest/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white/50 backdrop-blur-sm">
+          <h4 class="font-outfit font-bold text-forest text-base sm:text-lg">
             Portfolio List
           </h4>
           <button
@@ -47,8 +47,8 @@ export const PortfolioOverview = () => {
           </button>
         </div>
 
-        <div class="overflow-x-auto">
-          <div class="flex flex-col min-w-[900px]">
+        <div class="overflow-x-auto custom-scrollbar">
+          <div class="flex flex-col min-w-[760px] sm:min-w-[900px]">
             {/* Header Row */}
             <div class="flex items-center px-8 py-4 border-b border-forest/5 text-[11px] font-bold uppercase tracking-widest text-earth/60">
               {/* Spacer for the vertical color bar */}

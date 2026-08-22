@@ -186,7 +186,7 @@ export const GardenWins = (props: GardenWinsProps) => {
   });
 
   return (
-    <div class="premium-card p-6 flex flex-col justify-between h-full">
+    <div class="premium-card p-4 sm:p-6 flex flex-col justify-between h-full cursor-default">
       <div>
         <h4 class="font-outfit font-bold text-forest mb-4">Garden Wins</h4>
 

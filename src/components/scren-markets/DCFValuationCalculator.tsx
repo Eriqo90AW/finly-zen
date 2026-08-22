@@ -301,13 +301,13 @@ export const DCFValuationCalculator = (props: DCFValuationCalculatorProps) => {
   const verdictText = () => isUndervalued() ? "Undervalued" : "Overvalued";
 
   return (
-    <div class="premium-card p-6 flex flex-col lg:flex-row gap-6">
+    <div class="premium-card p-4 sm:p-6 flex flex-col lg:flex-row gap-6">
       {/* Left Input Configuration Panel */}
       <div class="w-full lg:w-[35%] flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-forest/10 pb-6 lg:pb-0 lg:pr-6">
         <div>
-          <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-5 border-b border-forest/10 pb-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-forest/10 pb-4">
             <div>
-              <h4 class="font-outfit font-bold text-forest text-lg">DCF Calculator</h4>
+              <h4 class="font-outfit font-bold text-forest text-base sm:text-lg">DCF Calculator</h4>
               <p class="text-[10px] text-earth/60">Valuation & projection playground</p>
             </div>
             <div class="flex flex-col gap-1 items-end">

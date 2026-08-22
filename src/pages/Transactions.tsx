@@ -50,16 +50,16 @@ const Transactions = () => {
 
   return (
     <div class="space-y-6 animate-fade-in-up">
-      <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-cormorant text-forest">Transaction Ledger</h2>
-        <div class="flex items-center gap-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h2 class="text-2xl sm:text-3xl font-cormorant text-forest">Transaction Ledger</h2>
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={() => setIsChartVisible(!isChartVisible())}
-            class="px-4 py-2 bg-white border border-forest/10 rounded-xl text-sm font-outfit text-forest hover:bg-sage/20 transition-all"
+            class="px-3 sm:px-4 py-2 bg-white border border-forest/10 rounded-xl text-xs sm:text-sm font-outfit text-forest hover:bg-sage/20 transition-all cursor-pointer"
           >
             {isChartVisible() ? "Hide Analytics" : "Show Analytics"}
           </button>
-          <button class="px-4 py-2 bg-forest text-white rounded-xl text-sm font-outfit font-semibold flex items-center gap-2 hover:bg-mid-green transition-all shadow-lg shadow-forest/10">
+          <button class="px-3 sm:px-4 py-2 bg-forest text-white rounded-xl text-xs sm:text-sm font-outfit font-semibold flex items-center gap-2 hover:bg-mid-green transition-all shadow-lg shadow-forest/10 cursor-pointer">
             <FileDownloadIcon class="w-4 h-4" />
             Export CSV
           </button>

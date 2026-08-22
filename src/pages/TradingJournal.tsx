@@ -53,18 +53,18 @@ export default function TradingJournal() {
   };
 
   return (
-    <div class="flex flex-col gap-6 items-stretch relative h-[calc(100vh-128px)] overflow-hidden animate-fade-in-up">
+    <div class="flex flex-col gap-4 sm:gap-6 items-stretch relative min-h-[calc(100dvh-128px)] lg:h-[calc(100dvh-128px)] overflow-y-auto lg:overflow-hidden animate-fade-in-up pb-12 lg:pb-0">
         {/* Page Title Header */}
         <div class="flex items-center justify-between shrink-0">
           <div>
-            <h1 class="text-3xl font-cormorant font-bold text-forest">Trading Journal</h1>
+            <h1 class="text-2xl sm:text-3xl font-cormorant font-bold text-forest">Trading Journal</h1>
             <p class="text-xs text-earth">Monitor execution quality, psychology, and performance stats.</p>
           </div>
         </div>
 
-      <div class="flex gap-6 flex-1 min-h-0 overflow-hidden">
+      <div class="flex flex-col lg:flex-row gap-4 sm:gap-6 flex-1 min-h-0 lg:overflow-hidden">
         {/* Main Journal Content (Left Column) */}
-        <div class="flex-1 min-w-0 h-full flex flex-col gap-4 overflow-hidden">
+        <div class="flex-1 min-w-0 flex flex-col gap-4 lg:overflow-hidden">
 
           {/* Performance Summary Banner */}
           <Show 
@@ -81,11 +81,11 @@ export default function TradingJournal() {
           <Show 
             when={!days.loading && days()} 
             fallback={
-              <div class="premium-card bg-white p-6 space-y-6 border border-forest/10 animate-pulse flex-1 min-h-0">
+              <div class="premium-card bg-white p-4 sm:p-6 space-y-6 border border-forest/10 animate-pulse flex-1 min-h-[300px]">
                 <div class="h-8 bg-sage/20 rounded-xl w-48 shrink-0" />
-                <div class="grid grid-cols-5 gap-3 flex-1 min-h-0">
+                <div class="grid grid-cols-5 gap-2 sm:gap-3 flex-1 min-h-0">
                   {Array.from({ length: 25 }).map(() => (
-                    <div class="bg-sage/10 rounded-xl h-full w-full" />
+                    <div class="bg-sage/10 rounded-xl h-12 sm:h-full w-full" />
                   ))}
                 </div>
               </div>
@@ -109,7 +109,7 @@ export default function TradingJournal() {
         </div>
 
         {/* Right Column: Dynamic Form / Drawer Panel */}
-        <div class="w-[380px] shrink-0 h-full flex flex-col relative overflow-hidden">
+        <div class="w-full lg:w-[380px] shrink-0 min-h-[480px] lg:h-full flex flex-col relative overflow-hidden">
           <NewTradeForm onSave={handleSaveTrade} />
           <DailySummaryDrawer 
             day={selectedDaySummary()} 
@@ -120,8 +120,6 @@ export default function TradingJournal() {
           />
         </div>
       </div>
-      
-
     </div>
   );
 }

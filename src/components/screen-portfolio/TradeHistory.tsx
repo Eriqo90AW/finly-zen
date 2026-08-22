@@ -1132,17 +1132,17 @@ export const TradeHistory = (props: TradeHistoryProps) => {
       {/* Transactions Table Card */}
       <div class="premium-card overflow-hidden animate-fade-in-up stagger-5">
         {/* Table Filters & Toolbar */}
-        <div class="px-6 py-5 border-b border-forest/5 flex flex-col lg:flex-row justify-between items-center gap-4 bg-white">
-          <div class="flex flex-col gap-1 w-full lg:w-auto">
-            <h4 class="font-outfit font-bold text-forest text-lg">Transaction History</h4>
-            <p class="text-earth/50 text-xs font-outfit">
+        <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-forest/5 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 sm:gap-4 bg-white">
+          <div class="flex flex-col gap-0.5 w-full lg:w-auto">
+            <h4 class="font-outfit font-bold text-forest text-base sm:text-lg">Transaction History</h4>
+            <p class="text-earth/50 text-[11px] sm:text-xs font-outfit">
               Showing {processedTransactions().length > 0 ? (currentPage() - 1) * pageSize + 1 : 0} - {Math.min(currentPage() * pageSize, processedTransactions().length)} of {processedTransactions().length} records
             </p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+          <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto justify-start lg:justify-end">
             {/* Search Input */}
-            <div class="relative flex items-center bg-sage/10 border border-forest/10 rounded-xl px-3 py-1.5 focus-within:border-forest/30 transition-all duration-200 w-full md:w-56">
+            <div class="relative flex items-center bg-sage/10 border border-forest/10 rounded-xl px-3 py-1.5 focus-within:border-forest/30 transition-all duration-200 flex-1 sm:w-56">
               <span class="material-icons text-earth/40 text-sm mr-2 select-none">search</span>
               <input
                 type="text"
@@ -1162,14 +1162,14 @@ export const TradeHistory = (props: TradeHistoryProps) => {
             </div>
 
             {/* Type Selector Pills */}
-            <div class="flex bg-sage/15 p-1 rounded-xl border border-forest/5 shadow-inner">
+            <div class="flex bg-sage/15 p-1 rounded-xl border border-forest/5 shadow-inner overflow-x-auto">
               <For each={["ALL", "BUY", "SELL", "DIVIDEND"]}>
                 {(type) => {
                   const isActive = () => typeFilter() === type;
                   return (
                     <button
                       onClick={() => setTypeFilter(type)}
-                      class={`px-3 py-1.5 rounded-lg text-[10px] font-outfit font-bold transition-all duration-200 cursor-pointer uppercase tracking-wider ${
+                      class={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] font-outfit font-bold transition-all duration-200 cursor-pointer uppercase tracking-wider ${
                         isActive()
                           ? "bg-forest text-white shadow-sm"
                           : "text-earth/65 hover:text-forest hover:bg-forest/5"
@@ -1185,8 +1185,8 @@ export const TradeHistory = (props: TradeHistoryProps) => {
         </div>
 
         {/* Table Container */}
-        <div class="overflow-x-auto w-full relative" style={{ "max-height": "650px" }}>
-          <table class="w-full min-w-[900px] border-collapse">
+        <div class="overflow-x-auto w-full relative custom-scrollbar" style={{ "max-height": "650px" }}>
+          <table class="w-full min-w-[760px] sm:min-w-[900px] border-collapse">
             <thead class="sticky-header bg-white/95 border-b border-forest/5 text-[10px] font-bold uppercase tracking-widest text-earth/65 select-none">
               <tr>
                 <th class="w-1.5 py-4 px-2"></th>

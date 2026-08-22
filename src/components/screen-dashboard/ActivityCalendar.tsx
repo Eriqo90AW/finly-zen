@@ -101,8 +101,8 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
   };
 
   return (
-    <div class="premium-card p-6 flex flex-col h-full cursor-default">
-      <div class="flex items-center justify-between mb-6">
+    <div class="premium-card p-4 sm:p-6 flex flex-col h-full cursor-default min-h-[340px]">
+      <div class="flex items-center justify-between mb-4">
         <div class="flex flex-col">
           <h4 class="font-outfit font-bold text-forest leading-tight">
             Activity Calendar

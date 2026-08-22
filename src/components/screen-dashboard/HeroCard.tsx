@@ -243,7 +243,7 @@ export const HeroCard = (props: HeroCardProps) => {
 
   return (
     <div
-      class="col-span-8 row-span-2 premium-card p-0 relative overflow-hidden group flex flex-col transition-[background-color,box-shadow] duration-700 ease-out"
+      class="w-full flex-1 premium-card p-0 relative overflow-hidden group flex flex-col transition-[background-color,box-shadow] duration-700 ease-out min-h-[260px] sm:min-h-[290px] lg:h-[340px]"
       style={{
         "background-color": activeStats().color || "#FDF5E6",
         "background-image": activeStats().color
@@ -261,19 +261,19 @@ export const HeroCard = (props: HeroCardProps) => {
 
       {/* Watermark */}
       <div class="absolute -right-10 -bottom-10 opacity-[0.03] rotate-12 transition-transform group-hover:scale-110 duration-1000 pointer-events-none z-0">
-        <span class="material-icons text-[240px]">eco</span>
+        <span class="material-icons text-[140px] sm:text-[240px]">eco</span>
       </div>
 
-      <div class="absolute top-10 right-10 z-20 flex flex-col items-end gap-2">
+      <div class="absolute top-3.5 right-3.5 sm:top-6 sm:right-8 z-20 flex flex-col items-end gap-2">
         <button
           onClick={toggleShowAllTime}
-          class={`cursor-pointer text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
+          class={`cursor-pointer text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 ${
             state.ui.showAllTime
               ? "text-forest font-black"
-              : "text-forest/30 hover:text-forest/60"
+              : "text-forest/40 hover:text-forest/60"
           }`}
         >
-          {state.ui.showAllTime ? "Showing All Time" : "Showing This Month"}
+          {state.ui.showAllTime ? "All Time" : "This Month"}
         </button>
       </div>
 
@@ -281,9 +281,9 @@ export const HeroCard = (props: HeroCardProps) => {
       <Show when={activeIndex() > 0}>
         <button
           onClick={scrollLeft}
-          class="cursor-pointer absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur shadow-sm flex items-center justify-center text-forest z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-110"
+          class="cursor-pointer absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/80 backdrop-blur shadow-sm flex items-center justify-center text-forest z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-110"
         >
-          <span class="material-icons">chevron_left</span>
+          <span class="material-icons text-sm sm:text-base">chevron_left</span>
         </button>
       </Show>
 
@@ -291,9 +291,9 @@ export const HeroCard = (props: HeroCardProps) => {
       <Show when={activeIndex() < accounts().length - 1}>
         <button
           onClick={scrollRight}
-          class="cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur shadow-sm flex items-center justify-center text-forest z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-110"
+          class="cursor-pointer absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/80 backdrop-blur shadow-sm flex items-center justify-center text-forest z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-110"
         >
-          <span class="material-icons">chevron_right</span>
+          <span class="material-icons text-sm sm:text-base">chevron_right</span>
         </button>
       </Show>
 
@@ -313,64 +313,64 @@ export const HeroCard = (props: HeroCardProps) => {
         >
           <For each={allStats()}>
             {(stats, index) => (
-              <div class="p-10 relative z-10 flex flex-col justify-center space-y-8 min-w-full w-full shrink-0">
-                <div class="space-y-1">
-                  <p class="text-xs font-bold text-forest/40 uppercase tracking-widest">
+              <div class="px-4 py-4 sm:p-6 lg:px-8 lg:py-5 relative z-10 flex flex-col justify-center space-y-4 sm:space-y-4 min-w-full w-full shrink-0">
+                <div class="space-y-0.5 pr-20 sm:pr-0">
+                  <p class="text-xs sm:text-sm font-bold text-forest/60 uppercase tracking-widest">
                     {stats.name}
                   </p>
-                  <h3 class="text-7xl hero-numeral text-forest tabular-nums">
+                  <h3 class="text-5xl sm:text-6xl md:text-6xl lg:text-6xl xl:text-6xl hero-numeral text-forest tabular-nums leading-none tracking-tight">
                     {formatRupiah(
                       index() === activeIndex() ? displayTotal() : stats.net,
                     )}
                   </h3>
                 </div>
 
-                <div class="h-px bg-forest/10 w-full" />
+                <div class="h-px bg-forest/10 w-full my-2" />
 
-                <div class="grid grid-cols-4 gap-4 xl:gap-6">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest truncate">
+                    <p class="text-[9px] sm:text-[10px] font-bold text-earth uppercase tracking-widest truncate">
                       {state.ui.showAllTime
                         ? "All Time Income"
                         : "Monthly Income"}
                     </p>
-                    <p class="text-lg xl:text-xl font-outfit font-semibold text-forest truncate">
+                    <p class="text-sm sm:text-lg xl:text-xl font-outfit font-semibold text-forest truncate mt-0.5">
                       {formatRupiah(stats.income)}
                     </p>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-earth uppercase tracking-widest truncate">
+                    <p class="text-[9px] sm:text-[10px] font-bold text-earth uppercase tracking-widest truncate">
                       {state.ui.showAllTime
                         ? "All Time Expenses"
                         : "Monthly Expenses"}
                     </p>
-                    <p class="text-lg xl:text-xl font-outfit font-semibold text-forest truncate">
+                    <p class="text-sm sm:text-lg xl:text-xl font-outfit font-semibold text-forest truncate mt-0.5">
                       {formatRupiah(stats.expenses)}
                     </p>
                   </div>
                   <div class="min-w-0">
                     <p
-                      class="text-[10px] font-bold text-earth uppercase tracking-widest truncate"
+                      class="text-[9px] sm:text-[10px] font-bold text-earth uppercase tracking-widest truncate"
                       title="Daily Average (All Expenses)"
                     >
                       {state.ui.showAllTime
                         ? "All Time Daily Avg"
                         : "Daily Average"}
                     </p>
-                    <p class="text-lg xl:text-xl font-outfit font-semibold text-forest truncate">
+                    <p class="text-sm sm:text-lg xl:text-xl font-outfit font-semibold text-forest truncate mt-0.5">
                       {formatRupiah(stats.dailyAvg)}
                     </p>
                   </div>
                   <div class="min-w-0">
                     <p
-                      class="text-[10px] font-bold text-earth uppercase tracking-widest truncate"
+                      class="text-[9px] sm:text-[10px] font-bold text-earth uppercase tracking-widest truncate"
                       title="Daily Average excluding recurring transactions"
                     >
                       {state.ui.showAllTime
-                        ? "All Time Daily Avg (Excl. Rec)"
-                        : "Daily Avg (Excl. Rec)"}
+                        ? "All Time Daily (Ex. Rec)"
+                        : "Daily (Ex. Rec)"}
                     </p>
-                    <p class="text-lg xl:text-xl font-outfit font-semibold text-forest truncate">
+                    <p class="text-sm sm:text-lg xl:text-xl font-outfit font-semibold text-forest truncate mt-0.5">
                       {formatRupiah(stats.dailyAvgNonRecurring)}
                     </p>
                   </div>

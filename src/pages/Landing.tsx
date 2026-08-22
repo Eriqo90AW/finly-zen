@@ -7,14 +7,14 @@ export const Landing = () => {
   const [currencyPreview, setCurrencyPreview] = createSignal<"IDR" | "USD">("IDR");
 
   return (
-    <div class="min-h-screen bg-page-bg text-near-black flex flex-col selection:bg-spring/30">
+    <div class="min-h-dvh bg-page-bg text-near-black flex flex-col selection:bg-spring/30">
       {/* Top Navigation */}
-      <header class="h-20 bg-white/80 backdrop-blur-md border-b border-forest/10 sticky top-0 z-40 px-6 lg:px-16 flex items-center justify-between transition-all">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-forest rounded-xl flex items-center justify-center text-white shadow-sm">
-            <span class="material-icons text-2xl">eco</span>
+      <header class="h-16 sm:h-20 bg-white/80 backdrop-blur-md border-b border-forest/10 sticky top-0 z-40 px-4 sm:px-6 lg:px-16 flex items-center justify-between transition-all">
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-forest rounded-xl flex items-center justify-center text-white shadow-sm">
+            <span class="material-icons text-xl sm:text-2xl">eco</span>
           </div>
-          <span class="text-2xl font-cormorant font-bold text-forest tracking-tight">
+          <span class="text-xl sm:text-2xl font-cormorant font-bold text-forest tracking-tight">
             Finly Zen
           </span>
         </div>
@@ -26,26 +26,26 @@ export const Landing = () => {
           <a href="#philosophy" class="hover:text-forest transition-colors">Philosophy</a>
         </nav>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 sm:gap-4">
           {isAuthenticated() ? (
             <A
               href="/dashboard"
-              class="flex items-center gap-2 bg-forest hover:bg-forest/90 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95"
+              class="flex items-center gap-1.5 sm:gap-2 bg-forest hover:bg-forest/90 text-white text-xs font-bold uppercase tracking-wider px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-md transition-all active:scale-95"
             >
               <span>Go to App</span>
-              <span class="material-icons text-base">arrow_forward</span>
+              <span class="material-icons text-sm sm:text-base">arrow_forward</span>
             </A>
           ) : (
             <>
               <A
                 href="/login"
-                class="text-xs font-bold text-forest hover:text-forest/80 px-4 py-2.5 rounded-xl hover:bg-sage/40 transition-colors"
+                class="text-xs font-bold text-forest hover:text-forest/80 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl hover:bg-sage/40 transition-colors"
               >
                 Sign In
               </A>
               <A
                 href="/register"
-                class="bg-forest hover:bg-forest/90 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"
+                class="bg-forest hover:bg-forest/90 text-white text-xs font-bold uppercase tracking-wider px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"
               >
                 Get Started
               </A>

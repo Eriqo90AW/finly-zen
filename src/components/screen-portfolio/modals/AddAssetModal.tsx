@@ -6,6 +6,7 @@ import {
   onMount,
   onCleanup,
 } from "solid-js";
+import { Portal } from "solid-js/web";
 import { addTransactionToPortfolio } from "../../../store/portfolioStore";
 import { getUsdRate, formatNumericInput } from "../../../utils/format";
 import { searchTickers } from "../../../data/marketData";
@@ -282,20 +283,21 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
 
   return (
     <Show when={props.isOpen}>
-      <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 transition-opacity duration-300 p-6"
-        onClick={props.onClose}
-      >
+      <Portal>
         <div
-          class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col"
-          onClick={(e) => {
-            e.stopPropagation();
-            const target = e.target as HTMLElement;
-            if (!target.closest(".ticker-container")) {
-              setShowSuggestions(false);
-            }
-          }}
+          class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs transition-opacity duration-300 p-4 sm:p-6 animate-fade-in"
+          onClick={props.onClose}
         >
+          <div
+            class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[90dvh] flex flex-col"
+            onClick={(e) => {
+              e.stopPropagation();
+              const target = e.target as HTMLElement;
+              if (!target.closest(".ticker-container")) {
+                setShowSuggestions(false);
+              }
+            }}
+          >
           <div class="absolute top-0 left-0 w-full h-1 bg-spring"></div>
           <h3 class="text-2xl font-cormorant text-forest font-bold mb-6 flex-shrink-0">
             Add Transaction
@@ -659,6 +661,7 @@ export const AddAssetModal = (props: AddAssetModalProps) => {
           </form>
         </div>
       </div>
+    </Portal>
 
       {/* Inline scrollbar styles for suggestions dropdown */}
       <style>{`

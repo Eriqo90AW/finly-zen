@@ -1,4 +1,5 @@
 import { createSignal, For, Show } from "solid-js";
+import { Portal } from "solid-js/web";
 import { createDefaultUserData } from "../../data/expenseData";
 import { setState } from "../../store";
 import { formatRupiah } from "../../utils/format";
@@ -69,8 +70,9 @@ export const FirstTimeSetupModal = (props: FirstTimeSetupModalProps) => {
   };
 
   return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest/40 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white rounded-2xl shadow-2xl border border-forest/10 max-w-lg w-full p-8 flex flex-col gap-6 overflow-y-auto max-h-[90vh]">
+    <Portal>
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-forest/40 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl border border-forest/10 max-w-lg w-full p-5 sm:p-8 flex flex-col gap-4 sm:gap-6 overflow-y-auto max-h-[90dvh]">
         {/* Header */}
         <div class="flex items-center gap-4 border-b border-forest/10 pb-5">
           <div class="w-12 h-12 rounded-2xl bg-forest flex items-center justify-center text-white shrink-0 shadow-md">
@@ -196,6 +198,7 @@ export const FirstTimeSetupModal = (props: FirstTimeSetupModalProps) => {
         </div>
       </div>
     </div>
+  </Portal>
   );
 };
 

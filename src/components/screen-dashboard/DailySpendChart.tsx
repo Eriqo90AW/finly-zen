@@ -5,10 +5,12 @@ import { state } from "../../store";
 import { Tooltip } from "../modules/Tooltip";
 import { getDateRange } from "../../utils/date";
 import { formatRupiah, formatRupiahShort } from "../../utils/format";
+import { EditDailyBudgetModal } from "./modules/EditDailyBudgetModal";
 import type { DailySpendChartProps } from "../../types";
 
 export const DailySpendChart = (props: DailySpendChartProps) => {
   const [dayOffset, setDayOffset] = createSignal(0);
+  const [isEditBudgetOpen, setIsEditBudgetOpen] = createSignal(false);
 
   // Reset offset when month or datePeriod changes
   createEffect(() => {
@@ -141,7 +143,7 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
   });
 
   return (
-    <div class="col-span-4 row-span-2 premium-card px-3 py-6 flex flex-col relative cursor-default">
+    <div class="w-full flex-1 premium-card px-3 py-4 sm:py-5 flex flex-col relative cursor-default min-h-[300px] lg:h-[340px]">
       <style>
         {`
           .apexcharts-tooltip {
@@ -159,7 +161,7 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
           }
         `}
       </style>
-      <div class="flex items-center justify-between mb-6 mx-3">
+      <div class="flex items-center justify-between mb-3 sm:mb-4 mx-3">
         <div class="flex items-center gap-2">
           <h4 class="font-outfit font-bold text-forest">Daily Spend</h4>
           <div class="flex items-center gap-0.5 bg-sage/15 rounded-lg p-0.5 border border-forest/10">
@@ -198,15 +200,7 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
         <Tooltip content="Click to edit budget">
           <div
             class="text-[10px] font-bold text-earth hover:text-forest uppercase tracking-widest cursor-pointer transition-colors flex items-center gap-1 group/edit"
-            onClick={() => {
-              const newBudget = prompt(
-                "Enter new daily budget:",
-                props.dailyBudget().toString(),
-              );
-              if (newBudget && !isNaN(Number(newBudget))) {
-                props.setDailyBudget(Number(newBudget));
-              }
-            }}
+            onClick={() => setIsEditBudgetOpen(true)}
           >
             <span class="material-icons text-[10px] opacity-0 group-hover/edit:opacity-100 transition-opacity">
               edit
@@ -237,6 +231,15 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
           />
         </Show>
       </div>
+
+      <EditDailyBudgetModal
+        isOpen={isEditBudgetOpen()}
+        onClose={() => setIsEditBudgetOpen(false)}
+        currentBudget={props.dailyBudget()}
+        onSave={(newBudget) => props.setDailyBudget(newBudget)}
+        title="Edit Daily Budget"
+        subtitle="Set your target daily spending allowance to calibrate velocity and bar chart threshold."
+      />
     </div>
   );
 };

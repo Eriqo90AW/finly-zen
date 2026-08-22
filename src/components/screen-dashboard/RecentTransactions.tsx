@@ -1,4 +1,5 @@
 import { For, Show, createSignal, createMemo, onCleanup } from "solid-js";
+import { Portal } from "solid-js/web";
 import {
   RecentTransactionsProps,
   SortKey,
@@ -193,10 +194,10 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
     `px-6 py-4 font-semibold cursor-pointer select-none transition-colors hover:text-forest group${key === "amount" ? " text-right" : ""}`;
 
   return (
-    <div class="col-span-12 premium-card overflow-hidden cursor-default flex flex-col h-[500px]">
-      <div class="p-6 border-b border-forest/10 flex items-center justify-between shrink-0">
+    <div class="col-span-12 premium-card overflow-hidden cursor-default flex flex-col min-h-[420px] lg:h-[500px]">
+      <div class="p-4 sm:p-6 border-b border-forest/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-4">
           {/* Multi-Select Category Filters Dropdown */}
           <div class="relative filter-dropdown-container">
             <button
@@ -508,8 +509,8 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
         </div>
       </div>
       <Show when={!props.loading && sortedTransactions().length > 0}>
-        <div class="overflow-auto flex-1 min-h-0">
-          <table class="w-full text-left font-outfit relative">
+        <div class="overflow-x-auto overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+          <table class="w-full min-w-[640px] text-left font-outfit relative">
             <thead class="bg-sage/70 text-earth text-[10px] uppercase tracking-widest sticky top-0 z-10 backdrop-blur-sm shadow-sm">
               <tr>
                 <th
@@ -720,88 +721,76 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
       {/* Delete Confirmation Modal */}
       <Show when={transactionToDelete()}>
         {(t) => (
-          <div
-            class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs transition-opacity duration-300 p-6"
-            onClick={() => !isDeleting() && setTransactionToDelete(null)}
-          >
+          <Portal>
             <div
-              class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-200"
-              onClick={(e) => e.stopPropagation()}
+              class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs transition-opacity duration-300 p-4 sm:p-6 animate-fade-in"
+              onClick={() => !isDeleting() && setTransactionToDelete(null)}
             >
-              <div class="flex flex-col items-center text-center">
-                {/* Warning Icon */}
-                <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-5">
-                  <span class="material-icons text-3xl">delete_outline</span>
-                </div>
+              <div
+                class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-sm shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div class="flex flex-col items-center text-center">
+                  {/* Warning Icon */}
+                  <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-5">
+                    <span class="material-icons text-3xl">delete_outline</span>
+                  </div>
 
-                <h3 class="text-2xl font-cormorant text-forest font-bold mb-2">
-                  Delete Transaction
-                </h3>
+                  <h3 class="text-2xl font-cormorant text-forest font-bold mb-2">
+                    Delete Transaction
+                  </h3>
 
-                {/* Transaction Preview Card */}
-                <div class="w-full p-3.5 bg-page-bg/80 border border-forest/5 rounded-2xl mb-4 text-left space-y-1">
-                  <div class="flex items-center justify-between">
-                    <p class="font-semibold text-xs text-forest truncate max-w-[180px]">{t().name}</p>
-                    <span
-                      class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                      style={{
-                        "background-color": t().accountColor ? `${t().accountColor}15` : "rgba(82, 194, 120, 0.1)",
-                        color: t().accountColor || "var(--color-mid-green)",
-                      }}
+                  {/* Transaction Preview Card */}
+                  <div class="w-full p-3.5 bg-page-bg/80 border border-forest/5 rounded-2xl mb-4 text-left space-y-1">
+                    <div class="flex items-center justify-between">
+                      <p class="font-semibold text-xs text-forest truncate max-w-[180px]">{t().name}</p>
+                      <span
+                        class="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                        style={{
+                          "background-color": t().categoryColor ? `${t().categoryColor}20` : "rgba(26, 77, 46, 0.1)",
+                          color: t().categoryColor || "#1A4D2E",
+                        }}
+                      >
+                        {t().category}
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="text-earth/60 text-[10px]">{formatDateDetail(t().date)}</span>
+                      <span class={`font-bold font-outfit ${t().type === "income" ? "text-emerald-600" : "text-rose-600"}`}>
+                        {t().type === "income" ? "+" : "-"}{formatRupiah(t().amount)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-earth/80 mb-6 leading-relaxed">
+                    Are you sure you want to permanently delete this transaction? This action cannot be undone.
+                  </p>
+
+                  <div class="flex items-center gap-3 w-full">
+                    <button
+                      type="button"
+                      disabled={isDeleting()}
+                      onClick={() => setTransactionToDelete(null)}
+                      class="flex-1 py-3 px-4 rounded-xl border border-forest/10 text-xs font-bold font-outfit text-earth hover:bg-forest/5 transition-all disabled:opacity-50 cursor-pointer"
                     >
-                      {t().accountName}
-                    </span>
-                  </div>
-                  <div class="flex items-center justify-between pt-1">
-                    <span class="text-[11px] text-earth">{t().category}</span>
-                    <p
-                      class="text-sm font-bold font-outfit"
-                      classList={{
-                        "text-red-600": t().type?.toLowerCase() === "expense",
-                        "text-green-600": t().type?.toLowerCase() === "income",
-                        "text-forest": !["expense", "income"].includes(t().type?.toLowerCase() || ""),
-                      }}
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDeleting()}
+                      onClick={handleDeleteConfirm}
+                      class="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold font-outfit shadow-lg shadow-rose-600/20 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                     >
-                      {t().type?.toLowerCase() === "income" ? "+" : t().type?.toLowerCase() === "expense" ? "-" : ""}
-                      {formatRupiah(t().amount)}
-                    </p>
+                      <Show when={isDeleting()} fallback="Delete">
+                        <span class="material-icons text-sm animate-spin">refresh</span>
+                        <span>Deleting...</span>
+                      </Show>
+                    </button>
                   </div>
-                </div>
-
-                <Show when={deleteError()}>
-                  <div class="mb-3 px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs w-full text-left">
-                    {deleteError()}
-                  </div>
-                </Show>
-
-                <p class="text-earth font-outfit text-xs mb-6 leading-relaxed">
-                  Are you sure you want to delete this transaction? This action is permanent and cannot be undone.
-                </p>
-
-                <div class="flex gap-3 w-full">
-                  <button
-                    type="button"
-                    disabled={isDeleting()}
-                    onClick={() => setTransactionToDelete(null)}
-                    class="flex-1 px-4 py-3 rounded-xl font-outfit font-bold text-earth hover:bg-slate-50 transition-all cursor-pointer text-xs uppercase tracking-wider disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isDeleting()}
-                    onClick={handleDeleteConfirm}
-                    class="flex-1 bg-rose-500 text-white px-4 py-3 rounded-xl font-outfit font-bold shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all cursor-pointer text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <Show when={isDeleting()} fallback="Delete">
-                      <div class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Deleting...</span>
-                    </Show>
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
+          </Portal>
         )}
       </Show>
     </div>

@@ -71,7 +71,7 @@ const SearchBar = () => {
   onCleanup(() => window.removeEventListener("click", handleClickOutside));
 
   return (
-    <div class="relative w-80 search-container">
+    <div class="relative w-full max-w-xs lg:w-80 search-container">
       <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-earth w-5 h-5" />
       <input 
         type="text" 

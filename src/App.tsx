@@ -73,11 +73,11 @@ const AppContent = (props: ParentProps) => {
     location.pathname.startsWith("/trading-journal");
 
   return (
-    <div class="relative min-h-screen bg-page-bg">
+    <div class="relative min-h-dvh bg-page-bg">
       <Show
         when={!isPublicPage()}
         fallback={
-          <main class="min-h-screen">
+          <main class="min-h-dvh">
             {props.children}
           </main>
         }
@@ -98,12 +98,13 @@ const AppContent = (props: ParentProps) => {
         <Show when={!shouldHideAddButton()}>
           <button
             onClick={() => setState("ui", "showAddExpense", true)}
-            class="fixed bottom-10 right-12 w-16 h-16 bg-spring text-white rounded-full flex items-center justify-center shadow-2xl transition-all z-40 group cursor-pointer hover:bg-forest duration-300 active:scale-95"
+            class="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 lg:bottom-10 lg:right-12 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-spring text-white rounded-full flex items-center justify-center shadow-2xl transition-all z-40 group cursor-pointer hover:bg-forest duration-300 active:scale-95"
             classList={{
-              "right-10": !state.ui.insightsOpen,
+              "right-4 sm:right-8 lg:right-10": !state.ui.insightsOpen,
             }}
+            aria-label="Add transaction"
           >
-            <AddIcon class="text-3xl group-hover:rotate-90 transition-transform duration-500" />
+            <AddIcon class="text-2xl lg:text-3xl group-hover:rotate-90 transition-transform duration-500" />
           </button>
         </Show>
       </Show>

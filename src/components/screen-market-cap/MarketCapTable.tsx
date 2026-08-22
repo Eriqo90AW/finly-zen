@@ -140,8 +140,8 @@ export const MarketCapTable = (props: MarketCapTableProps) => {
   return (
     <div class="bg-white rounded-2xl border border-forest/10 shadow-sm flex flex-col overflow-hidden">
       {/* Header bar */}
-      <div class="p-4 border-b border-forest/5 flex justify-between items-center bg-white/80">
-        <div class="relative w-72">
+      <div class="p-3 sm:p-4 border-b border-forest/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-white/80">
+        <div class="relative w-full sm:w-72">
           <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-earth !text-sm">
             search
           </span>
@@ -160,8 +160,8 @@ export const MarketCapTable = (props: MarketCapTableProps) => {
       </div>
 
       {/* Table */}
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse whitespace-nowrap">
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full min-w-[760px] text-left border-collapse whitespace-nowrap">
           <thead class="bg-sage/20 border-b border-forest/5 text-[11px] text-earth">
             <tr>
               <th class="px-4 py-3 font-semibold uppercase tracking-wider w-12 text-center">
