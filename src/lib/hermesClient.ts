@@ -31,7 +31,7 @@ function buildUrl(): string {
   const { baseUrl } = getConfig();
   let normalizedBase = (baseUrl || "").trim().replace(/\/+$/, "");
 
-  // If in browser and pointing to remote domains directly, route through Vite proxy to bypass CORS
+  // If in browser, route through Vite proxy to bypass CORS
   if (typeof window !== "undefined") {
     if (
       normalizedBase.startsWith("https://openagent.ercloud.site") ||
@@ -56,6 +56,7 @@ function buildUrl(): string {
     return normalizedBase;
   }
 
+  // If baseUrl already ends with /v1, append /chat/completions -> /v1/chat/completions
   return `${normalizedBase}/chat/completions`;
 }
 

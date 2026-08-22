@@ -1,5 +1,6 @@
 import { useLocation } from "@solidjs/router";
-import { Show } from "solid-js";
+import { createSignal, onMount, Show } from "solid-js";
+import { Portal } from "solid-js/web";
 import { state, setState } from "../../store";
 import { clearIntelligenceChat } from "../../store/intelligenceStore";
 import { getPageInfo } from "../../lib/pageContext";
@@ -9,6 +10,21 @@ import CloseIcon from "@suid/icons-material/Close";
 const InsightsSidebar = () => {
   const location = useLocation();
   const pageInfo = () => getPageInfo(location.pathname);
+
+  const [viewportHeight, setViewportHeight] = createSignal<number | null>(null);
+
+  onMount(() => {
+    if (typeof window !== "undefined" && window.visualViewport) {
+      const updateHeight = () => {
+        if (window.visualViewport) {
+          setViewportHeight(window.visualViewport.height);
+        }
+      };
+      window.visualViewport.addEventListener("resize", updateHeight);
+      window.visualViewport.addEventListener("scroll", updateHeight);
+      updateHeight();
+    }
+  });
 
   const getAssistantIcon = () => {
     return pageInfo().assistantName === "Market Quant" ? "trending_up" : "eco";
@@ -53,40 +69,49 @@ const InsightsSidebar = () => {
 
       {/* Mobile Fullscreen Modal (< lg) */}
       <Show when={state.ui.insightsOpen}>
-        <div class="lg:hidden fixed inset-0 z-50 flex flex-col bg-page-bg animate-fade-in">
-          <div class="px-4 py-3 h-16 flex items-center justify-between border-b border-forest/10 shrink-0 bg-white">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-xl bg-forest/10 text-forest flex items-center justify-center">
-                <span class="material-icons text-lg">{getAssistantIcon()}</span>
+        <Portal>
+          <div
+            class="lg:hidden fixed inset-x-0 top-0 z-50 flex flex-col w-screen max-w-full bg-page-bg animate-fade-in overflow-hidden"
+            style={{
+              height: viewportHeight() ? `${viewportHeight()}px` : "100dvh",
+              "max-height": viewportHeight() ? `${viewportHeight()}px` : "100dvh",
+            }}
+          >
+            <div class="px-4 py-3 h-16 flex items-center justify-between border-b border-forest/10 shrink-0 bg-white shadow-xs">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-xl bg-forest/10 text-forest flex items-center justify-center shrink-0">
+                  <span class="material-icons text-lg">{getAssistantIcon()}</span>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-sm font-outfit font-bold text-forest leading-none truncate">{pageInfo().assistantName}</h3>
+                  <p class="text-[9px] text-earth/60 uppercase tracking-widest mt-0.5 truncate">{pageInfo().assistantRole}</p>
+                </div>
               </div>
-              <div>
-                <h3 class="text-sm font-outfit font-bold text-forest leading-none">{pageInfo().assistantName}</h3>
-                <p class="text-[9px] text-earth/60 uppercase tracking-widest mt-0.5">{pageInfo().assistantRole}</p>
+
+              <div class="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => clearIntelligenceChat(pageInfo().model)}
+                  class="w-8 h-8 rounded-lg flex items-center justify-center text-earth/50 hover:text-forest hover:bg-sage/50 transition-colors cursor-pointer"
+                  title="New chat"
+                  aria-label="New chat"
+                >
+                  <span class="material-icons text-lg">restart_alt</span>
+                </button>
+                <button
+                  onClick={() => setState("ui", "insightsOpen", false)}
+                  class="w-8 h-8 rounded-lg flex items-center justify-center text-earth/60 hover:text-forest hover:bg-sage/50 transition-colors cursor-pointer"
+                  aria-label="Close assistant"
+                >
+                  <CloseIcon class="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            <div class="flex items-center gap-1">
-              <button
-                onClick={() => clearIntelligenceChat(pageInfo().model)}
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-earth/50 hover:text-forest hover:bg-sage/50 transition-colors cursor-pointer"
-                title="New chat"
-              >
-                <span class="material-icons text-lg">restart_alt</span>
-              </button>
-              <button
-                onClick={() => setState("ui", "insightsOpen", false)}
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-earth/60 hover:text-forest hover:bg-sage/50 transition-colors cursor-pointer"
-                aria-label="Close assistant"
-              >
-                <CloseIcon class="w-5 h-5" />
-              </button>
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <ChatPanel />
             </div>
           </div>
-
-          <div class="flex-1 overflow-hidden">
-            <ChatPanel />
-          </div>
-        </div>
+        </Portal>
       </Show>
     </>
   );

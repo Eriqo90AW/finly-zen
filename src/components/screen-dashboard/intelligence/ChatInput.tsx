@@ -124,7 +124,7 @@ const ChatInput = (props: Props) => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      class={`p-3 bg-white border-t border-forest/10 relative transition-colors ${
+      class={`p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-white border-t border-forest/10 relative shrink-0 transition-colors ${
         isDragging() ? "bg-sage/20 border-forest/40" : ""
       }`}
     >

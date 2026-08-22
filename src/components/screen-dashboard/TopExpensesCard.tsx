@@ -164,7 +164,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
                               "background-color": tx.categoryColor || "#1A4D2E",
                             }}
                           />
-                          <span class="text-[9px] text-earth/60 truncate uppercase font-medium">
+                          <span class="text-[10px] text-earth/60 truncate font-medium">
                             {tx.category || "General"}
                           </span>
                         </div>
@@ -196,7 +196,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
           <span class="text-[9px] text-earth/60 italic">Click target to edit</span>
         </div>
 
-        <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar-thin space-y-2 min-h-0">
+        <div class="flex-1 max-h-[220px] lg:max-h-none overflow-y-auto pr-1 custom-scrollbar-thin space-y-2 min-h-0">
           <Show
             when={!props.loading}
             fallback={

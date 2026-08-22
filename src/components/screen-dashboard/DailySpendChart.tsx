@@ -143,7 +143,7 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
   });
 
   return (
-    <div class="w-full flex-1 premium-card px-3 py-4 sm:py-5 flex flex-col relative cursor-default min-h-[300px] lg:h-[340px]">
+    <div class="w-full flex-1 premium-card px-3 py-3.5 sm:py-4 flex flex-col relative cursor-default min-h-[280px] lg:h-[320px]">
       <style>
         {`
           .apexcharts-tooltip {

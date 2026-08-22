@@ -243,7 +243,7 @@ export const HeroCard = (props: HeroCardProps) => {
 
   return (
     <div
-      class="w-full flex-1 premium-card p-0 relative overflow-hidden group flex flex-col transition-[background-color,box-shadow] duration-700 ease-out min-h-[260px] sm:min-h-[290px] lg:h-[340px]"
+      class="w-full flex-1 premium-card p-0 relative overflow-hidden group flex flex-col transition-[background-color,box-shadow] duration-700 ease-out min-h-[260px] sm:min-h-[280px] lg:h-[320px]"
       style={{
         "background-color": activeStats().color || "#FDF5E6",
         "background-image": activeStats().color

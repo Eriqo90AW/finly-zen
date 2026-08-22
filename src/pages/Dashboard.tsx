@@ -71,8 +71,8 @@ const Dashboard = () => {
   });
 
   return (
-    <div class="space-y-6 sm:space-y-8 animate-fade-in-up">
-      <div class="bento-grid">
+    <div class="space-y-6 sm:space-y-8 animate-fade-in-up overflow-x-clip w-full max-w-full">
+      <div class="bento-grid w-full">
         <div class="col-span-1 sm:col-span-2 lg:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           <div class="col-span-1 lg:col-span-8 min-w-0 flex flex-col">
             <HeroCard
@@ -129,7 +129,7 @@ const Dashboard = () => {
               setDailyBudget={setDailyBudget}
             />
           </div>
-          <div class="col-span-1 sm:col-span-2 lg:col-span-3 min-w-0 min-h-[260px] lg:h-[500px]">
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 min-w-0 lg:h-[500px]">
             <TopExpensesAndTargetsCard
               transactions={accountFilteredTransactions()}
               loading={transactions.loading}
