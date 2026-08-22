@@ -50,8 +50,19 @@ const ChatMessage = (props: Props) => {
     return text.trim();
   };
 
+  const shouldRender = () => {
+    if (props.message.role === "user") return true;
+    if (props.message.role === "assistant") {
+      // If streaming, always show thinking or tokens
+      if (props.message.isStreaming) return true;
+      // If completed, only show if there is reasoning or text content
+      return Boolean(props.message.reasoning || sanitizedContent());
+    }
+    return false;
+  };
+
   return (
-    <Show when={props.message.role === "user" || props.message.role === "assistant"}>
+    <Show when={shouldRender()}>
       <div class={`flex ${isUser() ? "justify-end" : "justify-start"}`}>
         <div
           class={`max-w-[92%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap space-y-2 ${
