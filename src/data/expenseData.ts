@@ -413,3 +413,23 @@ export async function deleteTransfer(transactionIds: string[]): Promise<void> {
   }
 }
 
+export async function deleteTransaction(id: string): Promise<void> {
+  try {
+    if (!id) return;
+
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting transaction:", error);
+      throw error;
+    }
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : JSON.stringify(e);
+    console.error("Failed to delete transaction:", e);
+    throw new Error(`Failed to delete transaction: ${errorMessage}`);
+  }
+}
+

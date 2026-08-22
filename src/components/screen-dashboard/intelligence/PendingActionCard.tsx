@@ -34,7 +34,7 @@ const PendingActionCard = (props: Props) => {
         <button
           onClick={handleConfirm}
           disabled={isConfirming()}
-          class="flex-1 py-2 px-3 rounded-xl bg-forest text-white text-xs font-semibold hover:bg-forest/90 disabled:opacity-50"
+          class="flex-1 py-2 px-3 rounded-xl bg-forest text-white text-xs font-semibold hover:bg-forest/90 disabled:opacity-50 cursor-pointer"
         >
           <Show when={isConfirming()} fallback="Confirm">
             Saving…
@@ -43,7 +43,7 @@ const PendingActionCard = (props: Props) => {
         <button
           onClick={() => props.onCancel()}
           disabled={isConfirming()}
-          class="flex-1 py-2 px-3 rounded-xl border border-forest/20 text-forest text-xs font-semibold hover:bg-white disabled:opacity-50"
+          class="flex-1 py-2 px-3 rounded-xl border border-forest/20 text-forest text-xs font-semibold hover:bg-white disabled:opacity-50 cursor-pointer"
         >
           Cancel
         </button>

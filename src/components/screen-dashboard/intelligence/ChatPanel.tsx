@@ -8,6 +8,7 @@ import {
   sendIntelligenceMessage,
   confirmPendingAction,
   cancelPendingAction,
+  stopIntelligenceStream,
 } from "../../../services/intelligence/chatOrchestrator";
 import { getPageInfo } from "../../../lib/pageContext";
 import ChatMessage from "./ChatMessage";
@@ -28,12 +29,6 @@ const ChatPanel = () => {
     }
   };
 
-  onMount(scrollToBottom);
-
-  createEffect(() => {
-    setActiveProfile(pageInfo().model);
-  });
-
   createEffect(() => {
     currentMessages().length;
     intelligenceState.activeToolLabel;
@@ -41,8 +36,17 @@ const ChatPanel = () => {
     queueMicrotask(scrollToBottom);
   });
 
+  onMount(() => {
+    setActiveProfile(pageInfo().model);
+    scrollToBottom();
+  });
+
   const handleSend = (text: string, attachment?: { base64: string; fileName: string }) => {
     sendIntelligenceMessage(text, location.pathname, attachment);
+  };
+
+  const handleStop = () => {
+    stopIntelligenceStream();
   };
 
   return (
@@ -126,8 +130,10 @@ const ChatPanel = () => {
 
       <ChatInput
         onSend={handleSend}
+        onStop={handleStop}
+        isStreaming={intelligenceState.isStreaming}
         placeholder={`Ask ${pageInfo().assistantName} about ${pageInfo().name.toLowerCase()}…`}
-        disabled={intelligenceState.isStreaming || !!intelligenceState.pendingAction}
+        disabled={!!intelligenceState.pendingAction}
       />
     </div>
   );

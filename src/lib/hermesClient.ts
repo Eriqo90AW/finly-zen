@@ -89,12 +89,13 @@ export interface ChatCompletionOptions {
   tools?: OpenAIToolDefinition[];
   stream?: boolean;
   callbacks?: StreamCallbacks;
+  signal?: AbortSignal;
 }
 
 export async function createChatCompletion(
   options: ChatCompletionOptions,
 ): Promise<ChatCompletionResponse> {
-  const { messages, systemPrompt, tools, stream, callbacks } = options;
+  const { messages, systemPrompt, tools, stream, callbacks, signal } = options;
   const config = getConfig();
   const model = options.model || config.defaultModel || "finly";
 
@@ -118,6 +119,7 @@ export async function createChatCompletion(
     method: "POST",
     headers: buildHeaders(),
     body: JSON.stringify(body),
+    signal,
   });
 
   if (!response.ok) {
@@ -138,7 +140,7 @@ export async function createChatCompletion(
   }
 
   if (stream && response.body) {
-    return parseStreamingResponse(response.body, callbacks);
+    return parseStreamingResponse(response.body, callbacks, signal);
   }
 
   const result = (await response.json()) as ChatCompletionResponse;
@@ -170,13 +172,15 @@ function extractXmlToolCallsFromResponse(
   if (!message?.content) return response;
 
   const content = message.content;
-  const toolCallRegex = /<tool_call>([\s\S]*?)<\/tool_call>/gi;
+  const toolCallRegex = /<tool_call(?:s)?>([\s\S]*?)<\/tool_call(?:s)?>/gi;
   let match: RegExpExecArray | null;
   const extractedCalls: NonNullable<ChatMessage["tool_calls"]> = message.tool_calls ? [...message.tool_calls] : [];
   let cleanedContent = content;
 
   while ((match = toolCallRegex.exec(content)) !== null) {
-    const rawJson = match[1].trim();
+    let rawJson = match[1].trim();
+    // Strip optional markdown code fence if present inside XML
+    rawJson = rawJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
     try {
       const parsed = JSON.parse(rawJson) as { name?: string; arguments?: unknown };
       if (parsed.name) {
@@ -191,8 +195,8 @@ function extractXmlToolCallsFromResponse(
                 : JSON.stringify(parsed.arguments || {}),
           },
         });
+        cleanedContent = cleanedContent.replace(match[0], "").trim();
       }
-      cleanedContent = cleanedContent.replace(match[0], "").trim();
     } catch {
       // Malformed JSON inside tool_call tag, leave as is
     }
@@ -201,22 +205,30 @@ function extractXmlToolCallsFromResponse(
   if (extractedCalls.length > 0) {
     message.tool_calls = extractedCalls;
     message.content = cleanedContent || null;
-    response.choices[0].finish_reason = "tool_calls";
+    if (response.choices?.[0]) {
+      response.choices[0].finish_reason = "tool_calls";
+    }
   }
 
   return response;
 }
 
+const OPENING_TOOL_TAGS = ["<tool_call>", "<tool_calls>", "<action>"];
+const CLOSING_TOOL_TAGS = ["</tool_call>", "</tool_calls>", "</action>"];
+
 async function parseStreamingResponse(
   body: ReadableStream<Uint8Array>,
   callbacks?: StreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<ChatCompletionResponse> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let content = "";
   let reasoning = "";
+  let toolCallXmlBuffer = "";
   let insideReasoningTag = false;
+  let insideToolCallTag = false;
   let textStreamBuffer = "";
   const toolCalls = new Map<
     number,
@@ -227,34 +239,48 @@ async function parseStreamingResponse(
     textStreamBuffer += incomingText;
 
     while (textStreamBuffer.length > 0) {
-      if (!insideReasoningTag) {
-        // Look for any opening thinking tag
+      if (!insideReasoningTag && !insideToolCallTag) {
         const lowerBuf = textStreamBuffer.toLowerCase();
-        let earliestTagIndex = -1;
-        let matchedTag = "";
-
+        let earliestThinkIndex = -1;
+        let matchedThinkTag = "";
         for (const tag of OPENING_THINK_TAGS) {
           const idx = lowerBuf.indexOf(tag);
-          if (idx !== -1 && (earliestTagIndex === -1 || idx < earliestTagIndex)) {
-            earliestTagIndex = idx;
-            matchedTag = tag;
+          if (idx !== -1 && (earliestThinkIndex === -1 || idx < earliestThinkIndex)) {
+            earliestThinkIndex = idx;
+            matchedThinkTag = tag;
           }
         }
 
-        if (earliestTagIndex !== -1) {
-          // Output content before the tag
-          const beforeTag = textStreamBuffer.slice(0, earliestTagIndex);
+        let earliestToolIndex = -1;
+        let matchedToolTag = "";
+        for (const tag of OPENING_TOOL_TAGS) {
+          const idx = lowerBuf.indexOf(tag);
+          if (idx !== -1 && (earliestToolIndex === -1 || idx < earliestToolIndex)) {
+            earliestToolIndex = idx;
+            matchedToolTag = tag;
+          }
+        }
+
+        if (earliestThinkIndex !== -1 && (earliestToolIndex === -1 || earliestThinkIndex < earliestToolIndex)) {
+          const beforeTag = textStreamBuffer.slice(0, earliestThinkIndex);
           if (beforeTag) {
             content += beforeTag;
             callbacks?.onToken?.(beforeTag);
           }
-          textStreamBuffer = textStreamBuffer.slice(earliestTagIndex + matchedTag.length);
+          textStreamBuffer = textStreamBuffer.slice(earliestThinkIndex + matchedThinkTag.length);
           insideReasoningTag = true;
+        } else if (earliestToolIndex !== -1) {
+          const beforeTag = textStreamBuffer.slice(0, earliestToolIndex);
+          if (beforeTag) {
+            content += beforeTag;
+            callbacks?.onToken?.(beforeTag);
+          }
+          textStreamBuffer = textStreamBuffer.slice(earliestToolIndex + matchedToolTag.length);
+          insideToolCallTag = true;
+          callbacks?.onToolCallStart?.("Preparing action");
         } else {
-          // Check if buffer ends with a potential opening bracket or partial tag
           const lastLt = textStreamBuffer.lastIndexOf("<");
           if (lastLt !== -1 && textStreamBuffer.length - lastLt < 20) {
-            // Keep the potential tag prefix in buffer for the next chunk
             const safeText = textStreamBuffer.slice(0, lastLt);
             if (safeText) {
               content += safeText;
@@ -268,8 +294,7 @@ async function parseStreamingResponse(
             textStreamBuffer = "";
           }
         }
-      } else {
-        // Look for any closing thinking tag
+      } else if (insideReasoningTag) {
         const lowerBuf = textStreamBuffer.toLowerCase();
         let earliestTagIndex = -1;
         let matchedTag = "";
@@ -283,7 +308,6 @@ async function parseStreamingResponse(
         }
 
         if (earliestTagIndex !== -1) {
-          // Output reasoning before the closing tag
           const beforeTag = textStreamBuffer.slice(0, earliestTagIndex);
           if (beforeTag) {
             reasoning += beforeTag;
@@ -292,7 +316,6 @@ async function parseStreamingResponse(
           textStreamBuffer = textStreamBuffer.slice(earliestTagIndex + matchedTag.length);
           insideReasoningTag = false;
         } else {
-          // Check if buffer ends with a potential closing bracket or partial tag
           const lastLt = textStreamBuffer.lastIndexOf("<");
           if (lastLt !== -1 && textStreamBuffer.length - lastLt < 20) {
             const safeText = textStreamBuffer.slice(0, lastLt);
@@ -308,12 +331,70 @@ async function parseStreamingResponse(
             textStreamBuffer = "";
           }
         }
+      } else if (insideToolCallTag) {
+        const lowerBuf = textStreamBuffer.toLowerCase();
+        let earliestTagIndex = -1;
+        let matchedTag = "";
+
+        for (const tag of CLOSING_TOOL_TAGS) {
+          const idx = lowerBuf.indexOf(tag);
+          if (idx !== -1 && (earliestTagIndex === -1 || idx < earliestTagIndex)) {
+            earliestTagIndex = idx;
+            matchedTag = tag;
+          }
+        }
+
+        if (earliestTagIndex !== -1) {
+          const beforeTag = textStreamBuffer.slice(0, earliestTagIndex);
+          toolCallXmlBuffer += beforeTag;
+          textStreamBuffer = textStreamBuffer.slice(earliestTagIndex + matchedTag.length);
+          insideToolCallTag = false;
+
+          // Parse captured tool call XML
+          let rawJson = toolCallXmlBuffer.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+          try {
+            const parsed = JSON.parse(rawJson) as { name?: string; arguments?: unknown };
+            if (parsed.name) {
+              const idx = toolCalls.size;
+              toolCalls.set(idx, {
+                id: `call_${crypto.randomUUID().slice(0, 8)}`,
+                type: "function",
+                function: {
+                  name: parsed.name,
+                  arguments:
+                    typeof parsed.arguments === "string"
+                      ? parsed.arguments
+                      : JSON.stringify(parsed.arguments || {}),
+                },
+              });
+            }
+          } catch {
+            // keep raw
+          }
+          toolCallXmlBuffer = "";
+        } else {
+          const lastLt = textStreamBuffer.lastIndexOf("<");
+          if (lastLt !== -1 && textStreamBuffer.length - lastLt < 20) {
+            const safeText = textStreamBuffer.slice(0, lastLt);
+            toolCallXmlBuffer += safeText;
+            textStreamBuffer = textStreamBuffer.slice(lastLt);
+            break;
+          } else {
+            toolCallXmlBuffer += textStreamBuffer;
+            textStreamBuffer = "";
+          }
+        }
       }
     }
   };
 
   try {
     while (true) {
+      if (signal?.aborted) {
+        await reader.cancel();
+        break;
+      }
+
       const { done, value } = await reader.read();
       if (done) break;
 
@@ -379,11 +460,17 @@ async function parseStreamingResponse(
       if (insideReasoningTag) {
         reasoning += textStreamBuffer;
         callbacks?.onReasoningToken?.(textStreamBuffer);
-      } else {
+      } else if (!insideToolCallTag) {
         content += textStreamBuffer;
         callbacks?.onToken?.(textStreamBuffer);
       }
       textStreamBuffer = "";
+    }
+  } catch (err: unknown) {
+    if (signal?.aborted) {
+      // Gracefully handle user abortion
+    } else {
+      throw err;
     }
   } finally {
     callbacks?.onDone?.();

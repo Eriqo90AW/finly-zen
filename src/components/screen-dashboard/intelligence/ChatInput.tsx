@@ -7,6 +7,8 @@ export interface ImagePayload {
 
 interface Props {
   onSend: (text: string, attachment?: ImagePayload) => void;
+  onStop?: () => void;
+  isStreaming?: boolean;
   disabled?: boolean;
   placeholder?: string;
 }
@@ -214,14 +216,29 @@ const ChatInput = (props: Props) => {
           class="flex-1 resize-none px-3 py-2 text-xs rounded-xl border border-forest/15 bg-page-bg text-forest placeholder:text-earth/50 focus:outline-none focus:border-forest/40 disabled:opacity-50"
         />
 
-        <button
-          type="submit"
-          disabled={!canSubmit()}
-          class="shrink-0 w-9 h-9 rounded-xl bg-forest text-white flex items-center justify-center disabled:opacity-40 hover:bg-forest/90 transition-colors cursor-pointer disabled:cursor-default"
-          aria-label="Send message"
+        <Show
+          when={props.isStreaming}
+          fallback={
+            <button
+              type="submit"
+              disabled={!canSubmit()}
+              class="shrink-0 w-9 h-9 rounded-xl bg-forest text-white flex items-center justify-center disabled:opacity-40 hover:bg-forest/90 transition-colors cursor-pointer disabled:cursor-default"
+              aria-label="Send message"
+            >
+              <span class="material-icons text-lg">send</span>
+            </button>
+          }
         >
-          <span class="material-icons text-lg">send</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => props.onStop?.()}
+            class="shrink-0 w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600 transition-colors cursor-pointer shadow-md shadow-rose-500/20"
+            title="Stop generating"
+            aria-label="Stop generating"
+          >
+            <span class="material-icons text-lg">stop</span>
+          </button>
+        </Show>
       </div>
     </form>
   );

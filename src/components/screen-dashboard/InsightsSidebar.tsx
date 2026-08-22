@@ -37,10 +37,10 @@ const InsightsSidebar = () => {
         <button
           onClick={() => clearIntelligenceChat(pageInfo().model)}
           class="w-8 h-8 rounded-lg flex items-center justify-center text-earth/50 hover:text-forest hover:bg-sage/50 transition-colors cursor-pointer"
-          title={`Clear ${pageInfo().assistantName} chat`}
-          aria-label={`Clear ${pageInfo().assistantName} chat`}
+          title={`New chat / Reset conversation`}
+          aria-label={`New chat / Reset conversation`}
         >
-          <span class="material-icons text-lg">delete_outline</span>
+          <span class="material-icons text-lg">restart_alt</span>
         </button>
       </div>
 

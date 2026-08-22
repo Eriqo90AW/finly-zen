@@ -30,6 +30,16 @@ export interface ImageAttachment {
 const MAX_TOOL_ROUNDS = 5;
 
 let pendingActionResolver: ((result: string) => void) | null = null;
+let currentAbortController: AbortController | null = null;
+
+export function stopIntelligenceStream(): void {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+  }
+  setStreaming(false);
+  setActiveToolLabel(null);
+}
 
 function waitForPendingActionDecision(): Promise<string> {
   return new Promise((resolve) => {
@@ -46,10 +56,14 @@ export async function confirmPendingAction(): Promise<void> {
   const action = intelligenceState.pendingAction;
   if (!action) return;
 
+  stopIntelligenceStream();
   setPendingAction(null);
+
+  const model = intelligenceState.activeProfile || "finly";
+
   try {
     const result = await action.execute();
-    resolvePendingAction(JSON.stringify({ success: true, data: result }));
+
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("finly:data-changed", {
@@ -57,15 +71,69 @@ export async function confirmPendingAction(): Promise<void> {
         }),
       );
     }
+
+    addMessage(model, {
+      id: createMessageId(),
+      role: "assistant",
+      content: "Done — confirmed",
+      createdAt: Date.now(),
+    });
+
+    resolvePendingAction(
+      JSON.stringify({
+        success: true,
+        status: "confirmed_and_saved",
+        data: result,
+      }),
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Action failed";
-    resolvePendingAction(JSON.stringify({ success: false, error: message }));
+    setIntelligenceError(message);
+    addMessage(model, {
+      id: createMessageId(),
+      role: "assistant",
+      content: `Failed to confirm action: ${message}`,
+      createdAt: Date.now(),
+    });
+    resolvePendingAction(
+      JSON.stringify({
+        success: false,
+        status: "error",
+        error: message,
+      }),
+    );
+  } finally {
+    setStreaming(false);
+    setActiveToolLabel(null);
   }
 }
 
 export async function cancelPendingAction(): Promise<void> {
+  const action = intelligenceState.pendingAction;
+  if (!action) return;
+
+  stopIntelligenceStream();
   setPendingAction(null);
-  resolvePendingAction(JSON.stringify({ success: false, cancelled: true }));
+
+  const model = intelligenceState.activeProfile || "finly";
+
+  addMessage(model, {
+    id: createMessageId(),
+    role: "assistant",
+    content: "Done — cancelled",
+    createdAt: Date.now(),
+  });
+
+  resolvePendingAction(
+    JSON.stringify({
+      success: false,
+      status: "cancelled",
+      cancelled: true,
+    }),
+  );
+
+  setStreaming(false);
+  setActiveToolLabel(null);
 }
 
 async function callModel(
@@ -92,9 +160,11 @@ async function callModel(
     model,
     tools,
     stream: true,
+    signal: currentAbortController?.signal,
     callbacks: {
       onToken: (token) => appendToMessage(model, assistantId, token),
       onReasoningToken: (token) => appendToReasoning(model, assistantId, token),
+      onToolCallStart: (label) => setActiveToolLabel(label),
     },
   });
 
@@ -113,7 +183,7 @@ async function executeToolCall(
   toolCall: ChatToolCall,
   ctx: Awaited<ReturnType<typeof buildUserContext>>,
   model: string,
-): Promise<void> {
+): Promise<boolean> {
   const toolName = toolCall.function.name;
   setActiveToolLabel(TOOL_LABELS[toolName] || toolName);
 
@@ -125,8 +195,10 @@ async function executeToolCall(
   );
 
   let toolContent: string;
+  let isPending = false;
 
   if (outcome.kind === "pending") {
+    isPending = true;
     setPendingAction(outcome.pendingAction);
     toolContent = await waitForPendingActionDecision();
   } else {
@@ -143,6 +215,7 @@ async function executeToolCall(
   });
 
   setActiveToolLabel(null);
+  return isPending;
 }
 
 async function runAgentLoop(
@@ -160,8 +233,17 @@ async function runAgentLoop(
     if (!toolCalls?.length) break;
 
     const ctx = await buildUserContext(pathname);
+    let hadPendingAction = false;
+
     for (const toolCall of toolCalls) {
-      await executeToolCall(toolCall, ctx, model);
+      const isPending = await executeToolCall(toolCall, ctx, model);
+      if (isPending) {
+        hadPendingAction = true;
+      }
+    }
+
+    if (hadPendingAction) {
+      break;
     }
   }
 }
@@ -190,6 +272,7 @@ export async function sendIntelligenceMessage(
 
   setIntelligenceError(null);
   setStreaming(true);
+  currentAbortController = new AbortController();
 
   const userMessageId = createMessageId();
 
@@ -236,17 +319,22 @@ export async function sendIntelligenceMessage(
   try {
     const systemPrompt = formatContextForPrompt(ctx);
     await runAgentLoop(systemPrompt, currentPath, model);
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Something went wrong";
-    setIntelligenceError(message);
-    addMessage(model, {
-      id: createMessageId(),
-      role: "assistant",
-      content: `Sorry, I ran into an error: ${message}`,
-      createdAt: Date.now(),
-    });
+  } catch (e: unknown) {
+    if (e instanceof DOMException && e.name === "AbortError") {
+      // User requested stop
+    } else {
+      const message = e instanceof Error ? e.message : "Something went wrong";
+      setIntelligenceError(message);
+      addMessage(model, {
+        id: createMessageId(),
+        role: "assistant",
+        content: `Sorry, I ran into an error: ${message}`,
+        createdAt: Date.now(),
+      });
+    }
   } finally {
     setStreaming(false);
     setActiveToolLabel(null);
+    currentAbortController = null;
   }
 }

@@ -97,7 +97,7 @@ const proposeAddTransactionTool: OpenAIToolDefinition = {
   function: {
     name: "propose_add_transaction",
     description:
-      "Propose adding a new expense or income transaction. Requires user confirmation before saving.",
+      "Add a new expense or income transaction. Triggers a confirmation step with the user and executes the database insert upon confirmation.",
     parameters: {
       type: "object",
       properties: {
@@ -121,7 +121,7 @@ const proposeAddTransferTool: OpenAIToolDefinition = {
   function: {
     name: "propose_add_transfer",
     description:
-      "Propose transferring money between two accounts. Requires user confirmation before saving.",
+      "Transfer money between two accounts. Triggers a confirmation step with the user and executes the database insert upon confirmation.",
     parameters: {
       type: "object",
       properties: {

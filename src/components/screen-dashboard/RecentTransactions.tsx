@@ -3,6 +3,7 @@ import {
   RecentTransactionsProps,
   SortKey,
   SortDirection,
+  Transaction,
 } from "../../types";
 import { state, setSelectedAccount } from "../../store";
 import {
@@ -10,6 +11,7 @@ import {
   formatRupiah,
   formatDateDetail,
 } from "../../utils/format";
+import { deleteTransaction } from "../../data/expenseData";
 
 export const RecentTransactions = (props: RecentTransactionsProps) => {
   const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(
@@ -20,6 +22,40 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   const [sortKey, setSortKey] = createSignal<SortKey>("date");
   const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc");
   const [accountDropdownOpen, setAccountDropdownOpen] = createSignal(false);
+  const [transactionToDelete, setTransactionToDelete] =
+    createSignal<Transaction | null>(null);
+  const [isDeleting, setIsDeleting] = createSignal(false);
+  const [deleteError, setDeleteError] = createSignal<string | null>(null);
+
+  const handleDeleteConfirm = async () => {
+    const t = transactionToDelete();
+    if (!t) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      if (props.onDeleteTransaction) {
+        await props.onDeleteTransaction(t.id);
+      } else {
+        await deleteTransaction(t.id);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("finly:data-changed", {
+              detail: { source: "delete_transaction", id: t.id },
+            }),
+          );
+        }
+      }
+      setTransactionToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete transaction:", err);
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete transaction",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleClickOutside = (e: MouseEvent) => {
     const path = e.composedPath ? e.composedPath() : [];
@@ -564,6 +600,9 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                     </span>
                   </span>
                 </th>
+                <th class="px-4 py-4 w-12 text-center text-[10px] font-semibold uppercase tracking-wider text-earth">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm divide-y divide-forest/5">
@@ -640,6 +679,20 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                           : ""}
                       {formatRupiah(t.amount)}
                     </td>
+                    <td class="px-4 py-4 text-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTransactionToDelete(t);
+                        }}
+                        class="w-7 h-7 rounded-lg text-earth/40 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                        title="Delete transaction"
+                        aria-label={`Delete ${t.name}`}
+                      >
+                        <span class="material-icons !text-[16px]">delete_outline</span>
+                      </button>
+                    </td>
                   </tr>
                 )}
               </For>
@@ -662,6 +715,94 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
             No transactions this month. Start tending your garden!
           </p>
         </div>
+      </Show>
+
+      {/* Delete Confirmation Modal */}
+      <Show when={transactionToDelete()}>
+        {(t) => (
+          <div
+            class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs transition-opacity duration-300 p-6"
+            onClick={() => !isDeleting() && setTransactionToDelete(null)}
+          >
+            <div
+              class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div class="flex flex-col items-center text-center">
+                {/* Warning Icon */}
+                <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-5">
+                  <span class="material-icons text-3xl">delete_outline</span>
+                </div>
+
+                <h3 class="text-2xl font-cormorant text-forest font-bold mb-2">
+                  Delete Transaction
+                </h3>
+
+                {/* Transaction Preview Card */}
+                <div class="w-full p-3.5 bg-page-bg/80 border border-forest/5 rounded-2xl mb-4 text-left space-y-1">
+                  <div class="flex items-center justify-between">
+                    <p class="font-semibold text-xs text-forest truncate max-w-[180px]">{t().name}</p>
+                    <span
+                      class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                      style={{
+                        "background-color": t().accountColor ? `${t().accountColor}15` : "rgba(82, 194, 120, 0.1)",
+                        color: t().accountColor || "var(--color-mid-green)",
+                      }}
+                    >
+                      {t().accountName}
+                    </span>
+                  </div>
+                  <div class="flex items-center justify-between pt-1">
+                    <span class="text-[11px] text-earth">{t().category}</span>
+                    <p
+                      class="text-sm font-bold font-outfit"
+                      classList={{
+                        "text-red-600": t().type?.toLowerCase() === "expense",
+                        "text-green-600": t().type?.toLowerCase() === "income",
+                        "text-forest": !["expense", "income"].includes(t().type?.toLowerCase() || ""),
+                      }}
+                    >
+                      {t().type?.toLowerCase() === "income" ? "+" : t().type?.toLowerCase() === "expense" ? "-" : ""}
+                      {formatRupiah(t().amount)}
+                    </p>
+                  </div>
+                </div>
+
+                <Show when={deleteError()}>
+                  <div class="mb-3 px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs w-full text-left">
+                    {deleteError()}
+                  </div>
+                </Show>
+
+                <p class="text-earth font-outfit text-xs mb-6 leading-relaxed">
+                  Are you sure you want to delete this transaction? This action is permanent and cannot be undone.
+                </p>
+
+                <div class="flex gap-3 w-full">
+                  <button
+                    type="button"
+                    disabled={isDeleting()}
+                    onClick={() => setTransactionToDelete(null)}
+                    class="flex-1 px-4 py-3 rounded-xl font-outfit font-bold text-earth hover:bg-slate-50 transition-all cursor-pointer text-xs uppercase tracking-wider disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDeleting()}
+                    onClick={handleDeleteConfirm}
+                    class="flex-1 bg-rose-500 text-white px-4 py-3 rounded-xl font-outfit font-bold shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all cursor-pointer text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Show when={isDeleting()} fallback="Delete">
+                      <div class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Deleting...</span>
+                    </Show>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </Show>
     </div>
   );

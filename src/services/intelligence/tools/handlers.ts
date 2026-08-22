@@ -23,9 +23,9 @@ function parseArgs(raw: string): Record<string, unknown> {
       return {};
     }
     // Prevent prototype pollution
-    delete (parsed as Record<string, unknown>).__proto__;
-    delete (parsed as Record<string, unknown>).constructor;
-    delete (parsed as Record<string, unknown>).prototype;
+    Reflect.deleteProperty(parsed, "__proto__");
+    Reflect.deleteProperty(parsed, "constructor");
+    Reflect.deleteProperty(parsed, "prototype");
     return parsed as Record<string, unknown>;
   } catch {
     return {};

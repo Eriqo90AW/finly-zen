@@ -6,6 +6,7 @@ export interface RecentTransactionsProps {
   transactions: Transaction[];
   loading: boolean;
   allTransactions?: Transaction[];
+  onDeleteTransaction?: (id: string) => Promise<void>;
 }
 
 export type SortKey = "name" | "category" | "account" | "date" | "amount";

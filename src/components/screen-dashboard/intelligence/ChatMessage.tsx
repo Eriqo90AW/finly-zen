@@ -38,9 +38,16 @@ const ChatMessage = (props: Props) => {
   };
 
   const sanitizedContent = () => {
-    const raw = props.message.content || "";
+    let text = props.message.content || "";
+    // Strip XML tool call tags and action blocks so raw function calling is invisible to users
+    text = text.replace(/<tool_call(?:s)?>[\s\S]*?<\/tool_call(?:s)?>/gi, "");
+    text = text.replace(/<action>[\s\S]*?<\/action>/gi, "");
+    // Strip unclosed tool_call tag if currently streaming
+    text = text.replace(/<tool_call(?:s)?>[\s\S]*$/gi, "");
+    text = text.replace(/<action>[\s\S]*$/gi, "");
     // Strip markdown image tags to prevent tracking-pixel / image-based exfiltration
-    return raw.replace(/!\[.*?\]\(.*?\)/g, "[Image removed for security]");
+    text = text.replace(/!\[.*?\]\(.*?\)/g, "[Image removed for security]");
+    return text.trim();
   };
 
   return (
@@ -135,7 +142,7 @@ const ChatMessage = (props: Props) => {
 
           {/* Main Message Content */}
           <Show
-            when={props.message.content}
+            when={sanitizedContent()}
             fallback={
               <Show when={props.message.isStreaming && !props.message.reasoning}>
                 <div class="flex items-center gap-1.5 text-earth/70 font-medium">
