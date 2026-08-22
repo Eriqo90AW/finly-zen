@@ -31,8 +31,8 @@ function buildUrl(): string {
   const { baseUrl } = getConfig();
   let normalizedBase = (baseUrl || "").trim().replace(/\/+$/, "");
 
-  // If in browser local dev server, route through Vite proxy to bypass CORS
-  if (typeof window !== "undefined" && import.meta.env.DEV) {
+  // If in browser, route through proxy to bypass CORS (works in dev and vite preview)
+  if (typeof window !== "undefined") {
     if (
       normalizedBase.startsWith("https://openagent.ercloud.site") ||
       normalizedBase.startsWith("http://openagent.ercloud.site")
