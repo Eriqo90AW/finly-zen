@@ -1,6 +1,7 @@
 import { Show, For } from "solid-js";
 import { DailySummary } from "../../data/TradingJournal/data/types";
 import { formatRupiah, formatRupiahShort } from "../../utils/format";
+import { calculateTradeR } from "../../utils/tradingJournalR";
 
 interface DayCellProps {
   day: DailySummary;
@@ -95,7 +96,11 @@ export default function DayCell(props: DayCellProps) {
   }
 
   // Calculate total R-multiple for the day from executed trades
-  const totalR = day.trades.reduce((sum, t) => sum + (t.record_type === 'EXECUTED' ? (t.risk_r || 0) : 0), 0);
+  const tradeRValues = day.trades
+    .filter((trade) => trade.record_type === "EXECUTED")
+    .map(calculateTradeR);
+  const totalR = tradeRValues.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+  const hasCalculatedR = tradeRValues.some((value) => value !== null);
 
   // Position tooltip top-full for first row (dayNumber <= 7) to prevent cutoff at calendar top
   const isFirstRow = () => day.dayNumber > 0 && day.dayNumber <= 7;
@@ -103,7 +108,7 @@ export default function DayCell(props: DayCellProps) {
   return (
     <button
       onClick={onClick}
-      class={`h-full w-full rounded-xl border p-1 md:p-1.5 relative flex flex-col items-end justify-between text-right transition-all duration-300 hover:-translate-y-0.5 group ${bgClass}`}
+      class={`h-full w-full rounded-xl border p-1 md:p-1.5 relative flex flex-col items-stretch justify-end text-center transition-all duration-300 hover:-translate-y-0.5 group ${bgClass}`}
       classList={{
         "ring-2 ring-forest ring-offset-2 shadow-premium z-20": isActive,
         ...todayClassList,
@@ -122,16 +127,18 @@ export default function DayCell(props: DayCellProps) {
       </span>
 
       {hasTrades ? (
-        <div class="mt-4 flex flex-col gap-0.5 items-end w-full">
-          <span class={`text-[10px] md:text-[11px] font-outfit ${netColorClass}`}>
+        <div class="flex min-w-0 w-full flex-col items-center gap-0 leading-tight pb-0.5">
+          <span class={`max-w-full truncate text-[10px] md:text-[11px] font-outfit ${netColorClass}`}>
             {day.netReturn >= 0 ? "+" : ""}{formatRupiahShort(day.netReturn)}
           </span>
-          <span class="text-[8px] md:text-[9px] text-earth font-medium">
-            {totalR >= 0 ? "+" : ""}{totalR.toFixed(1)}R
-          </span>
+          <Show when={hasCalculatedR} fallback={<span class="text-[8px] md:text-[9px] text-earth/50 font-medium leading-tight">R unavailable</span>}>
+            <span class="text-[8px] md:text-[9px] text-earth font-medium leading-tight">
+              {totalR >= 0 ? "+" : ""}{totalR.toFixed(1)}R
+            </span>
+          </Show>
           {day.trades[0]?.ticker && (
-            <div class="flex flex-wrap justify-end gap-1 mt-0.5">
-              <span class="px-1 py-0.5 rounded bg-forest/5 text-[7.5px] font-bold text-forest uppercase tracking-wider">
+            <div class="mt-0.5 flex max-w-full justify-center gap-1">
+              <span class="max-w-full truncate rounded bg-forest/5 px-1 py-0.5 text-[7.5px] font-bold text-forest uppercase tracking-wider leading-none">
                 {day.trades[0].ticker}
               </span>
             </div>
@@ -161,7 +168,7 @@ export default function DayCell(props: DayCellProps) {
               {(trade) => {
                 const isSetup = trade.record_type === 'SETUP';
                 const pnlValue = isSetup ? 0 : (trade.net_pnl || 0);
-                const rValue = isSetup ? (trade.planned_rr || 0) : (trade.risk_r || 0);
+                const rValue = isSetup ? trade.planned_rr : calculateTradeR(trade);
                 return (
                   <div class="flex justify-between items-center gap-2">
                     <span class="text-white/80 truncate text-[10px]">
@@ -172,9 +179,9 @@ export default function DayCell(props: DayCellProps) {
                       "text-rose-400": !isSetup && pnlValue < 0,
                       "text-blue-400": isSetup
                     }}>
-                      {isSetup 
-                        ? `${rValue?.toFixed(1) || "0"}R Plan` 
-                        : `${pnlValue >= 0 ? "+" : ""}${formatRupiah(pnlValue)} (${rValue >= 0 ? "+" : ""}${rValue?.toFixed(1) || "0"}R)`
+                      {isSetup
+                        ? rValue !== null && rValue !== undefined ? `${rValue.toFixed(1)}R Plan` : "R Plan unavailable"
+                        : `${pnlValue >= 0 ? "+" : ""}${formatRupiah(pnlValue)} (${rValue !== null ? `${rValue >= 0 ? "+" : ""}${rValue.toFixed(1)}R` : "R unavailable"})`
                       }
                     </span>
                   </div>

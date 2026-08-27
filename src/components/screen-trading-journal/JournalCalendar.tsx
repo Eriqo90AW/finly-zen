@@ -53,8 +53,6 @@ export default function JournalCalendar(props: JournalCalendarProps) {
     });
   });
 
-  const rowCount = createMemo(() => Math.ceil((emptyPrefixSlots().length + activeDays().length) / 5));
-  
   // Format today's date in YYYY-MM-DD
   const todayObj = new Date();
   const todayString = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
@@ -97,8 +95,7 @@ export default function JournalCalendar(props: JournalCalendarProps) {
 
         {/* Days Grid */}
         <div 
-          class="grid grid-cols-5 gap-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1"
-          style={{ "grid-template-rows": `repeat(${rowCount()}, minmax(120px, 1fr))` }}
+          class="grid grid-cols-5 grid-rows-5 gap-2 flex-1 min-h-0 overflow-hidden"
         >
           <For each={emptyPrefixSlots()}>
             {(emptyDay) => <DayCell day={emptyDay} isActive={false} onClick={() => {}} />}

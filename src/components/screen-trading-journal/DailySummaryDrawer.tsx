@@ -1,6 +1,7 @@
 import { Show, For, createSignal, createEffect } from "solid-js";
 import { DailySummary, Trade } from "../../data/TradingJournal/data/types";
 import { formatRupiah } from "../../utils/format";
+import { calculateTradeR } from "../../utils/tradingJournalR";
 import CloseIcon from "@suid/icons-material/Close";
 
 interface DailySummaryDrawerProps {
@@ -318,7 +319,10 @@ function ExecutionAccordionItem(props: { trade: Trade; index: number }) {
               {props.trade.net_pnl !== null ? `${props.trade.net_pnl >= 0 ? "+" : ""}${formatRupiah(props.trade.net_pnl)}` : "OPEN"}
             </div>
             <div class="text-[9px] font-medium text-earth/60 mt-0.5">
-              {props.trade.risk_r !== null ? `${props.trade.risk_r >= 0 ? "+" : ""}${props.trade.risk_r.toFixed(2)}R` : ""}
+              {(() => {
+                const rValue = calculateTradeR(props.trade);
+                return rValue !== null ? `${rValue >= 0 ? "+" : ""}${rValue.toFixed(2)}R` : "R unavailable";
+              })()}
             </div>
           </div>
           <span class="material-icons text-earth transition-transform duration-300 text-lg"

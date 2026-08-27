@@ -67,7 +67,7 @@ const MainLayout = (props: ParentProps) => {
         <main 
           ref={mainRef}
           onScroll={handleScroll}
-          class="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 custom-scrollbar"
+          class="flex-1 overflow-hidden p-3 sm:p-4 lg:p-6 custom-scrollbar"
         >
           <div class="max-w-[1400px] mx-auto w-full">
             {props.children}

@@ -21,6 +21,7 @@ export interface ExitLeg {
 
 export interface TradingJournalRow {
   id: string;
+  user_id: string | null;
   trade_date: string;
   ticker: string;
   direction: TradeDirection;

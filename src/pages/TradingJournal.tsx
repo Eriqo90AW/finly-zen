@@ -10,7 +10,10 @@ export default function TradingJournal() {
   const [activeDate, setActiveDate] = createSignal<string | null>(null);
   const [selectedDaySummary, setSelectedDaySummary] = createSignal<DailySummary | null>(null);
   
-  const [currentMonth, setCurrentMonth] = createSignal("2026-07");
+  const now = new Date();
+  const [currentMonth, setCurrentMonth] = createSignal(
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+  );
 
   // Resources for async mock/supabase data loading
   const [performance, { refetch: refetchPerf }] = createResource(currentMonth, getMonthlyPerformance);
@@ -53,7 +56,7 @@ export default function TradingJournal() {
   };
 
   return (
-    <div class="flex flex-col gap-4 sm:gap-6 items-stretch relative min-h-[calc(100dvh-128px)] lg:h-[calc(100dvh-128px)] overflow-y-auto lg:overflow-hidden animate-fade-in-up pb-12 lg:pb-0">
+    <div class="flex flex-col gap-4 sm:gap-6 items-stretch relative min-h-[calc(100dvh-128px)] lg:h-[calc(100dvh-128px)] overflow-hidden animate-fade-in-up pb-12 lg:pb-0">
         {/* Page Title Header */}
         <div class="flex items-center justify-between shrink-0">
           <div>
@@ -83,7 +86,7 @@ export default function TradingJournal() {
             fallback={
               <div class="premium-card bg-white p-4 sm:p-6 space-y-6 border border-forest/10 animate-pulse flex-1 min-h-[300px]">
                 <div class="h-8 bg-sage/20 rounded-xl w-48 shrink-0" />
-                <div class="grid grid-cols-5 gap-2 sm:gap-3 flex-1 min-h-0">
+                <div class="grid grid-cols-5 grid-rows-5 gap-2 sm:gap-3 flex-1 min-h-0">
                   {Array.from({ length: 25 }).map(() => (
                     <div class="bg-sage/10 rounded-xl h-12 sm:h-full w-full" />
                   ))}

@@ -1,6 +1,7 @@
 import { createSignal, For, createEffect, Show } from "solid-js";
 import { Trade } from "../../data/TradingJournal/data/types";
 import { EntryLeg, ExitLeg, SetupQualityType, SetupStatusType, PosStatusType, TradeDirection, ResultLabelType } from "../../data/TradingJournal/data/database.types";
+import { calculateTradeR } from "../../utils/tradingJournalR";
 
 interface NewTradeFormProps {
   onSave: (date: string, trade: Partial<Trade>) => void;
@@ -121,15 +122,21 @@ export default function NewTradeForm(props: NewTradeFormProps) {
     setTotalFee(calculatedTotalFee);
 
     // PnL & ROI Calculations
-    if (calculatedAvgEntry > 0 && totalClosed > 0 && calculatedAvgExit > 0) {
-      // 1 lot = 100 shares in Indonesia
-      const gross = (calculatedAvgExit - calculatedAvgEntry) * totalClosed * 100;
-      const net = gross - calculatedTotalFee;
-      setGrossPnL(gross);
-      setNetPnL(net);
+    const hasRealizedExit = calculatedAvgEntry > 0 && totalClosed > 0 && calculatedAvgExit > 0;
+    const priceChange = direction() === "SHORT"
+      ? calculatedAvgEntry - calculatedAvgExit
+      : calculatedAvgExit - calculatedAvgEntry;
+    const calculatedGrossPnL = hasRealizedExit
+      ? priceChange * totalClosed * 100
+      : 0;
+    const calculatedNetPnL = calculatedGrossPnL - calculatedTotalFee;
+
+    if (hasRealizedExit) {
+      setGrossPnL(calculatedGrossPnL);
+      setNetPnL(calculatedNetPnL);
       
       const totalCost = calculatedAvgEntry * totalClosed * 100 + commissionBuy();
-      setRoiPct(totalCost > 0 ? (net / totalCost) * 100 : 0);
+      setRoiPct(totalCost > 0 ? (calculatedNetPnL / totalCost) * 100 : 0);
     } else {
       setGrossPnL(0);
       setNetPnL(0);
@@ -138,19 +145,26 @@ export default function NewTradeForm(props: NewTradeFormProps) {
 
     // Risk Calculations
     const sl = parseFloat(stopLoss());
+    let calculatedRiskAmount = 0;
     if (calculatedAvgEntry > 0 && totalLots > 0 && !isNaN(sl) && sl > 0) {
-      const risk = Math.abs(calculatedAvgEntry - sl) * totalLots * 100;
-      setRiskAmount(risk);
-
-      if (calculatedAvgExit > 0 && Math.abs(calculatedAvgEntry - sl) > 0) {
-        setRiskR((calculatedAvgExit - calculatedAvgEntry) / Math.abs(calculatedAvgEntry - sl));
-      } else {
-        setRiskR(0);
-      }
-    } else {
-      setRiskAmount(0);
-      setRiskR(0);
+      calculatedRiskAmount = Math.abs(calculatedAvgEntry - sl) * totalLots * 100;
     }
+    setRiskAmount(calculatedRiskAmount);
+
+    const calculatedR = calculateTradeR({
+      direction: direction(),
+      lots: totalLots,
+      lots_closed: totalClosed,
+      avg_entry_price: calculatedAvgEntry || null,
+      avg_exit_price: calculatedAvgExit || null,
+      stop_loss: !isNaN(sl) && sl > 0 ? sl : null,
+      net_pnl: hasRealizedExit ? calculatedNetPnL : null,
+      gross_pnl: hasRealizedExit ? calculatedGrossPnL : null,
+      risk_amount: calculatedRiskAmount || null,
+      risk_r: null,
+      exit_details: exitLegs(),
+    });
+    setRiskR(calculatedR ?? 0);
   });
 
   // Automatically calculate planned RR for Setup

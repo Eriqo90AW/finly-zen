@@ -1,6 +1,7 @@
 import { supabase } from "../../../lib/supabase";
 import { resolveUserId } from "../../../lib/userContext";
 import { MonthlyPerformance, DailySummary, Trade } from "../data/types";
+import { calculateTradeR } from "../../../utils/tradingJournalR";
 
 function generateEmptyMonth(monthStr: string): DailySummary[] {
   const [year, month] = monthStr.split("-").map(Number);
@@ -87,7 +88,7 @@ export async function getMonthlyPerformance(month: string): Promise<MonthlyPerfo
     if (row.net_pnl !== null && row.net_pnl !== undefined) {
       const netPnL = Number(row.net_pnl || 0);
       totalPnL += netPnL;
-      totalR += Number(row.risk_r || 0);
+      totalR += calculateTradeR(row) ?? 0;
 
       if (netPnL > 0) {
         wins++;
@@ -131,6 +132,7 @@ export async function getMonthlyPerformance(month: string): Promise<MonthlyPerfo
  */
 export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
   const userId = await resolveUserId();
+
   let query = supabase
     .from('trading_journal')
     .select('*')
@@ -186,7 +188,7 @@ export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
     if (row.net_pnl !== null && row.net_pnl !== undefined) {
       const netPnL = Number(row.net_pnl || 0);
       totalPnL += netPnL;
-      totalR += Number(row.risk_r || 0);
+      totalR += calculateTradeR(row) ?? 0;
 
       if (netPnL > 0) {
         wins++;
@@ -277,6 +279,7 @@ export async function getDailySummaries(month: string): Promise<DailySummary[]> 
  */
 export async function getDailySummary(date: string): Promise<DailySummary | undefined> {
   const userId = await resolveUserId();
+
   let query = supabase
     .from('trading_journal')
     .select('*')
@@ -294,7 +297,7 @@ export async function getDailySummary(date: string): Promise<DailySummary | unde
     return undefined;
   }
 
-  const [year, month, day] = date.split("-").map(Number);
+  const [,, day] = date.split("-").map(Number);
   const summary: DailySummary = {
     date,
     dayNumber: day,
@@ -325,7 +328,6 @@ export async function getDailySummary(date: string): Promise<DailySummary | unde
  */
 export async function saveTrade(date: string, trade: Partial<Trade>): Promise<void> {
   const userId = await resolveUserId();
-  // Ensure the trade date and user_id are correctly set
   const payload = {
     ...trade,
     trade_date: date,
