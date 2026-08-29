@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { getAccounts, getCategories, getTransactions } from "../data/expenseData";
+import { getAccounts, getAccountsWithBalances, getCategories, getTransactions } from "../data/expenseData";
 import { getPortfolios } from "../data/portfolioData";
 import { state } from "../store";
 import { portfolioState, loadPortfolios } from "../store/portfolioStore";
@@ -14,6 +14,8 @@ export const DEFAULT_USER_ID =
 export interface UserContextAccount {
   id: string;
   name: string;
+  balance: number;
+  color?: string;
 }
 
 export interface UserContextPortfolio {
@@ -259,7 +261,7 @@ export async function buildUserContext(pathname?: string): Promise<UserContext> 
   const currentPage = getPageInfo(currentPath);
   const userId = await resolveUserId();
   const [accounts, categories, portfolios] = await Promise.all([
-    getAccounts(),
+    getAccountsWithBalances(userId),
     getCategories(),
     getPortfolios(),
   ]);
@@ -284,7 +286,12 @@ export async function buildUserContext(pathname?: string): Promise<UserContext> 
   return {
     userId,
     userName: state.settings.userName || DEFAULT_CONFIG.userName,
-    accounts: scopedAccounts.map((a) => ({ id: a.id, name: a.name })),
+    accounts: scopedAccounts.map((a) => ({
+      id: a.id,
+      name: a.name,
+      balance: a.balance ?? 0,
+      color: a.color,
+    })),
     portfolios: portfolios.map((p) => ({ id: p.id, name: p.name })),
     categories: (categories as Category[]).map((c) => ({
       id: c.id,
@@ -316,7 +323,13 @@ export function formatContextForPrompt(ctx: UserContext): string {
     `user_id: ${ctx.userId}`,
     `current_page: "${ctx.currentPage.name}" (${ctx.currentPage.path})`,
     `page_focus: "${ctx.currentPage.focus}"`,
-    `accounts: ${JSON.stringify(ctx.accounts)}`,
+    `accounts: ${JSON.stringify(
+      ctx.accounts.map((a) => ({
+        id: a.id,
+        name: a.name,
+        balance_idr: a.balance,
+      })),
+    )}`,
     `portfolios: ${JSON.stringify(ctx.portfolios)}`,
     `categories: ${JSON.stringify(ctx.categories)}`,
     ctx.selectedAccountName

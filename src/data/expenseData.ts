@@ -115,6 +115,53 @@ export async function getAccounts() {
   })) as Account[];
 }
 
+export async function getAccountsWithBalances(customUserId?: string): Promise<Account[]> {
+  const userId = customUserId || (await resolveUserId());
+  const [accounts, transactions] = await Promise.all([
+    getAccounts(),
+    getTransactions(),
+  ]);
+
+  const scopedAccounts = accounts.filter(
+    (a) => !a.user_id || a.user_id === userId,
+  );
+
+  const accountStats = new Map<string, { balance: number; income: number; expenses: number }>();
+  const nameToId = new Map<string, string>();
+
+  for (const acc of scopedAccounts) {
+    accountStats.set(acc.id, { balance: 0, income: 0, expenses: 0 });
+    nameToId.set(acc.name.trim().toLowerCase(), acc.id);
+  }
+
+  for (const t of transactions) {
+    let targetId = t.accountId && accountStats.has(t.accountId) ? t.accountId : undefined;
+    if (!targetId && t.accountName) {
+      targetId = nameToId.get(t.accountName.trim().toLowerCase());
+    }
+
+    if (targetId) {
+      const stats = accountStats.get(targetId)!;
+      const amount = t.amount || 0;
+      if (t.type === "income") {
+        stats.income += amount;
+        stats.balance += amount;
+      } else if (t.type === "expense") {
+        stats.expenses += amount;
+        stats.balance -= amount;
+      }
+    }
+  }
+
+  return scopedAccounts.map((acc) => {
+    const stats = accountStats.get(acc.id);
+    return {
+      ...acc,
+      balance: stats ? stats.balance : 0,
+    };
+  });
+}
+
 export async function createDefaultUserData(
   userId: string,
   initialBalance: number = 0,

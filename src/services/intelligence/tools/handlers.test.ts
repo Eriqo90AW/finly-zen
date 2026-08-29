@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   executeTool,
   normalizeDraft,
@@ -11,12 +11,23 @@ import {
 import type { UserContext } from "../../../lib/userContext";
 import type { PendingBatchTransactionAction } from "../../../types/intelligence";
 
+vi.mock("../../../data/expenseData", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../data/expenseData")>();
+  return {
+    ...actual,
+    getAccountsWithBalances: vi.fn().mockResolvedValue([
+      { id: "acc-1", name: "BCA Main", color: "#1a4d2e", balance: 1500000 },
+      { id: "acc-2", name: "Bank Jago", color: "#d47b5a", balance: 250000 },
+    ]),
+  };
+});
+
 const mockUserContext: UserContext = {
   userId: "user-123",
   userName: "Eriqo",
   accounts: [
-    { id: "acc-1", name: "BCA Main" },
-    { id: "acc-2", name: "Bank Jago" },
+    { id: "acc-1", name: "BCA Main", balance: 1500000 },
+    { id: "acc-2", name: "Bank Jago", balance: 250000 },
   ],
   portfolios: [],
   categories: [
@@ -249,6 +260,43 @@ describe("Tool Handlers and Batch Normalization", () => {
         expect(action.drafts[1].errors).toHaveProperty("name");
         expect(action.drafts[1].errors).toHaveProperty("amount");
         expect(action.drafts[1].errors).toHaveProperty("categoryId");
+      }
+    });
+  });
+
+  describe("list_accounts tool execution", () => {
+    it("returns accounts with their calculated balances", async () => {
+      const outcome = await executeTool(
+        "list_accounts",
+        "{}",
+        mockUserContext,
+        "call-acc-1",
+      );
+
+      expect(outcome.kind).toBe("result");
+      if (outcome.kind === "result") {
+        const accounts = outcome.data as Array<{
+          id: string;
+          name: string;
+          color: string;
+          balance: number;
+          balance_idr: number;
+        }>;
+        expect(accounts).toHaveLength(2);
+        expect(accounts[0]).toEqual({
+          id: "acc-1",
+          name: "BCA Main",
+          color: "#1a4d2e",
+          balance: 1500000,
+          balance_idr: 1500000,
+        });
+        expect(accounts[1]).toEqual({
+          id: "acc-2",
+          name: "Bank Jago",
+          color: "#d47b5a",
+          balance: 250000,
+          balance_idr: 250000,
+        });
       }
     });
   });

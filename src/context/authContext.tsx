@@ -32,6 +32,7 @@ export const AuthProvider = (props: ParentProps) => {
   const [user, setUser] = createSignal<User | null>(null);
   const [session, setSession] = createSignal<Session | null>(null);
   const [isLoading, setIsLoading] = createSignal<boolean>(true);
+  let authSubscription: { unsubscribe: () => void } | null = null;
 
   onMount(async () => {
     try {
@@ -60,9 +61,11 @@ export const AuthProvider = (props: ParentProps) => {
       setIsLoading(false);
     });
 
-    onCleanup(() => {
-      subscription.unsubscribe();
-    });
+    authSubscription = subscription;
+  });
+
+  onCleanup(() => {
+    authSubscription?.unsubscribe();
   });
 
   const signInWithEmail = async (email: string, password: string) => {

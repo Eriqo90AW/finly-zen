@@ -1,5 +1,6 @@
 import {
   getAccounts,
+  getAccountsWithBalances,
   getCategories,
   getTransactions,
   addTransfer,
@@ -327,10 +328,16 @@ export async function executeTool(
 
   switch (toolName) {
     case "list_accounts": {
-      const accounts = await getAccounts();
+      const accounts = await getAccountsWithBalances(ctx.userId);
       const scoped = accounts
         .filter((a) => !a.user_id || a.user_id === ctx.userId)
-        .map((a) => ({ id: a.id, name: a.name, color: a.color }));
+        .map((a) => ({
+          id: a.id,
+          name: a.name,
+          color: a.color,
+          balance: a.balance ?? 0,
+          balance_idr: a.balance ?? 0,
+        }));
       return { kind: "result", data: scoped };
     }
 

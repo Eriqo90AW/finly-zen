@@ -21,6 +21,7 @@ import type {
 vi.mock("../../data/expenseData", () => ({
   addTransactions: vi.fn(),
   getAccounts: vi.fn().mockResolvedValue([]),
+  getAccountsWithBalances: vi.fn().mockResolvedValue([]),
   getCategories: vi.fn().mockResolvedValue([]),
 }));
 
@@ -38,7 +39,7 @@ vi.mock("../../lib/userContext", () => ({
   buildUserContext: vi.fn().mockResolvedValue({
     userId: "user-123",
     userName: "Eriqo",
-    accounts: [{ id: "acc-1", name: "BCA Main" }],
+    accounts: [{ id: "acc-1", name: "BCA Main", balance: 500000 }],
     portfolios: [],
     categories: [{ id: "cat-1", name: "Food & Dining" }],
     selectedAccountName: "BCA Main",
