@@ -64,86 +64,119 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
     return last7Days;
   });
 
-  const barChartOptions = (): ApexOptions => ({
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-      animations: { enabled: true },
-      events: {
-        updated: (chartContext: any) => {
-          const el = chartContext.el;
-          const annotations = el?.querySelector(
-            ".apexcharts-yaxis-annotations",
-          );
-          const parent = annotations?.parentNode;
-          if (annotations && parent) {
-            parent.appendChild(annotations);
-          }
+  const barChartOptions = (): ApexOptions => {
+    const data = chartData();
+    const maxSpent = Math.max(...data.map((d) => d.amount), 0);
+    const budget = props.dailyBudget();
+    const peak = Math.max(maxSpent, budget);
+    const calculatedMax = peak > 0 ? Math.ceil(peak * 1.15) : 500000;
+
+    return {
+      chart: {
+        type: "bar",
+        toolbar: { show: false },
+        animations: { enabled: true },
+        parentHeightOffset: 0,
+        events: {
+          updated: (chartContext: any) => {
+            const el = chartContext.el;
+            const annotations = el?.querySelector(
+              ".apexcharts-yaxis-annotations",
+            );
+            const parent = annotations?.parentNode;
+            if (annotations && parent) {
+              parent.appendChild(annotations);
+            }
+          },
         },
       },
-    },
-    plotOptions: {
-      bar: {
-        borderRadius: 4,
-        borderRadiusApplication: "end",
-        columnWidth: "60%",
-        distributed: true,
+      plotOptions: {
+        bar: {
+          borderRadius: 4,
+          borderRadiusApplication: "end",
+          columnWidth: "60%",
+          distributed: true,
+        },
       },
-    },
-    // Color logic: red if > 1jt or > daily budget
-    colors: chartData().map((d) =>
-      d.amount > 1000000 || d.amount > props.dailyBudget()
-        ? "#EF4444"
-        : "#52C278",
-    ),
-    dataLabels: { enabled: false },
-    tooltip: {
-      shared: true,
-      intersect: false,
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-        const val = series[seriesIndex][dataPointIndex];
-        const category = w.globals.labels[dataPointIndex];
-        return `
-          <div class="px-3 py-1.5 bg-near-black text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center whitespace-nowrap">
-            <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">${category}</span>
-            <span class="font-bold">${formatRupiahShort(val)}</span>
-          </div>
-        `;
+      // Color logic: red if > 1jt or > daily budget
+      colors: data.map((d) =>
+        d.amount > 1000000 || d.amount > budget
+          ? "#EF4444"
+          : "#52C278",
+      ),
+      dataLabels: { enabled: false },
+      tooltip: {
+        shared: true,
+        intersect: false,
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          const val = series[seriesIndex][dataPointIndex];
+          const category = w.globals.labels[dataPointIndex];
+          return `
+            <div class="px-3 py-1.5 bg-near-black text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center whitespace-nowrap">
+              <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">${category}</span>
+              <span class="font-bold">${formatRupiahShort(val)}</span>
+            </div>
+          `;
+        },
       },
-    },
-    xaxis: {
-      categories: chartData().map((d) => d.date),
-      labels: { style: { colors: "#5C6B5E", fontFamily: "Outfit" } },
-      tooltip: { enabled: false },
-    },
-    yaxis: {
-      min: 0,
-      max: 500000,
-      tickAmount: 5, // 1,000,000 / 5 = 200,000
-      labels: {
-        style: { colors: "#5C6B5E", fontFamily: "Outfit" },
-        formatter: (value) => (value < 0 ? "" : formatRupiahShort(value)),
+      xaxis: {
+        categories: data.map((d) => d.date),
+        labels: {
+          style: { colors: "#5C6B5E", fontFamily: "Outfit", fontSize: "10px" },
+          rotate: 0,
+          rotateAlways: false,
+          hideOverlappingLabels: true,
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        tooltip: { enabled: false },
       },
-    },
-    grid: { borderColor: "rgba(26,77,46,0.05)" },
-    annotations: {
-      yaxis: [
-        {
-          y: props.dailyBudget(),
-          borderColor: "#1A4D2E",
-          position: "front",
-          label: {
-            text: "Budget",
-            style: { background: "#1A4D2E", color: "#fff" },
-          },
-        } as any,
-      ],
-    },
-    legend: { show: false },
-  });
+      yaxis: {
+        min: 0,
+        max: calculatedMax,
+        tickAmount: 4,
+        labels: {
+          style: { colors: "#5C6B5E", fontFamily: "Outfit", fontSize: "10px" },
+          formatter: (value) => (value < 0 ? "" : formatRupiahShort(value)),
+          offsetX: -4,
+        },
+      },
+      grid: {
+        borderColor: "rgba(26,77,46,0.08)",
+        strokeDashArray: 4,
+        padding: {
+          top: 4,
+          right: 0,
+          bottom: 0,
+          left: -4,
+        },
+      },
+      annotations: {
+        yaxis: [
+          {
+            y: budget,
+            borderColor: "#1A4D2E",
+            position: "front",
+            strokeDashArray: 3,
+            label: {
+              text: "Budget",
+              style: {
+                background: "#1A4D2E",
+                color: "#fff",
+                fontSize: "9px",
+                fontFamily: "Outfit",
+                padding: { left: 4, right: 4, top: 2, bottom: 2 },
+              },
+            },
+          } as any,
+        ],
+      },
+      legend: { show: false },
+    };
+  };
 
   return (
-    <div class="w-full flex-1 premium-card px-3 py-3.5 sm:py-4 flex flex-col relative cursor-default min-h-[280px] lg:h-[320px]">
+    <div class="w-full flex-1 premium-card p-3.5 sm:p-5 lg:p-6 flex flex-col relative cursor-default min-h-[280px] lg:h-[320px]">
       <style>
         {`
           .apexcharts-tooltip {
@@ -161,22 +194,24 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
           }
         `}
       </style>
-      <div class="flex items-center justify-between mb-3 sm:mb-4 mx-3">
-        <div class="flex items-center gap-2">
-          <h4 class="font-outfit font-bold text-forest">Daily Spend</h4>
-          <div class="flex items-center gap-0.5 bg-sage/15 rounded-lg p-0.5 border border-forest/10">
+      <div class="flex items-center justify-between gap-2 mb-2 sm:mb-4">
+        <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <h4 class="font-outfit font-bold text-forest text-sm sm:text-base whitespace-nowrap shrink-0">
+            Daily Spend
+          </h4>
+          <div class="flex items-center gap-0.5 bg-sage/15 rounded-lg p-0.5 border border-forest/10 shrink-0">
             <button
               onClick={() => setDayOffset((prev) => prev - 1)}
-              class="w-6 h-6 rounded-md hover:bg-forest/10 flex items-center justify-center transition-colors text-forest cursor-pointer"
+              class="w-5 h-5 sm:w-6 sm:h-6 rounded hover:bg-forest/10 flex items-center justify-center transition-colors text-forest cursor-pointer"
               title="Previous day (shift 1 day back)"
               aria-label="Previous day"
             >
-              <span class="material-icons text-sm">chevron_left</span>
+              <span class="material-icons text-xs sm:text-sm">chevron_left</span>
             </button>
             <button
               onClick={() => setDayOffset((prev) => Math.min(0, prev + 1))}
               disabled={dayOffset() >= 0}
-              class={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
+              class={`w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center transition-colors ${
                 dayOffset() >= 0
                   ? "text-earth/30 cursor-not-allowed"
                   : "hover:bg-forest/10 text-forest cursor-pointer"
@@ -184,13 +219,13 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
               title="Next day (shift 1 day forward)"
               aria-label="Next day"
             >
-              <span class="material-icons text-sm">chevron_right</span>
+              <span class="material-icons text-xs sm:text-sm">chevron_right</span>
             </button>
           </div>
           <Show when={dayOffset() !== 0}>
             <button
               onClick={() => setDayOffset(0)}
-              class="text-[10px] font-medium text-forest/70 hover:text-forest bg-forest/5 hover:bg-forest/10 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+              class="text-[9px] sm:text-[10px] font-medium text-forest/70 hover:text-forest bg-forest/5 hover:bg-forest/10 px-1.5 py-0.5 rounded-full transition-colors cursor-pointer shrink-0"
               title="Reset to today / latest"
             >
               Today
@@ -199,10 +234,10 @@ export const DailySpendChart = (props: DailySpendChartProps) => {
         </div>
         <Tooltip content="Click to edit budget">
           <div
-            class="text-[10px] font-bold text-earth hover:text-forest uppercase tracking-widest cursor-pointer transition-colors flex items-center gap-1 group/edit"
+            class="text-[9px] sm:text-[10px] font-bold text-earth hover:text-forest uppercase tracking-wider cursor-pointer transition-colors flex items-center gap-1 group/edit shrink-0 ml-auto"
             onClick={() => setIsEditBudgetOpen(true)}
           >
-            <span class="material-icons text-[10px] opacity-0 group-hover/edit:opacity-100 transition-opacity">
+            <span class="material-icons text-[9px] sm:text-[10px] opacity-0 group-hover/edit:opacity-100 transition-opacity">
               edit
             </span>
             <span>Budget: {formatRupiah(props.dailyBudget())}</span>

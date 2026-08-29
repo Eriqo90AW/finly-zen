@@ -93,9 +93,11 @@ export const ExpenseCategoryCard = (props: CategoryCardProps) => {
   };
 
   return (
-    <div class="premium-card p-4 sm:p-6 flex flex-col h-full cursor-default">
-      <div class="flex items-center justify-between mb-4">
-        <h4 class="font-outfit font-bold text-forest">Categories</h4>
+    <div class="premium-card p-3.5 sm:p-5 lg:p-6 flex flex-col h-full cursor-default">
+      <div class="flex items-center justify-between mb-3 sm:mb-4">
+        <h4 class="font-outfit font-bold text-forest text-sm sm:text-base lg:text-lg">
+          Expense Categories
+        </h4>
       </div>
 
       <div class="relative h-[250px] mb-4">

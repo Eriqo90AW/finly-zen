@@ -93,6 +93,12 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
     const data = chartData();
     const { lastActualIndex, lastActual, todayTargetVal } = chartComputed();
 
+    const maxVal = Math.max(
+      lastActual,
+      data.length > 0 ? data[data.length - 1].target : 0,
+    );
+    const chartMax = maxVal > 0 ? Math.ceil(maxVal * 1.03) : 1000000;
+
     return {
       chart: {
         type: "line",
@@ -102,6 +108,7 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
         animations: { enabled: true },
         fontFamily: "Outfit",
         sparkline: { enabled: false },
+        parentHeightOffset: 0,
       },
       dataLabels: { enabled: false },
       stroke: {
@@ -129,12 +136,13 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
             label: {
               text: `Target: ${formatRupiahShort(todayTargetVal)}`,
               position: "right",
-              offsetX: -10,
+              offsetX: -6,
               style: {
                 color: "#fff",
                 background: "#1A4D2E",
-                fontSize: "10px",
-                padding: { left: 6, right: 6, top: 3, bottom: 3 },
+                fontSize: "9px",
+                fontFamily: "Outfit",
+                padding: { left: 5, right: 5, top: 2, bottom: 2 },
               },
             },
           },
@@ -146,12 +154,13 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
             label: {
               text: `Actual: ${formatRupiahShort(lastActual)}`,
               position: "right",
-              offsetX: -10,
+              offsetX: -6,
               style: {
                 color: "#fff",
                 background: "#52C278",
-                fontSize: "10px",
-                padding: { left: 6, right: 6, top: 3, bottom: 3 },
+                fontSize: "9px",
+                fontFamily: "Outfit",
+                padding: { left: 5, right: 5, top: 2, bottom: 2 },
               },
             },
           },
@@ -170,8 +179,9 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
                     style: {
                       color: "#fff",
                       background: "#1A4D2E",
-                      fontSize: "10px",
-                      padding: { left: 6, right: 6, top: 2, bottom: 2 },
+                      fontSize: "9px",
+                      fontFamily: "Outfit",
+                      padding: { left: 5, right: 5, top: 2, bottom: 2 },
                     },
                   },
                 },
@@ -181,32 +191,29 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
       xaxis: {
         categories: data.map((d) => d.date),
         labels: {
-          style: { colors: "#5C6B5E", fontSize: "10px" },
-          rotate: -45,
+          style: { colors: "#5C6B5E", fontSize: "10px", fontFamily: "Outfit" },
+          rotate: 0,
           rotateAlways: false,
           hideOverlappingLabels: true,
         },
-        axisBorder: { show: true },
-        axisTicks: { show: true },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
         tooltip: { enabled: false },
       },
       yaxis: {
         opposite: true,
         min: 0,
-        max:
-          Math.max(
-            lastActual,
-            data.length > 0 ? data[data.length - 1].target : 0,
-          ) + 2000000,
+        max: chartMax,
         labels: {
-          style: { colors: "#5C6B5E" },
+          style: { colors: "#5C6B5E", fontSize: "10px", fontFamily: "Outfit" },
           formatter: (val) => formatRupiahShort(val),
+          offsetX: -4,
         },
         tickAmount: 4,
       },
       grid: {
         show: true,
-        borderColor: "rgba(26,77,46,0.15)",
+        borderColor: "rgba(26,77,46,0.12)",
         strokeDashArray: 4,
         xaxis: {
           lines: { show: true },
@@ -214,7 +221,12 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
         yaxis: {
           lines: { show: true },
         },
-        padding: { left: 10, right: 10 },
+        padding: {
+          top: -12,
+          right: 0,
+          bottom: 0,
+          left: 4,
+        },
       },
       markers: {
         size: 0,
@@ -283,46 +295,51 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
         },
       },
       legend: {
-        position: "top",
-        horizontalAlign: "left",
-        fontFamily: "Outfit",
-        labels: { colors: "#1A4D2E" },
-        markers: { size: 6, shape: "circle" },
-        customLegendItems: ["Target", "Actual"],
+        show: false,
       },
     };
   };
 
   return (
-    <div class="premium-card p-4 sm:p-6 flex flex-col relative h-full">
-      <div class="flex items-start justify-between gap-3 mb-4 sm:mb-6">
+    <div class="premium-card p-3.5 sm:p-5 lg:p-6 flex flex-col relative h-full">
+      <div class="flex items-start justify-between gap-2 mb-1 sm:mb-2">
         <div class="min-w-0">
-          <h4 class="font-outfit font-bold text-forest text-base sm:text-lg">
-            Expense Pacing
-          </h4>
-          <p class="text-[11px] sm:text-xs text-earth/60">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <h4 class="font-outfit font-bold text-forest text-sm sm:text-base lg:text-lg whitespace-nowrap">
+              Expense Pacing
+            </h4>
+            <div class="flex items-center gap-2 text-[10px] sm:text-xs text-forest/80 shrink-0">
+              <span class="flex items-center gap-1 font-medium whitespace-nowrap">
+                <span class="w-2 h-2 rounded-full bg-[#1A4D2E]"></span> Target
+              </span>
+              <span class="flex items-center gap-1 font-medium whitespace-nowrap">
+                <span class="w-2 h-2 rounded-full bg-[#52C278]"></span> Actual
+              </span>
+            </div>
+          </div>
+          <p class="text-[10px] sm:text-xs text-earth/60">
             Cumulative spending vs monthly target
           </p>
         </div>
         <Tooltip content="Click to edit budget">
           <div
-            class="text-right cursor-pointer group/target transition-colors shrink-0 ml-auto"
+            class="text-right cursor-pointer group/target transition-colors shrink-0 ml-auto whitespace-nowrap"
             onClick={() => setIsEditBudgetOpen(true)}
           >
-            <div class="text-[9px] sm:text-[10px] font-bold text-earth group-hover/target:text-forest uppercase tracking-widest flex items-center justify-end gap-1">
+            <div class="text-[9px] sm:text-[10px] font-bold text-earth group-hover/target:text-forest uppercase tracking-wider flex items-center justify-end gap-1 whitespace-nowrap">
               <span class="material-icons text-[10px] opacity-0 group-hover/target:opacity-100 transition-opacity">
                 edit
               </span>
-              <span>Target Budget</span>
+              <span class="whitespace-nowrap">Target Budget</span>
             </div>
-            <div class="text-xs sm:text-sm font-bold text-forest group-hover/target:text-mid-green transition-colors">
+            <div class="text-xs sm:text-sm font-bold text-forest group-hover/target:text-mid-green transition-colors whitespace-nowrap">
               {formatRupiah(chartData()[chartData().length - 1]?.target || 0)}
             </div>
           </div>
         </Tooltip>
       </div>
 
-      <div class="flex-1 min-h-[220px] sm:min-h-[250px]">
+      <div class="flex-1 min-h-[240px] sm:min-h-[260px] w-full">
         <Show
           when={!props.loading}
           fallback={

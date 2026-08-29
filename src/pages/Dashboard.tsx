@@ -84,16 +84,15 @@ const Dashboard = () => {
               loading={isTransactionsLoading()}
             />
           </div>
-          <div class="col-span-1 sm:col-span-1 lg:col-span-6 min-w-0 min-h-[300px] lg:h-[500px]">
-            <ActivityCalendar
-              transactions={monthlyTransactions()}
+          <div class="col-span-1 sm:col-span-1 lg:col-span-3 min-w-0 min-h-[300px] lg:h-[500px]">
+            <IncomeCategoryCard
+              transactions={accountFilteredTransactions()}
               loading={isTransactionsLoading()}
-              dailyBudget={dailyBudget}
             />
           </div>
-          <div class="col-span-1 sm:col-span-2 lg:col-span-3 min-w-0 min-h-[260px] lg:h-[500px]">
-            <GardenWins
-              transactions={transactions() || []}
+          <div class="col-span-1 sm:col-span-2 lg:col-span-6 min-w-0 min-h-[300px] lg:h-[500px]">
+            <ActivityCalendar
+              transactions={monthlyTransactions()}
               loading={isTransactionsLoading()}
               dailyBudget={dailyBudget}
             />
@@ -101,13 +100,7 @@ const Dashboard = () => {
         </div>
 
         <div class="col-span-1 sm:col-span-2 lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 lg:gap-6">
-          <div class="col-span-1 sm:col-span-1 lg:col-span-3 min-w-0 min-h-[300px] lg:h-[500px]">
-            <IncomeCategoryCard
-              transactions={accountFilteredTransactions()}
-              loading={isTransactionsLoading()}
-            />
-          </div>
-          <div class="col-span-1 sm:col-span-1 lg:col-span-6 min-w-0 min-h-[300px] lg:h-[500px]">
+          <div class="col-span-1 sm:col-span-2 lg:col-span-6 min-w-0 min-h-[300px] lg:h-[500px]">
             <BudgetPacingChart
               transactions={monthlyTransactions()}
               loading={isTransactionsLoading()}
@@ -115,10 +108,17 @@ const Dashboard = () => {
               setDailyBudget={setDailyBudget}
             />
           </div>
-          <div class="col-span-1 sm:col-span-2 lg:col-span-3 min-w-0 lg:h-[500px]">
+          <div class="col-span-1 sm:col-span-1 lg:col-span-3 min-w-0 lg:h-[500px]">
             <TopExpensesAndTargetsCard
               transactions={accountFilteredTransactions()}
               loading={isTransactionsLoading()}
+            />
+          </div>
+          <div class="col-span-1 sm:col-span-1 lg:col-span-3 min-w-0 min-h-[260px] lg:h-[500px]">
+            <GardenWins
+              transactions={transactions() || []}
+              loading={isTransactionsLoading()}
+              dailyBudget={dailyBudget}
             />
           </div>
         </div>

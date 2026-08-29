@@ -202,26 +202,26 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   };
 
   const headerClass = (key: SortKey) =>
-    `px-6 py-4 font-semibold cursor-pointer select-none transition-colors hover:text-forest group${key === "amount" ? " text-right" : ""}`;
+    `px-3 sm:px-6 py-3 sm:py-4 font-semibold cursor-pointer select-none transition-colors hover:text-forest group${key === "amount" ? " text-right" : ""}`;
 
   return (
-    <div class="col-span-12 premium-card overflow-hidden cursor-default flex flex-col min-h-[420px] lg:h-[500px]">
-      <div class="p-4 sm:p-6 border-b border-forest/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-        <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
-          <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
+    <div class="col-span-12 premium-card cursor-default flex flex-col min-h-0 sm:min-h-[420px] lg:h-[500px]">
+      <div class="p-3.5 sm:p-6 border-b border-forest/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
+        <div class="flex items-center justify-between sm:justify-start gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
+          <h4 class="font-outfit font-bold text-forest text-sm sm:text-base whitespace-nowrap">Recent Transactions</h4>
 
           {/* Expense - Income Pill Shape Selector */}
           <div
             role="radiogroup"
             aria-label="Transaction Type Filter"
-            class="flex items-center p-0.5 bg-page-bg rounded-full border border-forest/10"
+            class="flex items-center p-0.5 bg-page-bg rounded-full border border-forest/10 shrink-0"
           >
             <button
               type="button"
               role="radio"
               aria-checked={typeFilter() === "all"}
               onClick={() => setTypeFilter("all")}
-              class="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
+              class="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
               classList={{
                 "bg-forest text-white shadow-sm font-black":
                   typeFilter() === "all",
@@ -237,7 +237,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
               onClick={() =>
                 setTypeFilter((prev) => (prev === "expense" ? "all" : "expense"))
               }
-              class="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
+              class="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
               classList={{
                 "bg-rose-600 text-white shadow-sm font-black":
                   typeFilter() === "expense",
@@ -253,7 +253,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
               onClick={() =>
                 setTypeFilter((prev) => (prev === "income" ? "all" : "income"))
               }
-              class="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
+              class="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
               classList={{
                 "bg-emerald-600 text-white shadow-sm font-black":
                   typeFilter() === "income",
@@ -264,14 +264,25 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
             </button>
           </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+        <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center sm:justify-end flex-nowrap min-w-0">
           {/* Recurring Toggle */}
           <div
-            class="flex items-center gap-2 group cursor-pointer select-none"
+            class="flex items-center gap-1 sm:gap-2 group cursor-pointer select-none shrink-0"
             onClick={() => setShowOnlyRecurring((v) => !v)}
+            title={showOnlyRecurring() ? "Show all transactions" : "Filter recurring transactions"}
+            aria-label="Filter recurring transactions"
           >
             <span
-              class="text-[10px] font-bold uppercase tracking-widest transition-colors"
+              class="sm:hidden material-icons !text-[16px] transition-colors"
+              classList={{
+                "text-forest": showOnlyRecurring(),
+                "text-mid-green group-hover:text-forest": !showOnlyRecurring(),
+              }}
+            >
+              autorenew
+            </span>
+            <span
+              class="hidden sm:inline text-[10px] font-bold uppercase tracking-widest transition-colors"
               classList={{
                 "text-forest": showOnlyRecurring(),
                 "text-mid-green group-hover:text-forest": !showOnlyRecurring(),
@@ -279,7 +290,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
             >
               Recurring
             </span>
-            <div class="ios-switch" aria-checked={showOnlyRecurring()}>
+            <div class="ios-switch shrink-0" aria-checked={showOnlyRecurring()}>
               <div
                 class="ios-switch-thumb"
                 data-state={showOnlyRecurring() ? "checked" : "unchecked"}
@@ -288,10 +299,10 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
           </div>
 
           {/* Account Dropdown */}
-          <div class="relative account-dropdown-container">
+          <div class="relative account-dropdown-container shrink-0 min-w-0">
             <button
               type="button"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-colors duration-200 cursor-pointer select-none group/acc hover:shadow-sm"
+              class="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-md border transition-colors duration-200 cursor-pointer select-none group/acc hover:shadow-sm shrink-0 min-w-0"
               style={{
                 ...(state.ui.selectedAccountColor
                   ? {
@@ -311,48 +322,57 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
               onClick={() => setAccountDropdownOpen((v) => !v)}
               aria-expanded={accountDropdownOpen()}
             >
+              <div class="flex items-center gap-1 sm:gap-1.5 min-w-0">
+                <span
+                  class="material-icons !text-[13px] shrink-0"
+                  style={{
+                    color:
+                      state.ui.selectedAccountColor ||
+                      (state.ui.selectedAccount
+                        ? "var(--color-forest)"
+                        : "var(--color-mid-green)"),
+                  }}
+                >
+                  account_balance_wallet
+                </span>
+                <span
+                  class="hidden sm:inline text-[10px] font-bold uppercase tracking-widest shrink-0"
+                  style={{
+                    color: state.ui.selectedAccountColor || undefined,
+                  }}
+                  classList={{
+                    "text-earth":
+                      !state.ui.selectedAccountColor && !state.ui.selectedAccount,
+                    "text-forest":
+                      !state.ui.selectedAccountColor && !!state.ui.selectedAccount,
+                  }}
+                >
+                  Account:
+                </span>
+                <span
+                  class="text-[10px] font-bold uppercase tracking-wider sm:tracking-widest truncate max-w-[80px] xs:max-w-[120px] sm:max-w-[150px] md:max-w-none text-left"
+                  style={{
+                    color: state.ui.selectedAccountColor || undefined,
+                  }}
+                  classList={{
+                    "text-forest font-black":
+                      !state.ui.selectedAccountColor && !!state.ui.selectedAccount,
+                    "text-forest/70":
+                      !state.ui.selectedAccountColor && !state.ui.selectedAccount,
+                  }}
+                >
+                  {state.ui.selectedAccount ? (
+                    state.ui.selectedAccount
+                  ) : (
+                    <>
+                      <span class="sm:hidden">Accounts</span>
+                      <span class="hidden sm:inline">All Accounts</span>
+                    </>
+                  )}
+                </span>
+              </div>
               <span
-                class="material-icons !text-[13px]"
-                style={{
-                  color:
-                    state.ui.selectedAccountColor ||
-                    (state.ui.selectedAccount
-                      ? "var(--color-forest)"
-                      : "var(--color-mid-green)"),
-                }}
-              >
-                account_balance_wallet
-              </span>
-              <span
-                class="text-[10px] font-bold uppercase tracking-widest"
-                style={{
-                  color: state.ui.selectedAccountColor || undefined,
-                }}
-                classList={{
-                  "text-earth":
-                    !state.ui.selectedAccountColor && !state.ui.selectedAccount,
-                  "text-forest":
-                    !state.ui.selectedAccountColor && !!state.ui.selectedAccount,
-                }}
-              >
-                Account:
-              </span>
-              <span
-                class="text-[10px] font-bold uppercase tracking-widest"
-                style={{
-                  color: state.ui.selectedAccountColor || undefined,
-                }}
-                classList={{
-                  "text-forest font-black":
-                    !state.ui.selectedAccountColor && !!state.ui.selectedAccount,
-                  "text-forest/70":
-                    !state.ui.selectedAccountColor && !state.ui.selectedAccount,
-                }}
-              >
-                {state.ui.selectedAccount || "All Accounts"}
-              </span>
-              <span
-                class="material-icons !text-[14px] transition-transform duration-200"
+                class="material-icons !text-[14px] shrink-0 transition-transform duration-200"
                 classList={{
                   "rotate-180": accountDropdownOpen(),
                 }}
@@ -368,7 +388,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
 
             {/* Dropdown Menu */}
             <Show when={accountDropdownOpen()}>
-              <div class="absolute left-0 sm:right-0 mt-1.5 w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-1 z-30 flex flex-col gap-0.5 animate-slide-down">
+              <div class="absolute left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 mt-1.5 w-48 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-1 z-40 flex flex-col gap-0.5 animate-slide-down">
                 <For each={availableAccounts()}>
                   {(acc) => {
                     const isSelected = () =>
@@ -391,7 +411,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                           setAccountDropdownOpen(false);
                         }}
                       >
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
                           <span
                             class="w-2.5 h-2.5 rounded-full border border-forest/20 shrink-0"
                             style={{
@@ -402,7 +422,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                           <span class="truncate">{acc.name}</span>
                         </div>
                         <Show when={isSelected()}>
-                          <span class="material-icons !text-[14px] text-forest">
+                          <span class="material-icons !text-[14px] text-forest shrink-0">
                             check
                           </span>
                         </Show>
@@ -415,10 +435,10 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
           </div>
 
           {/* Multi-Select Category Filters Dropdown */}
-          <div class="relative filter-dropdown-container">
+          <div class="relative filter-dropdown-container shrink-0">
             <button
               type="button"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all duration-200 cursor-pointer select-none group/filter hover:shadow-sm"
+              class="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-md border transition-all duration-200 cursor-pointer select-none group/filter hover:shadow-sm shrink-0"
               style={{
                 ...(selectedCategories().size > 0
                   ? {
@@ -434,7 +454,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
               aria-expanded={filtersOpen()}
             >
               <span
-                class="material-icons !text-[13px]"
+                class="material-icons !text-[13px] shrink-0"
                 style={{
                   color:
                     selectedCategories().size > 0
@@ -445,7 +465,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                 filter_list
               </span>
               <span
-                class="text-[10px] font-bold uppercase tracking-widest"
+                class="text-[10px] font-bold uppercase tracking-wider sm:tracking-widest"
                 classList={{
                   "text-forest font-black": selectedCategories().size > 0,
                   "text-forest/70": selectedCategories().size === 0,
@@ -455,7 +475,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
               </span>
               <Show when={selectedCategories().size > 0}>
                 <span
-                  class="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
+                  class="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-[8px] sm:text-[9px] font-bold shrink-0"
                   style={{
                     "background-color": "var(--color-forest)",
                     color: "#ffffff",
@@ -465,7 +485,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                 </span>
               </Show>
               <span
-                class="material-icons !text-[14px] transition-transform duration-200 text-forest"
+                class="material-icons !text-[14px] shrink-0 transition-transform duration-200 text-forest"
                 classList={{
                   "rotate-180": filtersOpen(),
                 }}
@@ -477,7 +497,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
             {/* Multi-Select Dropdown Menu */}
             <Show when={filtersOpen()}>
               <div
-                class="absolute right-0 mt-1.5 w-60 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-2 z-30 flex flex-col gap-1 animate-slide-down"
+                class="absolute right-0 mt-1.5 w-56 sm:w-60 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-2 z-40 flex flex-col gap-1 animate-slide-down"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div class="flex items-center justify-between px-2 py-1 border-b border-forest/10 mb-0.5">
@@ -577,12 +597,12 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
         </div>
       </div>
       <Show when={!props.loading && sortedTransactions().length > 0}>
-        <div class="overflow-x-auto overflow-y-auto flex-1 min-h-0 custom-scrollbar">
-          <table class="w-full min-w-[640px] text-left font-outfit relative">
-            <thead class="bg-sage/70 text-earth text-[10px] uppercase tracking-widest sticky top-0 z-10 backdrop-blur-sm shadow-sm">
+        <div class="overflow-x-hidden sm:overflow-x-auto overflow-y-auto flex-1 h-[380px] min-h-[380px] max-h-[380px] sm:h-auto sm:min-h-0 sm:max-h-none custom-scrollbar rounded-b-2xl">
+          <table class="w-full min-w-0 sm:min-w-[640px] text-left font-outfit relative">
+            <thead class="bg-sage text-earth text-[9px] sm:text-[10px] uppercase tracking-widest sticky top-0 z-10 border-b border-forest/10 shadow-xs">
               <tr>
                 <th
-                  class={headerClass("name")}
+                  class={`${headerClass("name")} pl-3.5 sm:pl-6 pr-1.5 sm:pr-4`}
                   onClick={() => handleSort("name")}
                 >
                   <span class="inline-flex items-center gap-1">
@@ -599,7 +619,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                   </span>
                 </th>
                 <th
-                  class={headerClass("category")}
+                  class={`${headerClass("category")} hidden sm:table-cell`}
                   onClick={() => handleSort("category")}
                 >
                   <span class="inline-flex items-center gap-1">
@@ -617,7 +637,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                   </span>
                 </th>
                 <th
-                  class={headerClass("account")}
+                  class={`${headerClass("account")} hidden sm:table-cell`}
                   onClick={() => handleSort("account")}
                 >
                   <span class="inline-flex items-center gap-1">
@@ -635,7 +655,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                   </span>
                 </th>
                 <th
-                  class={headerClass("date")}
+                  class={`${headerClass("date")} hidden sm:table-cell`}
                   onClick={() => handleSort("date")}
                 >
                   <span class="inline-flex items-center gap-1">
@@ -652,7 +672,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                   </span>
                 </th>
                 <th
-                  class={headerClass("amount")}
+                  class={`${headerClass("amount")} px-1.5 sm:px-6 whitespace-nowrap w-px sm:w-auto`}
                   onClick={() => handleSort("amount")}
                 >
                   <span class="inline-flex items-center gap-1 justify-end">
@@ -669,12 +689,12 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                     </span>
                   </span>
                 </th>
-                <th class="px-4 py-4 w-20 text-center text-[10px] font-semibold uppercase tracking-wider text-earth">
+                <th class="pr-3.5 sm:pr-6 pl-1 sm:pl-4 py-3 sm:py-4 w-20 sm:w-24 text-center text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-earth">
                   Action
                 </th>
               </tr>
             </thead>
-            <tbody class="text-sm divide-y divide-forest/5">
+            <tbody class="text-xs sm:text-sm divide-y divide-forest/5">
               <For each={sortedTransactions()}>
                 {(t) => {
                   const isPending = () => isTransactionPending(t.id);
@@ -694,30 +714,68 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                         "opacity-70 bg-forest/[0.02]": isPending(),
                       }}
                     >
-                      <td class="px-6 py-4 border-l-3 border-transparent group-hover:border-spring">
-                        <div class="flex flex-col gap-1.5">
-                          <div class="flex items-center gap-2 flex-wrap">
-                            <p class="font-semibold text-forest leading-none">
+                      <td class="pl-3.5 sm:pl-6 pr-1.5 sm:pr-4 py-2.5 sm:py-4 border-l-3 border-transparent group-hover:border-spring min-w-0">
+                        <div class="flex flex-col gap-1 min-w-0">
+                          <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <p class="font-semibold text-xs sm:text-sm text-forest leading-snug truncate max-w-[140px] xs:max-w-[180px] sm:max-w-none">
                               {t.name}
                             </p>
                             <Show when={t.isRecurring}>
                               <span
-                                class="material-icons text-[14px] text-spring"
+                                class="material-icons !text-[13px] sm:!text-[14px] text-spring shrink-0"
                                 title="Recurring Transaction"
                               >
                                 autorenew
                               </span>
                             </Show>
                             <Show when={isPending()}>
-                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
-                                <span class="w-2.5 h-2.5 border-2 border-amber-600/30 border-t-amber-600 rounded-full animate-spin" />
+                              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shrink-0">
+                                <span class="w-2 h-2 border-2 border-amber-600/30 border-t-amber-600 rounded-full animate-spin" />
                                 Saving…
                               </span>
                             </Show>
                           </div>
+
+                          {/* Mobile details: Category, Account, Date */}
+                          <div class="sm:hidden flex items-center gap-1.5 flex-wrap text-[10px] text-earth/70">
+                            <span
+                              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0"
+                              style={{
+                                "background-color": t.categoryColor
+                                  ? `${t.categoryColor}15`
+                                  : "rgba(232, 245, 236, 0.5)",
+                                color: t.categoryColor || "var(--color-forest)",
+                              }}
+                            >
+                              <Show when={formatIconName(t.categoryIcon)}>
+                                <span class="material-icons !text-[11px] shrink-0">
+                                  {formatIconName(t.categoryIcon)}
+                                </span>
+                              </Show>
+                              <span class="truncate max-w-[80px]">{t.category}</span>
+                            </span>
+
+                            <Show when={t.accountName}>
+                              <span
+                                class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0"
+                                style={{
+                                  "background-color": t.accountColor
+                                    ? `${t.accountColor}15`
+                                    : "rgba(82, 194, 120, 0.1)",
+                                  color: t.accountColor || "var(--color-mid-green)",
+                                }}
+                              >
+                                {t.accountName}
+                              </span>
+                            </Show>
+
+                            <span class="text-[10px] text-earth/60 shrink-0">
+                              {formatDateDetail(t.date)}
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td class="px-6 py-4">
+                      <td class="hidden sm:table-cell px-6 py-4">
                         <div class="flex items-center gap-2">
                           <span
                             class="pl-2 pr-3 py-1 text-[12px] rounded-md font-medium flex items-center gap-1.5 whitespace-nowrap"
@@ -737,7 +795,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                           </span>
                         </div>
                       </td>
-                      <td class="px-6 py-4">
+                      <td class="hidden sm:table-cell px-6 py-4">
                         <span
                           class="px-2 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
                           style={{
@@ -750,11 +808,11 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                           {t.accountName}
                         </span>
                       </td>
-                      <td class="px-6 py-4 text-earth">
+                      <td class="hidden sm:table-cell px-6 py-4 text-earth">
                         {formatDateDetail(t.date)}
                       </td>
                       <td
-                        class="px-6 py-4 text-right font-bold"
+                        class="px-1.5 sm:px-6 py-2.5 sm:py-4 text-right font-bold text-xs sm:text-sm whitespace-nowrap w-px sm:w-auto"
                         classList={{
                           "text-red-600": t.type?.toLowerCase() === "expense",
                           "text-green-600": t.type?.toLowerCase() === "income",
@@ -770,9 +828,9 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                             : ""}
                         {formatRupiah(t.amount)}
                       </td>
-                      <td class="px-4 py-4 text-center">
+                      <td class="pr-3.5 sm:pr-6 pl-1 sm:pl-4 py-2.5 sm:py-4 w-20 sm:w-24 text-center">
                         <div
-                          class="flex items-center justify-center gap-1"
+                          class="flex items-center justify-center gap-1 sm:gap-1.5"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
@@ -782,11 +840,11 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                               e.stopPropagation();
                               openEditTransaction(t.id);
                             }}
-                            class="w-7 h-7 rounded-lg text-earth/60 hover:text-forest hover:bg-forest/5 flex items-center justify-center transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed min-h-[28px]"
+                            class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg text-earth/60 hover:text-forest hover:bg-forest/5 flex items-center justify-center transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                             title="Edit transaction"
                             aria-label={`Edit ${t.name}`}
                           >
-                            <span class="material-icons !text-[16px]">edit</span>
+                            <span class="material-icons !text-[15px] sm:!text-[16px]">edit</span>
                           </button>
                           <button
                             type="button"
@@ -795,11 +853,11 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                               e.stopPropagation();
                               setTransactionToDelete(t);
                             }}
-                            class="w-7 h-7 rounded-lg text-earth/60 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed min-h-[28px]"
+                            class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg text-earth/60 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                             title="Delete transaction"
                             aria-label={`Delete ${t.name}`}
                           >
-                            <span class="material-icons !text-[16px]">delete_outline</span>
+                            <span class="material-icons !text-[15px] sm:!text-[16px]">delete_outline</span>
                           </button>
                         </div>
                       </td>
@@ -813,14 +871,14 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
       </Show>
 
       <Show when={props.loading}>
-        <div class="p-12 text-center text-earth/50 animate-pulse flex-1 flex flex-col items-center justify-center">
+        <div class="p-12 text-center text-earth/50 animate-pulse flex-1 flex flex-col items-center justify-center h-[380px] min-h-[380px] max-h-[380px] sm:h-auto sm:min-h-0 sm:max-h-none">
           <span class="material-icons text-4xl mb-2">sync</span>
           <p class="text-sm">Fetching your garden data...</p>
         </div>
       </Show>
 
       <Show when={!props.loading && sortedTransactions().length === 0}>
-        <div class="p-12 text-center text-earth/50 flex-1 flex flex-col items-center justify-center">
+        <div class="p-12 text-center text-earth/50 flex-1 flex flex-col items-center justify-center h-[380px] min-h-[380px] max-h-[380px] sm:h-auto sm:min-h-0 sm:max-h-none">
           <span class="material-icons text-4xl mb-2">eco</span>
           <p class="text-sm">
             {typeFilter() === "expense"
