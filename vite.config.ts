@@ -1,9 +1,15 @@
+import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import solidPlugin from "vite-plugin-solid";
 import devtools from "solid-devtools/vite";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "solid-apexcharts": path.resolve(__dirname, "./src/components/common/SolidApexCharts.tsx"),
+    },
+  },
   plugins: [devtools(), solidPlugin(), tailwindcss()],
   optimizeDeps: {
     include: ["solid-js", "solid-js/store", "@solid-devtools/shared"],

@@ -13,6 +13,12 @@ import { AuthProvider, useAuth } from "./context/authContext";
 import { getAccounts } from "./data/expenseData";
 import FirstTimeSetupModal from "./components/auth/FirstTimeSetupModal";
 
+import {
+  openCreateTransaction,
+  initializeTransactions,
+  setupTransactionListener,
+} from "./store/transactionStore";
+
 const AppContent = (props: ParentProps) => {
   setupPersistence();
   setupPortfolioPersistence();
@@ -26,6 +32,13 @@ const AppContent = (props: ParentProps) => {
   onMount(async () => {
     const rate = await fetchUsdRate();
     setUsdRateOnce(rate);
+  });
+
+  createEffect(() => {
+    if (isAuthenticated() && !isLoading()) {
+      initializeTransactions();
+      setupTransactionListener();
+    }
   });
 
   createEffect(() => {
@@ -54,6 +67,7 @@ const AppContent = (props: ParentProps) => {
     setNeedsOnboarding(false);
     await resolveUserId();
     await loadPortfolios();
+    await initializeTransactions(true);
   };
 
   const isPublicPage = () => {
@@ -97,7 +111,7 @@ const AppContent = (props: ParentProps) => {
         {/* Global Add Button - Hidden on Stock / Management pages */}
         <Show when={!shouldHideAddButton()}>
           <button
-            onClick={() => setState("ui", "showAddExpense", true)}
+            onClick={() => openCreateTransaction()}
             class="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 lg:bottom-10 lg:right-12 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-spring text-white rounded-full flex items-center justify-center shadow-2xl transition-all z-40 group cursor-pointer hover:bg-forest duration-300 active:scale-95"
             classList={{
               "right-4 sm:right-8 lg:right-10": !state.ui.insightsOpen,

@@ -1,11 +1,12 @@
 import { createSignal, Show } from "solid-js";
-import type { PendingAction } from "../../../types/intelligence";
+import type { PendingTransferAction } from "../../../types/intelligence";
 
 interface Props {
-  action: PendingAction;
+  action: PendingTransferAction;
   onConfirm: () => Promise<void>;
   onCancel: () => Promise<void>;
 }
+
 
 const PendingActionCard = (props: Props) => {
   const [isConfirming, setIsConfirming] = createSignal(false);

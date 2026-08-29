@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import InsightsSidebar from "../screen-dashboard/InsightsSidebar";
 import AddExpenseSlideOver from "../screen-dashboard/modules/AddExpenseSlideOver";
+import TransactionToastRegion from "../common/TransactionToastRegion";
 
 // Keep a map of pathnames to scroll positions
 const scrollPositions: Record<string, number> = {};
@@ -81,6 +82,7 @@ const MainLayout = (props: ParentProps) => {
         </main>
 
         <AddExpenseSlideOver />
+        <TransactionToastRegion />
       </div>
 
       {/* Right Insights Sidebar */}

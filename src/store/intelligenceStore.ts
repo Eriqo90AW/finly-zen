@@ -180,9 +180,202 @@ export function clearIntelligenceChat(profile?: string) {
   });
 }
 
+export function updateBatchDraft(
+  draftId: string,
+  patch: Partial<TransactionDraft>,
+  userAccounts?: Array<{ id: string; name: string }>,
+  userCategories?: Array<{ id: string; name: string }>,
+) {
+  const currentAction = intelligenceState.pendingAction;
+  if (!currentAction || currentAction.kind !== "transaction-batch") return;
+
+  const targetIndex = currentAction.drafts.findIndex((d) => d.id === draftId);
+  if (targetIndex === -1) return;
+
+  const currentDraft = currentAction.drafts[targetIndex];
+  if (currentDraft.status === "saved") return; // Cannot edit already saved drafts
+
+  const updated: TransactionDraft = {
+    ...currentDraft,
+    ...patch,
+  };
+
+  // Re-sync accountName or categoryName if IDs changed
+  if (patch.accountId !== undefined && userAccounts) {
+    const acc = userAccounts.find((a) => a.id === patch.accountId);
+    updated.accountName = acc?.name || updated.accountName;
+  }
+  if (patch.categoryId !== undefined && userCategories) {
+    const cat = userCategories.find((c) => c.id === patch.categoryId);
+    updated.categoryName = cat?.name || updated.categoryName;
+  }
+
+  // Re-validate draft fields if not excluded
+  if (updated.status !== "excluded") {
+    const errors: Record<string, string> = {};
+    if (!updated.name || updated.name.trim().length < 1) {
+      errors.name = "Description is required";
+    }
+    if (!updated.amount || updated.amount <= 0 || !Number.isFinite(updated.amount)) {
+      errors.amount = "Valid positive amount is required";
+    }
+    if (!updated.accountId) {
+      errors.accountId = "Account must be selected";
+    }
+    if (!updated.categoryId) {
+      errors.categoryId = "Category must be selected";
+    }
+
+    const isValid = Object.keys(errors).length === 0;
+    updated.errors = isValid ? undefined : errors;
+    if (updated.status !== "saving") {
+      updated.status = isValid ? "ready" : "invalid";
+    }
+    // Auto-select if becoming valid and was previously invalid
+    if (isValid && currentDraft.status === "invalid" && !updated.selected) {
+      updated.selected = true;
+    }
+  }
+
+  setIntelligenceState(
+    "pendingAction",
+    "drafts",
+    (d: TransactionDraft) => d.id === draftId,
+    updated,
+  );
+}
+
+export function toggleDraftSelection(draftId: string) {
+  const currentAction = intelligenceState.pendingAction;
+  if (!currentAction || currentAction.kind !== "transaction-batch") return;
+
+  const draft = currentAction.drafts.find((d) => d.id === draftId);
+  if (!draft || draft.status === "saved") return;
+
+  setIntelligenceState(
+    "pendingAction",
+    "drafts",
+    (d: TransactionDraft) => d.id === draftId,
+    "selected",
+    (s: boolean) => !s,
+  );
+}
+
+export function selectAllValidDrafts(select: boolean) {
+  const currentAction = intelligenceState.pendingAction;
+  if (!currentAction || currentAction.kind !== "transaction-batch") return;
+
+  setIntelligenceState(
+    "pendingAction",
+    "drafts",
+    (d: TransactionDraft) => d.status !== "saved" && d.status !== "excluded",
+    (prev: TransactionDraft) => ({
+      ...prev,
+      selected: select ? (prev.status === "ready" || prev.status === "failed") : false,
+    }),
+  );
+}
+
+
+export function toggleExcludeDraft(draftId: string) {
+  const currentAction = intelligenceState.pendingAction;
+  if (!currentAction || currentAction.kind !== "transaction-batch") return;
+
+  const draft = currentAction.drafts.find((d) => d.id === draftId);
+  if (!draft || draft.status === "saved") return;
+
+  const isExcluded = draft.status === "excluded";
+  if (isExcluded) {
+    const hasErrors = draft.errors && Object.keys(draft.errors).length > 0;
+    const newStatus = hasErrors ? "invalid" : "ready";
+    setIntelligenceState(
+      "pendingAction",
+      "drafts",
+      (d: TransactionDraft) => d.id === draftId,
+      (prev: TransactionDraft) => ({
+        ...prev,
+        status: newStatus,
+        selected: !hasErrors,
+      }),
+    );
+  } else {
+    setIntelligenceState(
+      "pendingAction",
+      "drafts",
+      (d: TransactionDraft) => d.id === draftId,
+      (prev: TransactionDraft) => ({
+        ...prev,
+        status: "excluded",
+        selected: false,
+      }),
+    );
+  }
+}
+
+export function applyAccountToSelectedDrafts(accountId: string, accountName: string) {
+  const currentAction = intelligenceState.pendingAction;
+  if (!currentAction || currentAction.kind !== "transaction-batch") return;
+
+  setIntelligenceState(
+    "pendingAction",
+    "drafts",
+    (d: TransactionDraft) => d.selected && d.status !== "saved" && d.status !== "excluded",
+    (prev: TransactionDraft) => {
+      const updatedErrors = { ...(prev.errors || {}) };
+      delete updatedErrors.accountId;
+      const isValid = Object.keys(updatedErrors).length === 0;
+
+      return {
+        ...prev,
+        accountId,
+        accountName,
+        errors: isValid ? undefined : updatedErrors,
+        status: isValid ? "ready" : "invalid",
+      };
+    },
+  );
+}
+
+export function applyDateToSelectedDrafts(date: string) {
+  const currentAction = intelligenceState.pendingAction;
+  if (!currentAction || currentAction.kind !== "transaction-batch") return;
+
+  setIntelligenceState(
+    "pendingAction",
+    "drafts",
+    (d: TransactionDraft) => d.selected && d.status !== "saved" && d.status !== "excluded",
+    "date",
+    date,
+  );
+}
+
+export function updateDraftStatus(
+  draftId: string,
+  status: TransactionDraft["status"],
+  errorMessage?: string,
+  savedTransactionId?: string,
+) {
+  const currentAction = intelligenceState.pendingAction;
+  if (!currentAction || currentAction.kind !== "transaction-batch") return;
+
+  setIntelligenceState(
+    "pendingAction",
+    "drafts",
+    (d: TransactionDraft) => d.id === draftId,
+    (prev: TransactionDraft) => ({
+      ...prev,
+      status,
+      errorMessage: errorMessage || undefined,
+      savedTransactionId: savedTransactionId || prev.savedTransactionId,
+      selected: status === "saved" ? false : prev.selected,
+    }),
+  );
+}
+
 export function createMessageId(): string {
   return crypto.randomUUID();
 }
+
 
 export function getApiMessages(profile?: string): ChatMessage[] {
   const targetProfile = profile || intelligenceState.activeProfile || "finly";

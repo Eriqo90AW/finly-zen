@@ -2,7 +2,7 @@ import { useLocation } from "@solidjs/router";
 import { createSignal, onMount, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { state, setState } from "../../store";
-import { clearIntelligenceChat } from "../../store/intelligenceStore";
+import { resetConversation } from "../../services/intelligence/chatOrchestrator";
 import { getPageInfo } from "../../lib/pageContext";
 import ChatPanel from "./intelligence/ChatPanel";
 import CloseIcon from "@suid/icons-material/Close";
@@ -55,7 +55,7 @@ const InsightsSidebar = () => {
           </div>
 
           <button
-            onClick={() => clearIntelligenceChat(pageInfo().model)}
+            onClick={() => resetConversation(pageInfo().model)}
             class="w-8 h-8 rounded-lg flex items-center justify-center text-earth/50 hover:text-forest hover:bg-sage/50 transition-colors cursor-pointer"
             title={`New chat / Reset conversation`}
             aria-label={`New chat / Reset conversation`}
@@ -90,7 +90,7 @@ const InsightsSidebar = () => {
 
               <div class="flex items-center gap-1 shrink-0">
                 <button
-                  onClick={() => clearIntelligenceChat(pageInfo().model)}
+                  onClick={() => resetConversation(pageInfo().model)}
                   class="w-8 h-8 rounded-lg flex items-center justify-center text-earth/50 hover:text-forest hover:bg-sage/50 transition-colors cursor-pointer"
                   title="New chat"
                   aria-label="New chat"
@@ -106,6 +106,7 @@ const InsightsSidebar = () => {
                 </button>
               </div>
             </div>
+
 
             <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
               <ChatPanel />

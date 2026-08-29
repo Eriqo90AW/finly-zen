@@ -2,27 +2,41 @@ import {
   getAccounts,
   getCategories,
   getTransactions,
-  addTransaction,
   addTransfer,
 } from "../../../data/expenseData";
 import { getPortfolios, getPortfolioHoldings } from "../../../data/portfolioData";
 import type { UserContext } from "../../../lib/userContext";
 import type {
+  EntryKind,
   PendingAction,
+  PendingBatchTransactionAction,
+  PendingTransferAction,
   ToolExecutionOutcome,
+  TransactionDraft,
 } from "../../../types/intelligence";
 import { formatRupiah } from "../../../utils/format";
 
 const MAX_TRANSACTION_AMOUNT = 100_000_000_000; // 100 Billion IDR
 const MAX_STRING_LENGTH = 255;
+const MAX_BATCH_SIZE = 25;
 
-function parseArgs(raw: string): Record<string, unknown> {
+export function getCurrentDateInJakarta(): string {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return formatter.format(now); // "YYYY-MM-DD"
+}
+
+export function parseArgs(raw: string): Record<string, unknown> {
   try {
     const parsed = JSON.parse(raw || "{}");
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
       return {};
     }
-    // Prevent prototype pollution
     Reflect.deleteProperty(parsed, "__proto__");
     Reflect.deleteProperty(parsed, "constructor");
     Reflect.deleteProperty(parsed, "prototype");
@@ -32,7 +46,7 @@ function parseArgs(raw: string): Record<string, unknown> {
   }
 }
 
-function sanitizeAmount(value: unknown): number | null {
+export function sanitizeAmount(value: unknown): number | null {
   if (typeof value === "number") {
     if (!Number.isFinite(value) || isNaN(value) || value <= 0 || value > MAX_TRANSACTION_AMOUNT) {
       return null;
@@ -49,19 +63,47 @@ function sanitizeAmount(value: unknown): number | null {
   return null;
 }
 
-function sanitizeText(value: unknown, maxLength = MAX_STRING_LENGTH): string {
+export function sanitizeText(value: unknown, maxLength = MAX_STRING_LENGTH): string {
   if (typeof value !== "string") return "";
-  // Strip control chars and trim
   return value.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, maxLength);
 }
 
-function parseValidDate(value: unknown): number | null {
+export function parseValidDate(value: unknown): number | null {
   if (typeof value !== "string" || !value.trim()) return null;
   const timestamp = new Date(value).getTime();
   return Number.isNaN(timestamp) ? null : timestamp;
 }
 
-function resolveAccountId(
+export function sanitizeIsoDate(value: unknown, fallbackDate?: string): string {
+  const defaultDate = fallbackDate || getCurrentDateInJakarta();
+  if (typeof value !== "string" || !value.trim()) return defaultDate;
+  const clean = value.trim();
+
+  // If already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+    const time = new Date(clean + "T00:00:00Z").getTime();
+    if (!Number.isNaN(time)) return clean;
+  }
+
+  const parsed = new Date(clean);
+  if (!Number.isNaN(parsed.getTime())) {
+    try {
+      const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      return formatter.format(parsed);
+    } catch {
+      return defaultDate;
+    }
+  }
+
+  return defaultDate;
+}
+
+export function resolveAccountId(
   ctx: UserContext,
   accountId?: unknown,
   accountName?: unknown,
@@ -77,12 +119,22 @@ function resolveAccountId(
     const match = ctx.accounts.find(
       (a) => a.name.trim().toLowerCase() === cleanName,
     );
-    return match?.id ?? null;
+    if (match) return match.id;
   }
-  return ctx.selectedAccountId;
+
+  if (ctx.selectedAccountId) {
+    const match = ctx.accounts.find((a) => a.id === ctx.selectedAccountId);
+    if (match) return match.id;
+  }
+
+  if (ctx.accounts.length === 1) {
+    return ctx.accounts[0].id;
+  }
+
+  return null;
 }
 
-function resolveCategoryId(
+export function resolveCategoryId(
   ctx: UserContext,
   categoryId?: unknown,
   categoryName?: unknown,
@@ -103,7 +155,7 @@ function resolveCategoryId(
   return null;
 }
 
-function resolvePortfolioId(
+export function resolvePortfolioId(
   ctx: UserContext,
   portfolioId?: unknown,
   portfolioName?: unknown,
@@ -124,12 +176,98 @@ function resolvePortfolioId(
   return ctx.activePortfolioId;
 }
 
+export function normalizeEntryKind(raw: unknown): EntryKind {
+  if (typeof raw !== "string") return "item";
+  const lower = raw.trim().toLowerCase();
+  if (lower === "tax") return "tax";
+  if (lower === "service" || lower === "service_charge" || lower === "charge") return "service";
+  if (lower === "discount" || lower === "voucher" || lower === "promo") return "discount";
+  if (lower === "adjustment") return "adjustment";
+  return "item";
+}
+
+export function normalizeDraft(
+  raw: Record<string, unknown>,
+  ctx: UserContext,
+  defaultDate: string,
+  fallbackCategoryId?: string | null,
+  toolCallId?: string,
+): TransactionDraft {
+  const id =
+    (typeof raw.id === "string" && raw.id.trim()) ||
+    (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `draft-${Math.random().toString(36).slice(2, 9)}`);
+
+  const entryKind = normalizeEntryKind(raw.entry_kind ?? raw.entryKind);
+  const rawType = typeof raw.type === "string" ? raw.type.trim().toLowerCase() : "";
+
+  // Discounts are always treated as income
+  const type: "expense" | "income" =
+    entryKind === "discount" ? "income" : rawType === "income" ? "income" : "expense";
+
+  // Sanitize amount (always positive)
+  let rawAmount = raw.amount;
+  if (typeof rawAmount === "number") {
+    rawAmount = Math.abs(rawAmount);
+  } else if (typeof rawAmount === "string") {
+    rawAmount = Math.abs(parseFloat(rawAmount.replace(/[^0-9.-]+/g, "") || "0"));
+  }
+  const amount = sanitizeAmount(rawAmount);
+
+  const name = sanitizeText(raw.name, 100);
+  const note = sanitizeText(raw.note, 255) || undefined;
+  const isRecurring = raw.is_recurring === true || raw.isRecurring === true;
+  const date = sanitizeIsoDate(raw.date, defaultDate);
+
+  const resolvedAccountId = resolveAccountId(ctx, raw.account_id ?? raw.accountId, raw.account_name ?? raw.accountName);
+  const resolvedAccount = resolvedAccountId ? ctx.accounts.find((a) => a.id === resolvedAccountId) : null;
+
+  let resolvedCatId = resolveCategoryId(ctx, raw.category_id ?? raw.categoryId, raw.category_name ?? raw.categoryName);
+  if (!resolvedCatId && entryKind === "discount" && fallbackCategoryId) {
+    resolvedCatId = fallbackCategoryId;
+  }
+  const resolvedCategory = resolvedCatId ? ctx.categories.find((c) => c.id === resolvedCatId) : null;
+
+  const errors: Record<string, string> = {};
+  if (!name || name.length < 1) {
+    errors.name = "Description is required";
+  }
+  if (amount === null || amount <= 0) {
+    errors.amount = "Valid positive amount is required";
+  }
+  if (!resolvedAccountId) {
+    errors.accountId = "Account must be selected";
+  }
+  if (!resolvedCatId) {
+    errors.categoryId = "Category must be selected";
+  }
+
+  const isValid = Object.keys(errors).length === 0;
+
+  return {
+    id,
+    name: name || (entryKind === "discount" ? "Discount" : entryKind === "tax" ? "Tax" : entryKind === "service" ? "Service Charge" : "Transaction"),
+    amount: amount ?? 0,
+    type,
+    entryKind,
+    accountId: resolvedAccountId,
+    accountName: resolvedAccount?.name,
+    categoryId: resolvedCatId,
+    categoryName: resolvedCategory?.name,
+    note,
+    isRecurring,
+    date,
+    status: isValid ? "ready" : "invalid",
+    selected: isValid,
+    errors: isValid ? undefined : errors,
+    toolCallId,
+  };
+}
+
 function filterTransactions(
   transactions: Awaited<ReturnType<typeof getTransactions>>,
   args: Record<string, unknown>,
   ctx: UserContext,
 ) {
-  // Only expose transactions associated with user's scoped accounts
   const allowedAccountNames = new Set(ctx.accounts.map((a) => a.name.toLowerCase()));
   let result = transactions.filter(
     (t) => t.accountName && allowedAccountNames.has(t.accountName.toLowerCase()),
@@ -284,55 +422,90 @@ export async function executeTool(
     }
 
     case "propose_add_transaction": {
-      const name = sanitizeText(args.name, 100);
-      const amount = sanitizeAmount(args.amount);
-      const rawType = typeof args.type === "string" ? args.type.trim().toLowerCase() : "";
-      const type = rawType === "income" ? "income" : rawType === "expense" ? "expense" : null;
+      const defaultDate = getCurrentDateInJakarta();
+      const draft = normalizeDraft(args, ctx, defaultDate, null, toolCallId);
 
-      if (!name || name.length < 1) {
-        return { kind: "result", data: { error: "A valid transaction description is required (1-100 chars)." } };
-      }
-      if (amount === null) {
-        return { kind: "result", data: { error: "Invalid amount. Must be a positive finite number up to 100B IDR." } };
-      }
-      if (!type) {
-        return { kind: "result", data: { error: "Invalid transaction type. Must be 'expense' or 'income'." } };
-      }
-
-      const accountId = resolveAccountId(ctx, args.account_id, args.account_name);
-      const categoryId = resolveCategoryId(ctx, args.category_id, args.category_name);
-
-      if (!accountId) {
-        return { kind: "result", data: { error: "Account not found or access denied." } };
-      }
-      if (!categoryId) {
-        return { kind: "result", data: { error: "Category not found or access denied." } };
-      }
-
-      const account = ctx.accounts.find((a) => a.id === accountId);
-      const category = ctx.categories.find((c) => c.id === categoryId);
-      const note = sanitizeText(args.note, 255) || undefined;
-      const isRecurring = args.is_recurring === true;
-
-      const pendingAction: PendingAction = {
-        id: crypto.randomUUID(),
+      const pendingAction: PendingBatchTransactionAction = {
+        id: crypto.randomUUID ? crypto.randomUUID() : `batch-${Date.now()}`,
+        kind: "transaction-batch",
         toolCallId,
-        toolName,
-        title: `Add ${type}: ${name}`,
-        description: `${formatRupiah(amount)} · ${category?.name} · ${account?.name}`,
-        args: { name, amount, type, accountId, categoryId, note, isRecurring },
-        execute: async () => {
-          return addTransaction({
-            accountId,
-            userId: ctx.userId,
-            name,
-            type,
-            amount,
-            categoryId,
-            note,
-            isRecurring,
-          });
-        },
+        toolCallIds: [toolCallId],
+        toolName: "propose_add_transaction",
+        source: "chat",
+        merchant: undefined,
+        drafts: [draft],
+        originatingProfile: ctx.currentPage.model || "finly",
+        originatingPath: ctx.currentPage.path,
+        createdAt: Date.now(),
+      };
+
+      return { kind: "pending", pendingAction };
+    }
+
+    case "propose_add_transactions": {
+      const rawList = args.transactions;
+      if (!Array.isArray(rawList) || rawList.length === 0) {
+        return {
+          kind: "result",
+          data: { error: "At least 1 transaction draft is required." },
+        };
+      }
+
+      if (rawList.length > MAX_BATCH_SIZE) {
+        return {
+          kind: "result",
+          data: {
+            error: `Batch exceeds the 25-transaction limit (${rawList.length} items submitted). Please split the request into smaller batches.`,
+          },
+        };
+      }
+
+      const defaultDate = sanitizeIsoDate(args.date, getCurrentDateInJakarta());
+
+      // Identify largest positive item category as fallback for discounts
+      let fallbackCategoryId: string | null = null;
+      let highestAmount = -1;
+      for (const item of rawList) {
+        if (typeof item === "object" && item !== null) {
+          const rawItem = item as Record<string, unknown>;
+          const kind = normalizeEntryKind(rawItem.entry_kind ?? rawItem.entryKind);
+          if (kind === "item" || !rawItem.entry_kind) {
+            const amt = sanitizeAmount(rawItem.amount);
+            if (amt !== null && amt > highestAmount) {
+              const catId = resolveCategoryId(ctx, rawItem.category_id, rawItem.category_name);
+              if (catId) {
+                highestAmount = amt;
+                fallbackCategoryId = catId;
+              }
+            }
+          }
+        }
+      }
+
+      const drafts: TransactionDraft[] = rawList.map((item) => {
+        const rawItem = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+        return normalizeDraft(rawItem, ctx, defaultDate, fallbackCategoryId, toolCallId);
+      });
+
+      const merchant = sanitizeText(args.merchant, 100) || undefined;
+      const receiptTotal = typeof args.receipt_total === "number" && args.receipt_total > 0 ? args.receipt_total : undefined;
+      const ocrConfidence = typeof args.ocr_confidence === "number" ? args.ocr_confidence : undefined;
+      const source = args.source === "ocr" ? "ocr" : "chat";
+
+      const pendingAction: PendingBatchTransactionAction = {
+        id: crypto.randomUUID ? crypto.randomUUID() : `batch-${Date.now()}`,
+        kind: "transaction-batch",
+        toolCallId,
+        toolCallIds: [toolCallId],
+        toolName: "propose_add_transactions",
+        source,
+        merchant,
+        receiptTotal,
+        ocrConfidence,
+        drafts,
+        originatingProfile: ctx.currentPage.model || "finly",
+        originatingPath: ctx.currentPage.path,
+        createdAt: Date.now(),
       };
 
       return { kind: "pending", pendingAction };
@@ -365,8 +538,9 @@ export async function executeTool(
       const fromAccount = ctx.accounts.find((a) => a.id === fromAccountId);
       const toAccount = ctx.accounts.find((a) => a.id === toAccountId);
 
-      const pendingAction: PendingAction = {
-        id: crypto.randomUUID(),
+      const pendingAction: PendingTransferAction = {
+        id: crypto.randomUUID ? crypto.randomUUID() : `transfer-${Date.now()}`,
+        kind: "transfer",
         toolCallId,
         toolName,
         title: "Transfer between accounts",
@@ -390,3 +564,4 @@ export async function executeTool(
       return { kind: "result", data: { error: `Unknown tool: ${toolName}` } };
   }
 }
+

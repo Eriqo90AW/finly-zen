@@ -34,3 +34,30 @@ export const isDateInRange = (dateStr: string | Date, start: Date, end: Date): b
   const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
   return d >= start && d <= end;
 };
+
+export function getLocalYmd(dateInput: string | Date): string {
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return new Date().toISOString().split("T")[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function composeDateWithTime(selectedYmd: string, originalIso?: string): Date {
+  const [year, month, day] = selectedYmd.split("-").map(Number);
+  if (originalIso) {
+    const originalDate = new Date(originalIso);
+    if (!isNaN(originalDate.getTime())) {
+      const result = new Date(originalDate.getTime());
+      result.setFullYear(year, month - 1, day);
+      return result;
+    }
+  }
+  const now = new Date();
+  const result = new Date();
+  result.setFullYear(year, month - 1, day);
+  result.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+  return result;
+}
+

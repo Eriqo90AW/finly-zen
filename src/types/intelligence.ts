@@ -33,15 +33,74 @@ export interface OpenAIToolDefinition {
   };
 }
 
-export interface PendingAction {
+export type EntryKind = "item" | "tax" | "service" | "discount" | "adjustment";
+export type DraftStatus = "ready" | "invalid" | "saving" | "saved" | "failed" | "excluded";
+
+export interface TransactionDraft {
   id: string;
+  name: string;
+  amount: number;
+  type: "expense" | "income";
+  entryKind: EntryKind;
+  accountId: string | null;
+  accountName?: string;
+  categoryId: string | null;
+  categoryName?: string;
+  note?: string;
+  isRecurring?: boolean;
+  date?: string;
+  status: DraftStatus;
+  selected: boolean;
+  errors?: Record<string, string>;
+  errorMessage?: string;
+  savedTransactionId?: string;
+  toolCallId?: string;
+}
+
+export interface BatchSaveResult {
+  saved: Array<{ draftId: string; transactionId: string }>;
+  failed: Array<{ draftId: string; error: string }>;
+  excluded: Array<{ draftId: string }>;
+  savedCount: number;
+  failedCount: number;
+  skippedCount: number;
+  savedNetAmount: number;
+}
+
+export interface PendingBatchTransactionAction {
+  id: string;
+  kind: "transaction-batch";
+  toolCallId: string;
+  toolCallIds?: string[];
+  toolName: string;
+  source: "chat" | "ocr";
+  merchant?: string;
+  receiptTotal?: number;
+  ocrConfidence?: number;
+  drafts: TransactionDraft[];
+  originatingProfile: string;
+  originatingPath: string;
+  createdAt: number;
+}
+
+export interface PendingTransferAction {
+  id: string;
+  kind: "transfer";
   toolCallId: string;
   toolName: string;
   title: string;
   description: string;
-  args: Record<string, unknown>;
+  args: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    note?: string;
+  };
   execute: () => Promise<unknown>;
 }
+
+export type PendingAction = PendingBatchTransactionAction | PendingTransferAction;
+
 
 export interface ToolExecutionResult {
   kind: "result";

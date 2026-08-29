@@ -8,6 +8,10 @@ import {
 } from "../../types";
 import { state, setSelectedAccount } from "../../store";
 import {
+  openEditTransaction,
+  isTransactionPending,
+} from "../../store/transactionStore";
+import {
   formatIconName,
   formatRupiah,
   formatDateDetail,
@@ -18,6 +22,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(
     new Set(),
   );
+  const [typeFilter, setTypeFilter] = createSignal<"all" | "expense" | "income">("all");
   const [filtersOpen, setFiltersOpen] = createSignal(false);
   const [showOnlyRecurring, setShowOnlyRecurring] = createSignal(false);
   const [sortKey, setSortKey] = createSignal<SortKey>("date");
@@ -148,6 +153,12 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   const sortedTransactions = () => {
     let list = [...props.transactions];
 
+    if (typeFilter() !== "all") {
+      list = list.filter(
+        (t) => (t.type?.toLowerCase() || "expense") === typeFilter(),
+      );
+    }
+
     if (showOnlyRecurring()) {
       list = list.filter((t) => t.isRecurring);
     }
@@ -196,7 +207,63 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   return (
     <div class="col-span-12 premium-card overflow-hidden cursor-default flex flex-col min-h-[420px] lg:h-[500px]">
       <div class="p-4 sm:p-6 border-b border-forest/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-        <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
+        <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
+          <h4 class="font-outfit font-bold text-forest">Recent Transactions</h4>
+
+          {/* Expense - Income Pill Shape Selector */}
+          <div
+            role="radiogroup"
+            aria-label="Transaction Type Filter"
+            class="flex items-center p-0.5 bg-page-bg rounded-full border border-forest/10"
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={typeFilter() === "all"}
+              onClick={() => setTypeFilter("all")}
+              class="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
+              classList={{
+                "bg-forest text-white shadow-sm font-black":
+                  typeFilter() === "all",
+                "text-earth hover:text-forest": typeFilter() !== "all",
+              }}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={typeFilter() === "expense"}
+              onClick={() =>
+                setTypeFilter((prev) => (prev === "expense" ? "all" : "expense"))
+              }
+              class="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
+              classList={{
+                "bg-rose-600 text-white shadow-sm font-black":
+                  typeFilter() === "expense",
+                "text-earth hover:text-rose-600": typeFilter() !== "expense",
+              }}
+            >
+              Expense
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={typeFilter() === "income"}
+              onClick={() =>
+                setTypeFilter((prev) => (prev === "income" ? "all" : "income"))
+              }
+              class="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-outfit font-bold transition-all cursor-pointer select-none"
+              classList={{
+                "bg-emerald-600 text-white shadow-sm font-black":
+                  typeFilter() === "income",
+                "text-earth hover:text-emerald-700": typeFilter() !== "income",
+              }}
+            >
+              Income
+            </button>
+          </div>
+        </div>
         <div class="flex flex-wrap items-center gap-2 sm:gap-4">
           {/* Recurring Toggle */}
           <div
@@ -602,101 +669,143 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                     </span>
                   </span>
                 </th>
-                <th class="px-4 py-4 w-12 text-center text-[10px] font-semibold uppercase tracking-wider text-earth">
+                <th class="px-4 py-4 w-20 text-center text-[10px] font-semibold uppercase tracking-wider text-earth">
                   Action
                 </th>
               </tr>
             </thead>
             <tbody class="text-sm divide-y divide-forest/5">
               <For each={sortedTransactions()}>
-                {(t) => (
-                  <tr class="group hover:bg-page-bg transition-all">
-                    <td class="px-6 py-4 border-l-3 border-transparent group-hover:border-spring">
-                      <div class="flex flex-col gap-2">
-                        <div class="flex items-center gap-1.5">
-                          <p class="font-semibold text-forest leading-none">
-                            {t.name}
-                          </p>
-                          <Show when={t.isRecurring}>
-                            <span
-                              class="material-icons text-[14px] text-spring"
-                              title="Recurring Transaction"
-                            >
-                              autorenew
-                            </span>
-                          </Show>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center gap-2">
-                        <span
-                          class="pl-2 pr-3 py-1 text-[12px] rounded-md font-medium flex items-center gap-1.5 whitespace-nowrap"
-                          style={{
-                            "background-color": t.categoryColor
-                              ? `${t.categoryColor}15`
-                              : "rgba(232, 245, 236, 0.3)",
-                            color: t.categoryColor || "var(--color-forest)",
-                          }}
-                        >
-                          <Show when={formatIconName(t.categoryIcon)}>
-                            <span class="material-icons !text-[16px] w-4 h-4 flex items-center justify-center">
-                              {formatIconName(t.categoryIcon)}
-                            </span>
-                          </Show>
-                          {t.category}
-                        </span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <span
-                        class="px-2 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
-                        style={{
-                          "background-color": t.accountColor
-                            ? `${t.accountColor}15`
-                            : "rgba(82, 194, 120, 0.1)",
-                          color: t.accountColor || "var(--color-mid-green)",
-                        }}
-                      >
-                        {t.accountName}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 text-earth">
-                      {formatDateDetail(t.date)}
-                    </td>
-                    <td
-                      class="px-6 py-4 text-right font-bold"
+                {(t) => {
+                  const isPending = () => isTransactionPending(t.id);
+                  return (
+                    <tr
+                      role="row"
+                      tabIndex={isPending() ? -1 : 0}
+                      onClick={() => !isPending() && openEditTransaction(t.id)}
+                      onKeyDown={(e) => {
+                        if ((e.key === "Enter" || e.key === " ") && !isPending()) {
+                          e.preventDefault();
+                          openEditTransaction(t.id);
+                        }
+                      }}
+                      class="group hover:bg-page-bg transition-all cursor-pointer select-none"
                       classList={{
-                        "text-red-600": t.type?.toLowerCase() === "expense",
-                        "text-green-600": t.type?.toLowerCase() === "income",
-                        "text-forest": !["expense", "income"].includes(
-                          t.type?.toLowerCase() || "",
-                        ),
+                        "opacity-70 bg-forest/[0.02]": isPending(),
                       }}
                     >
-                      {t.type?.toLowerCase() === "income"
-                        ? "+"
-                        : t.type?.toLowerCase() === "expense"
-                          ? "-"
-                          : ""}
-                      {formatRupiah(t.amount)}
-                    </td>
-                    <td class="px-4 py-4 text-center">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTransactionToDelete(t);
+                      <td class="px-6 py-4 border-l-3 border-transparent group-hover:border-spring">
+                        <div class="flex flex-col gap-1.5">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <p class="font-semibold text-forest leading-none">
+                              {t.name}
+                            </p>
+                            <Show when={t.isRecurring}>
+                              <span
+                                class="material-icons text-[14px] text-spring"
+                                title="Recurring Transaction"
+                              >
+                                autorenew
+                              </span>
+                            </Show>
+                            <Show when={isPending()}>
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+                                <span class="w-2.5 h-2.5 border-2 border-amber-600/30 border-t-amber-600 rounded-full animate-spin" />
+                                Saving…
+                              </span>
+                            </Show>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                          <span
+                            class="pl-2 pr-3 py-1 text-[12px] rounded-md font-medium flex items-center gap-1.5 whitespace-nowrap"
+                            style={{
+                              "background-color": t.categoryColor
+                                ? `${t.categoryColor}15`
+                                : "rgba(232, 245, 236, 0.3)",
+                              color: t.categoryColor || "var(--color-forest)",
+                            }}
+                          >
+                            <Show when={formatIconName(t.categoryIcon)}>
+                              <span class="material-icons !text-[16px] w-4 h-4 flex items-center justify-center">
+                                {formatIconName(t.categoryIcon)}
+                              </span>
+                            </Show>
+                            {t.category}
+                          </span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span
+                          class="px-2 py-1 text-[10px] rounded-md font-bold uppercase tracking-widest whitespace-nowrap"
+                          style={{
+                            "background-color": t.accountColor
+                              ? `${t.accountColor}15`
+                              : "rgba(82, 194, 120, 0.1)",
+                            color: t.accountColor || "var(--color-mid-green)",
+                          }}
+                        >
+                          {t.accountName}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-earth">
+                        {formatDateDetail(t.date)}
+                      </td>
+                      <td
+                        class="px-6 py-4 text-right font-bold"
+                        classList={{
+                          "text-red-600": t.type?.toLowerCase() === "expense",
+                          "text-green-600": t.type?.toLowerCase() === "income",
+                          "text-forest": !["expense", "income"].includes(
+                            t.type?.toLowerCase() || "",
+                          ),
                         }}
-                        class="w-7 h-7 rounded-lg text-earth/40 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
-                        title="Delete transaction"
-                        aria-label={`Delete ${t.name}`}
                       >
-                        <span class="material-icons !text-[16px]">delete_outline</span>
-                      </button>
-                    </td>
-                  </tr>
-                )}
+                        {t.type?.toLowerCase() === "income"
+                          ? "+"
+                          : t.type?.toLowerCase() === "expense"
+                            ? "-"
+                            : ""}
+                        {formatRupiah(t.amount)}
+                      </td>
+                      <td class="px-4 py-4 text-center">
+                        <div
+                          class="flex items-center justify-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            disabled={isPending()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditTransaction(t.id);
+                            }}
+                            class="w-7 h-7 rounded-lg text-earth/60 hover:text-forest hover:bg-forest/5 flex items-center justify-center transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed min-h-[28px]"
+                            title="Edit transaction"
+                            aria-label={`Edit ${t.name}`}
+                          >
+                            <span class="material-icons !text-[16px]">edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isPending()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTransactionToDelete(t);
+                            }}
+                            class="w-7 h-7 rounded-lg text-earth/60 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed min-h-[28px]"
+                            title="Delete transaction"
+                            aria-label={`Delete ${t.name}`}
+                          >
+                            <span class="material-icons !text-[16px]">delete_outline</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }}
               </For>
             </tbody>
           </table>
@@ -714,7 +823,11 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
         <div class="p-12 text-center text-earth/50 flex-1 flex flex-col items-center justify-center">
           <span class="material-icons text-4xl mb-2">eco</span>
           <p class="text-sm">
-            No transactions this month. Start tending your garden!
+            {typeFilter() === "expense"
+              ? "No expense transactions recorded for this view."
+              : typeFilter() === "income"
+                ? "No income transactions recorded for this view."
+                : "No transactions this month. Start tending your garden!"}
           </p>
         </div>
       </Show>

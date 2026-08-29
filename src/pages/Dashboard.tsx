@@ -1,11 +1,7 @@
 import {
   createSignal,
   For,
-  createResource,
-  createEffect,
   createMemo,
-  onMount,
-  onCleanup,
 } from "solid-js";
 import { RecentTransactions } from "../components/screen-dashboard/RecentTransactions";
 import { ActivityCalendar } from "../components/screen-dashboard/ActivityCalendar";
@@ -13,8 +9,11 @@ import { ExpenseCategoryCard } from "../components/screen-dashboard/ExpenseCateg
 import { IncomeCategoryCard } from "../components/screen-dashboard/IncomeCategoryCard";
 import { DailySpendChart } from "../components/screen-dashboard/DailySpendChart";
 import { HeroCard } from "../components/screen-dashboard/HeroCard";
-import { state, nextMonth, prevMonth } from "../store";
-import { getTransactions } from "../data/expenseData";
+import { state } from "../store";
+import {
+  transactions,
+  isTransactionsLoading,
+} from "../store/transactionStore";
 import { getDateRange, isDateInRange } from "../utils/date";
 import { GardenWins } from "../components/screen-dashboard/GardenWins";
 import { TopExpensesAndTargetsCard } from "../components/screen-dashboard/TopExpensesCard";
@@ -24,19 +23,6 @@ import { isTransferTransaction } from "../utils/transferUtils";
 
 const Dashboard = () => {
   const [dailyBudget, setDailyBudget] = createSignal(DEFAULT_CONFIG.dailyBudget);
-
-  // Supabase Resources
-  const [transactions, { refetch }] = createResource(getTransactions);
-
-  onMount(() => {
-    const handleDataChanged = () => {
-      refetch();
-    };
-    window.addEventListener("finly:data-changed", handleDataChanged);
-    onCleanup(() => {
-      window.removeEventListener("finly:data-changed", handleDataChanged);
-    });
-  });
 
   // Filtered transactions for the selected period (excludes internal transfers)
   const monthlyTransactions = createMemo(() => {
@@ -78,13 +64,13 @@ const Dashboard = () => {
             <HeroCard
               allTransactions={transactions() || []}
               monthlyTransactions={monthlyTransactions()}
-              loading={transactions.loading}
+              loading={isTransactionsLoading()}
             />
           </div>
           <div class="col-span-1 lg:col-span-4 min-w-0 flex flex-col">
             <DailySpendChart
               transactions={allFilteredTransactions()}
-              loading={transactions.loading}
+              loading={isTransactionsLoading()}
               dailyBudget={dailyBudget}
               setDailyBudget={setDailyBudget}
             />
@@ -95,20 +81,20 @@ const Dashboard = () => {
           <div class="col-span-1 sm:col-span-1 lg:col-span-3 min-w-0 min-h-[300px] lg:h-[500px]">
             <ExpenseCategoryCard
               transactions={accountFilteredTransactions()}
-              loading={transactions.loading}
+              loading={isTransactionsLoading()}
             />
           </div>
           <div class="col-span-1 sm:col-span-1 lg:col-span-6 min-w-0 min-h-[300px] lg:h-[500px]">
             <ActivityCalendar
               transactions={monthlyTransactions()}
-              loading={transactions.loading}
+              loading={isTransactionsLoading()}
               dailyBudget={dailyBudget}
             />
           </div>
           <div class="col-span-1 sm:col-span-2 lg:col-span-3 min-w-0 min-h-[260px] lg:h-[500px]">
             <GardenWins
               transactions={transactions() || []}
-              loading={transactions.loading}
+              loading={isTransactionsLoading()}
               dailyBudget={dailyBudget}
             />
           </div>
@@ -118,13 +104,13 @@ const Dashboard = () => {
           <div class="col-span-1 sm:col-span-1 lg:col-span-3 min-w-0 min-h-[300px] lg:h-[500px]">
             <IncomeCategoryCard
               transactions={accountFilteredTransactions()}
-              loading={transactions.loading}
+              loading={isTransactionsLoading()}
             />
           </div>
           <div class="col-span-1 sm:col-span-1 lg:col-span-6 min-w-0 min-h-[300px] lg:h-[500px]">
             <BudgetPacingChart
               transactions={monthlyTransactions()}
-              loading={transactions.loading}
+              loading={isTransactionsLoading()}
               dailyBudget={dailyBudget}
               setDailyBudget={setDailyBudget}
             />
@@ -132,7 +118,7 @@ const Dashboard = () => {
           <div class="col-span-1 sm:col-span-2 lg:col-span-3 min-w-0 lg:h-[500px]">
             <TopExpensesAndTargetsCard
               transactions={accountFilteredTransactions()}
-              loading={transactions.loading}
+              loading={isTransactionsLoading()}
             />
           </div>
         </div>
@@ -142,7 +128,7 @@ const Dashboard = () => {
           <RecentTransactions
             transactions={accountFilteredTransactions()}
             allTransactions={transactions() || []}
-            loading={transactions.loading}
+            loading={isTransactionsLoading()}
           />
         </div>
       </div>

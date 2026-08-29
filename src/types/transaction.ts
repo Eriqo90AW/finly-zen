@@ -19,14 +19,17 @@ export interface TransactionDetailModel {
   category_name: string;
   category_icon?: string;
   category_color?: string;
+  category_id?: string;
   transaction_name: string;
   account_name: string;
   account_color?: string;
+  account_id?: string;
   transaction_type: TransactionType;
   created_at: string;
   note?: string;
   is_recurring: boolean;
   attachment_url?: string;
+  user_id?: string;
 }
 
 export type Transaction = {
@@ -35,14 +38,30 @@ export type Transaction = {
   category: string;
   categoryIcon?: string;
   categoryColor?: string;
+  categoryId?: string;
   name: string;
   accountName?: string;
   accountColor?: string;
-  type?: string;
+  accountId?: string;
+  type: TransactionType;
   date: string;
   note: string;
   isRecurring?: boolean;
 };
+
+export interface UpdateTransactionParams {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  name: string;
+  categoryId: string;
+  accountId: string;
+  date: Date;
+  isRecurring: boolean;
+  note?: string;
+  userId?: string;
+  attachmentUrl?: string;
+}
 
 export interface AddTransferParams {
   fromAccountId: string;

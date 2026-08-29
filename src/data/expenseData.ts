@@ -3,15 +3,52 @@ import { formatHexColor } from "../utils/format";
 import { resolveUserId, getUserIdSync } from "../lib/userContext";
 import type {
   Transaction,
+  TransactionType,
   Category,
   Account,
   AddTransactionParams,
+  UpdateTransactionParams,
   TransactionDetailModel,
   AddTransferParams,
   TransferRecord,
 } from "../types";
 
-export async function getTransactions() {
+export function mapTransactionDetail(t: any): Transaction {
+  if (!t) {
+    return {
+      id: "",
+      amount: 0,
+      category: "General",
+      name: "Untitled",
+      type: "expense",
+      date: new Date().toISOString(),
+      note: "",
+      isRecurring: false,
+    };
+  }
+
+  const rawType = t.transaction_type || t.type;
+  const type: TransactionType = rawType === "income" ? "income" : "expense";
+
+  return {
+    id: String(t.transaction_id || t.id || ""),
+    amount: Number(t.amount) || 0,
+    category: t.category_name || t.category || "General",
+    categoryIcon: t.category_icon || t.categoryIcon || undefined,
+    categoryColor: formatHexColor(t.category_color || t.categoryColor),
+    categoryId: t.category_id || t.categoryId || undefined,
+    name: t.transaction_name || t.name || "Untitled",
+    accountName: t.account_name || t.accountName || undefined,
+    accountColor: formatHexColor(t.account_color || t.accountColor),
+    accountId: t.account_id || t.accountId || undefined,
+    type,
+    date: t.created_at || (t.date ? new Date(t.date).toISOString() : new Date().toISOString()),
+    note: t.note || "",
+    isRecurring: Boolean(t.is_recurring ?? t.isRecurring),
+  };
+}
+
+export async function getTransactions(): Promise<Transaction[]> {
   const userId = await resolveUserId();
   let query = supabase
     .from("view_transactions_detailed")
@@ -29,22 +66,7 @@ export async function getTransactions() {
     return [];
   }
 
-  return (data || []).map((t) => {
-    return {
-      id: t.transaction_id,
-      amount: t.amount,
-      category: t.category_name,
-      categoryIcon: t.category_icon,
-      categoryColor: formatHexColor(t.category_color),
-      name: t.transaction_name,
-      accountName: t.account_name,
-      accountColor: formatHexColor(t.account_color),
-      type: t.transaction_type,
-      date: t.created_at,
-      note: t.note,
-      isRecurring: t.is_recurring,
-    };
-  }) as Transaction[];
+  return (data || []).map(mapTransactionDetail);
 }
 
 export async function getCategories() {
@@ -215,6 +237,111 @@ export async function addTransaction(
     console.error("Failed to add transaction:", e);
     throw new Error(`Failed to add transaction: ${errorMessage}`);
   }
+}
+
+export async function updateTransaction(
+  params: UpdateTransactionParams,
+): Promise<Transaction> {
+  try {
+    const userId = params.userId || (await resolveUserId());
+    const data: Record<string, any> = {
+      account_id: params.accountId,
+      category_id: params.categoryId,
+      name: params.name,
+      type: params.type,
+      amount: params.amount,
+      note: params.note,
+      is_recurring: params.isRecurring,
+      created_at: params.date instanceof Date ? params.date.toISOString() : params.date,
+    };
+
+    if (params.attachmentUrl !== undefined) {
+      data.attachment_url = params.attachmentUrl;
+    }
+
+    let updateQuery = supabase
+      .from("transactions")
+      .update(data)
+      .eq("id", params.id);
+
+    if (userId) {
+      updateQuery = updateQuery.eq("user_id", userId);
+    }
+
+    const { error: updateError } = await updateQuery;
+    if (updateError) throw updateError;
+
+    let viewQuery = supabase
+      .from("view_transactions_detailed")
+      .select()
+      .eq("transaction_id", params.id);
+
+    if (userId) {
+      viewQuery = viewQuery.eq("user_id", userId);
+    }
+
+    const { data: viewData, error: viewError } = await viewQuery.single();
+    if (viewError) throw viewError;
+
+    return mapTransactionDetail(viewData);
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : JSON.stringify(e);
+    console.error("Failed to update transaction:", e);
+    throw new Error(`Failed to update transaction: ${errorMessage}`);
+  }
+}
+
+export interface AddTransactionsItemResult {
+  index: number;
+  success: boolean;
+  data?: TransactionDetailModel;
+  error?: string;
+}
+
+export async function addTransactions(
+  items: AddTransactionParams[],
+  concurrency = 4,
+): Promise<AddTransactionsItemResult[]> {
+  if (!items || items.length === 0) return [];
+
+  const results: AddTransactionsItemResult[] = new Array(items.length);
+  let currentIndex = 0;
+  let savedAny = false;
+
+  async function worker() {
+    while (currentIndex < items.length) {
+      const idx = currentIndex++;
+      const item = items[idx];
+      try {
+        const detail = await addTransaction(item);
+        results[idx] = { index: idx, success: true, data: detail };
+        savedAny = true;
+      } catch (err) {
+        results[idx] = {
+          index: idx,
+          success: false,
+          error: err instanceof Error ? err.message : "Failed to add transaction",
+        };
+      }
+    }
+  }
+
+  const poolSize = Math.min(concurrency, items.length);
+  const workers = Array.from({ length: poolSize }, () => worker());
+  await Promise.all(workers);
+
+  if (savedAny && typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("finly:data-changed", {
+        detail: {
+          source: "add_transactions_batch",
+          count: results.filter((r) => r.success).length,
+        },
+      }),
+    );
+  }
+
+  return results;
 }
 
 export async function addTransfer(

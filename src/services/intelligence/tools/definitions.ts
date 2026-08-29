@@ -97,7 +97,7 @@ const proposeAddTransactionTool: OpenAIToolDefinition = {
   function: {
     name: "propose_add_transaction",
     description:
-      "Add a new expense or income transaction. Triggers a confirmation step with the user and executes the database insert upon confirmation.",
+      "Add a single expense or income transaction. Triggers a review step with the user and executes the database insert upon confirmation.",
     parameters: {
       type: "object",
       properties: {
@@ -110,8 +110,72 @@ const proposeAddTransactionTool: OpenAIToolDefinition = {
         category_name: { type: "string", description: "Category name (alternative to id)" },
         note: { type: "string" },
         is_recurring: { type: "boolean" },
+        date: { type: "string", description: "ISO transaction date" },
       },
       required: ["name", "amount", "type"],
+    },
+  },
+};
+
+const proposeAddTransactionsTool: OpenAIToolDefinition = {
+  type: "function",
+  function: {
+    name: "propose_add_transactions",
+    description:
+      "Add a batch of 1 to 25 expense or income transactions, line items from receipts, or adjustments. Triggers a batch review step with the user.",
+    parameters: {
+      type: "object",
+      properties: {
+        source: {
+          type: "string",
+          enum: ["chat", "ocr"],
+          description: "Source of the transactions",
+        },
+        merchant: { type: "string", description: "Merchant or store name" },
+        receipt_total: {
+          type: "number",
+          description: "Total amount printed on receipt in IDR for reconciliation",
+        },
+        ocr_confidence: {
+          type: "number",
+          description: "OCR confidence score (0-100)",
+        },
+        transactions: {
+          type: "array",
+          description: "Array of 1 to 25 transaction drafts",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "Optional client draft ID" },
+              name: { type: "string", description: "Merchant or item description" },
+              amount: {
+                type: "number",
+                description: "Amount in IDR (positive number)",
+              },
+              type: {
+                type: "string",
+                enum: ["expense", "income"],
+                description:
+                  "Transaction type ('income' for discounts, 'expense' for items, taxes, and service charges)",
+              },
+              entry_kind: {
+                type: "string",
+                enum: ["item", "tax", "service", "discount", "adjustment"],
+                description: "Receipt or transaction line kind",
+              },
+              account_id: { type: "string", description: "Account UUID" },
+              account_name: { type: "string", description: "Account name" },
+              category_id: { type: "string", description: "Category UUID" },
+              category_name: { type: "string", description: "Category name" },
+              note: { type: "string" },
+              is_recurring: { type: "boolean" },
+              date: { type: "string", description: "ISO transaction date" },
+            },
+            required: ["name", "amount", "type"],
+          },
+        },
+      },
+      required: ["transactions"],
     },
   },
 };
@@ -145,6 +209,7 @@ export const FINLY_TOOLS: OpenAIToolDefinition[] = [
   spendingSummaryTool,
   getBudgetsAndGoalsTool,
   proposeAddTransactionTool,
+  proposeAddTransactionsTool,
   proposeAddTransferTool,
 ];
 
@@ -158,6 +223,7 @@ export const MARKET_QUANT_TOOLS: OpenAIToolDefinition[] = [
   spendingSummaryTool,
   getBudgetsAndGoalsTool,
   proposeAddTransactionTool,
+  proposeAddTransactionsTool,
   proposeAddTransferTool,
 ];
 
@@ -170,6 +236,7 @@ export const ALL_TOOLS: OpenAIToolDefinition[] = [
   getPortfolioHoldingsTool,
   getBudgetsAndGoalsTool,
   proposeAddTransactionTool,
+  proposeAddTransactionsTool,
   proposeAddTransferTool,
 ];
 
@@ -183,6 +250,7 @@ export function getToolsForProfile(profileName: string): OpenAIToolDefinition[] 
 
 export const WRITE_TOOL_NAMES = new Set([
   "propose_add_transaction",
+  "propose_add_transactions",
   "propose_add_transfer",
 ]);
 
@@ -195,5 +263,7 @@ export const TOOL_LABELS: Record<string, string> = {
   get_portfolio_holdings: "Fetching holdings",
   get_budgets_and_goals: "Reading budgets & goals",
   propose_add_transaction: "Preparing transaction",
+  propose_add_transactions: "Reviewing transaction batch",
   propose_add_transfer: "Preparing transfer",
 };
+

@@ -81,10 +81,10 @@ export function setupPersistence() {
   });
 }
 
+export * from "./transactionStore";
+
 // Helpers
-export const addTransaction = (t: Omit<Transaction, "id">) => {
-  setState("transactions", (prev) => [...prev, { ...t, id: Math.random().toString(36).substr(2, 9) }]);
-};
+
 
 export const updateGoal = (id: string, amount: number) => {
   setState("goals", (g) => g.id === id, "current", (c) => c + amount);

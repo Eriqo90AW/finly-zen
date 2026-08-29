@@ -1,5 +1,6 @@
 import { For, createSignal, createMemo, Show } from "solid-js";
 import { state } from "../store";
+import { transactions } from "../store/transactionStore";
 import { SolidApexCharts } from 'solid-apexcharts';
 import { ApexOptions } from "apexcharts";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
@@ -122,7 +123,7 @@ const Budgets = () => {
             <CategoryCard 
               category={b.category} 
               budget={b.limit} 
-              spent={state.transactions.filter(t => t.category === b.category).reduce((sum, t) => sum + t.amount, 0)} 
+              spent={(transactions() || []).filter(t => t.category?.toLowerCase() === b.category?.toLowerCase() && t.type === "expense").reduce((sum, t) => sum + t.amount, 0)} 
             />
           )}
         </For>
