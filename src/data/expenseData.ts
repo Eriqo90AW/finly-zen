@@ -254,7 +254,7 @@ export async function addTransfer(
       amount: params.amount,
       category_id: debtCategory.id,
       note: params.note || `Inter-account transfer to ${toAccount.name}`,
-      is_recurring: false,
+      is_recurring: true,
       created_at: timestamp,
     };
 
@@ -266,7 +266,7 @@ export async function addTransfer(
       amount: params.amount,
       category_id: debtCategory.id,
       note: params.note || `Inter-account transfer from ${fromAccount.name}`,
-      is_recurring: false,
+      is_recurring: true,
       created_at: timestamp,
     };
 

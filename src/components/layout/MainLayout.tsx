@@ -38,6 +38,8 @@ const MainLayout = (props: ParentProps) => {
     });
   });
 
+  const isTradingJournal = () => location.pathname.startsWith("/trading-journal");
+
   return (
     <div class="flex h-dvh overflow-hidden bg-page-bg relative">
       {/* Desktop Fixed Left Sidebar */}
@@ -67,7 +69,11 @@ const MainLayout = (props: ParentProps) => {
         <main 
           ref={mainRef}
           onScroll={handleScroll}
-          class="flex-1 overflow-hidden p-3 sm:p-4 lg:p-6 custom-scrollbar"
+          class="flex-1 p-3 sm:p-4 lg:p-6 custom-scrollbar"
+          classList={{
+            "overflow-hidden": isTradingJournal(),
+            "overflow-y-auto": !isTradingJournal(),
+          }}
         >
           <div class="max-w-[1400px] mx-auto w-full">
             {props.children}

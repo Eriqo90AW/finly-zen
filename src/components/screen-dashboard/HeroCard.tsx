@@ -105,7 +105,7 @@ export const HeroCard = (props: HeroCardProps) => {
     // Single pass aggregation for performance
     for (const t of dataSource) {
       const isTransfer = isTransferTransaction(t);
-      if (isTransfer) continue;
+      if (!isAllTime && isTransfer) continue;
 
       const amount = t.amount || 0;
       const type = t.type;
