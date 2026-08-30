@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase";
 import { resolveUserId } from "../lib/userContext";
 import { DEFAULT_CONFIG } from "../config/defaults";
 import type {
@@ -14,16 +14,15 @@ import type {
 // --- API Calls ---
 
 export async function fetchUsdRate(): Promise<number> {
-  const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/usd-rate`;
+  const url = `${SUPABASE_URL}/functions/v1/usd-rate`;
 
   try {
-    const response = await fetch(URL, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ANON_KEY}`,
-        apikey: ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({}),
     });
@@ -43,16 +42,15 @@ export async function fetchUsdRate(): Promise<number> {
 export async function fetchMultiStockPrices(symbols: string[]): Promise<MultiStockResponse> {
   if (symbols.length === 0) return { data: [] };
 
-  const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v2-multi-stock`;
+  const url = `${SUPABASE_URL}/functions/v1/v2-multi-stock`;
 
   try {
-    const response = await fetch(URL, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ANON_KEY}`,
-        apikey: ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({ symbols }),
     });

@@ -43,27 +43,43 @@ export const DEFAULT_CONFIG = {
   datePeriod: (import.meta.env.VITE_DEFAULT_DATE_PERIOD as DatePeriod) || "1-30",
   ai: {
     baseUrl:
+      import.meta.env.AI_BASE_URL ||
       import.meta.env.VITE_AI_BASE_URL ||
       import.meta.env.VITE_OPENCODE_BASE_URL ||
       "https://openagent.ercloud.site/v1",
     apiKey:
+      import.meta.env.AI_API_KEY ||
       import.meta.env.VITE_AI_API_KEY ||
       import.meta.env.VITE_OPENCODE_API_KEY ||
       "",
-    defaultModel: import.meta.env.VITE_DEFAULT_MODEL || "finly",
-    expenseModel: import.meta.env.VITE_EXPENSE_MODEL || "finly",
-    marketModel: import.meta.env.VITE_MARKET_MODEL || "market_quant",
+    defaultModel:
+      import.meta.env.DEFAULT_MODEL ||
+      import.meta.env.VITE_DEFAULT_MODEL ||
+      "finly",
+    expenseModel:
+      import.meta.env.EXPENSE_MODEL ||
+      import.meta.env.VITE_EXPENSE_MODEL ||
+      "finly",
+    marketModel:
+      import.meta.env.MARKET_MODEL ||
+      import.meta.env.VITE_MARKET_MODEL ||
+      "market_quant",
   },
   opencode: {
     baseUrl:
+      import.meta.env.AI_BASE_URL ||
       import.meta.env.VITE_AI_BASE_URL ||
       import.meta.env.VITE_OPENCODE_BASE_URL ||
       "https://openagent.ercloud.site/v1",
     apiKey:
+      import.meta.env.AI_API_KEY ||
       import.meta.env.VITE_AI_API_KEY ||
       import.meta.env.VITE_OPENCODE_API_KEY ||
       "",
-    model: import.meta.env.VITE_DEFAULT_MODEL || "finly",
+    model:
+      import.meta.env.DEFAULT_MODEL ||
+      import.meta.env.VITE_DEFAULT_MODEL ||
+      "finly",
   },
 };
 

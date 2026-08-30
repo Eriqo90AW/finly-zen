@@ -535,7 +535,7 @@ export async function sendIntelligenceMessage(
 
   if (!isHermesConfigured()) {
     setIntelligenceError(
-      "Hermes Agent is not configured. Add VITE_AI_API_KEY to your .env file.",
+      "Hermes Agent is not configured. Add AI_API_KEY to your .env file.",
     );
     return;
   }

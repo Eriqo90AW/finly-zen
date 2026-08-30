@@ -1,18 +1,18 @@
 import type { StockData, TickerSearchResult } from "../types";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase";
 
 export async function searchTickers(query: string): Promise<TickerSearchResult[]> {
   if (!query.trim()) return [];
 
-  const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const SUPABASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-ticker?query=${encodeURIComponent(query)}`;
+  const url = `${SUPABASE_URL}/functions/v1/search-ticker?query=${encodeURIComponent(query)}`;
 
   try {
-    const response = await fetch(SUPABASE_URL, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${ANON_KEY}`,
-        "apikey": ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "apikey": SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({}),
     });
@@ -30,14 +30,13 @@ export async function searchTickers(query: string): Promise<TickerSearchResult[]
 }
 
 export async function fetchStockData(ticker: string): Promise<StockData> {
-  const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const SUPABASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v2-fetch-ticker`;
+  const url = `${SUPABASE_URL}/functions/v1/v2-fetch-ticker`;
 
-  const response = await fetch(SUPABASE_URL, {
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${ANON_KEY}`,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
     },
     body: JSON.stringify({ ticker }),
   });

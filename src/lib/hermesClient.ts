@@ -13,7 +13,10 @@ function getConfig() {
 
 export function isHermesConfigured(): boolean {
   const { apiKey, baseUrl } = getConfig();
-  return Boolean(apiKey && baseUrl);
+  const isProxyConfigured =
+    typeof import.meta !== "undefined" &&
+    Boolean(import.meta.env?.HERMES_PROXY_CONFIGURED);
+  return Boolean(apiKey || baseUrl || isProxyConfigured);
 }
 
 // Backwards compatibility alias
@@ -21,10 +24,13 @@ export const isOpenCodeConfigured = isHermesConfigured;
 
 function buildHeaders(): HeadersInit {
   const { apiKey } = getConfig();
-  return {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
   };
+  if (apiKey) {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+  }
+  return headers;
 }
 
 function buildUrl(): string {

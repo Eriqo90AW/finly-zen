@@ -2,6 +2,7 @@ import { createSignal, createRoot } from "solid-js";
 import type { DividendEntry } from "../types/dividend";
 import rawDividendsJson from "../../sahamidx_dividends.json";
 import distinctCompanies from "../../distinct_companies.json";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../lib/supabase";
 
 // --- Date helpers ---
 
@@ -197,18 +198,17 @@ const allTickers: string[] = Object.keys(distinctCompanies as Record<string, str
 // --- Fetch fresh dividends from Supabase Edge Function ---
 
 async function fetchFreshDividends(): Promise<DividendEntry[]> {
-  const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const SUPABASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-dividends`;
+  const url = `${SUPABASE_URL}/functions/v1/fetch-dividends`;
 
   // Ensure tickers are formatted with .JK for Yahoo Finance lookup in Edge Function
   const formattedTickers = allTickers.map((t) => (t.endsWith(".JK") ? t : `${t}.JK`));
 
-  const response = await fetch(SUPABASE_URL, {
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${ANON_KEY}`,
-      apikey: ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      apikey: SUPABASE_ANON_KEY,
     },
     body: JSON.stringify({ tickers: formattedTickers }),
   });
