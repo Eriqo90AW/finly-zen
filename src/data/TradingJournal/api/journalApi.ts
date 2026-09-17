@@ -39,6 +39,30 @@ function generateEmptyPerformance(monthStr: string): MonthlyPerformance {
 }
 
 /**
+ * Backfills any unassigned trades (user_id IS NULL) to the current user.
+ */
+export async function syncUnassignedTrades(): Promise<number> {
+  try {
+    const userId = await resolveUserId();
+    if (!userId) return 0;
+    const { data, error } = await supabase
+      .from('trading_journal')
+      .update({ user_id: userId })
+      .is('user_id', null)
+      .select('id');
+
+    if (error) {
+      console.warn("Could not backfill unassigned trading journal rows:", error);
+      return 0;
+    }
+    return data ? data.length : 0;
+  } catch (err) {
+    console.warn("Error running syncUnassignedTrades:", err);
+    return 0;
+  }
+}
+
+/**
  * Fetches the performance summary for a specific month.
  * Calculates Win Rate, Profit Factor, Total PnL, Total R, and Current Win Streak
  * directly from executed trades in Supabase.
@@ -59,7 +83,7 @@ export async function getMonthlyPerformance(month: string): Promise<MonthlyPerfo
     .order('trade_date', { ascending: true });
 
   if (userId) {
-    query = query.eq('user_id', userId);
+    query = query.or(`user_id.eq.${userId},user_id.is.null`);
   }
 
   const { data, error } = await query;
@@ -140,7 +164,7 @@ export async function getAllTimePerformance(): Promise<MonthlyPerformance> {
     .order('trade_date', { ascending: true });
 
   if (userId) {
-    query = query.eq('user_id', userId);
+    query = query.or(`user_id.eq.${userId},user_id.is.null`);
   }
 
   const { data, error } = await query;
@@ -243,7 +267,7 @@ export async function getDailySummaries(month: string): Promise<DailySummary[]> 
     .order('trade_date', { ascending: true });
 
   if (userId) {
-    query = query.eq('user_id', userId);
+    query = query.or(`user_id.eq.${userId},user_id.is.null`);
   }
 
   const { data, error } = await query;
@@ -287,7 +311,7 @@ export async function getDailySummary(date: string): Promise<DailySummary | unde
     .order('created_at', { ascending: true });
 
   if (userId) {
-    query = query.eq('user_id', userId);
+    query = query.or(`user_id.eq.${userId},user_id.is.null`);
   }
 
   const { data, error } = await query;
@@ -331,7 +355,7 @@ export async function saveTrade(date: string, trade: Partial<Trade>): Promise<vo
   const payload = {
     ...trade,
     trade_date: date,
-    user_id: userId,
+    user_id: userId || null,
   };
 
   const { error } = await supabase

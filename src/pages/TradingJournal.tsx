@@ -1,5 +1,12 @@
 import { createSignal, createResource, Show } from "solid-js";
-import { getMonthlyPerformance, getAllTimePerformance, getDailySummaries, getDailySummary, saveTrade } from "../data/TradingJournal/api/journalApi";
+import {
+  getMonthlyPerformance,
+  getAllTimePerformance,
+  getDailySummaries,
+  getDailySummary,
+  saveTrade,
+  syncUnassignedTrades,
+} from "../data/TradingJournal/api/journalApi";
 import { DailySummary, Trade } from "../data/TradingJournal/data/types";
 import PerformanceBanner from "../components/screen-trading-journal/PerformanceBanner";
 import JournalCalendar from "../components/screen-trading-journal/JournalCalendar";
@@ -9,7 +16,9 @@ import NewTradeForm from "../components/screen-trading-journal/NewTradeForm";
 export default function TradingJournal() {
   const [activeDate, setActiveDate] = createSignal<string | null>(null);
   const [selectedDaySummary, setSelectedDaySummary] = createSignal<DailySummary | null>(null);
-  
+  const [isRefreshing, setIsRefreshing] = createSignal(false);
+  const [lastUpdated, setLastUpdated] = createSignal<string | null>(null);
+
   const now = new Date();
   const [currentMonth, setCurrentMonth] = createSignal(
     `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
@@ -19,6 +28,35 @@ export default function TradingJournal() {
   const [performance, { refetch: refetchPerf }] = createResource(currentMonth, getMonthlyPerformance);
   const [allTimePerformance, { refetch: refetchAllTimePerf }] = createResource(getAllTimePerformance);
   const [days, { refetch: refetchDays }] = createResource(currentMonth, getDailySummaries);
+
+  const handleRefresh = async () => {
+    if (isRefreshing()) return;
+    setIsRefreshing(true);
+    try {
+      await syncUnassignedTrades();
+      await Promise.all([
+        refetchDays(),
+        refetchPerf(),
+        refetchAllTimePerf(),
+      ]);
+      if (activeDate()) {
+        const summary = await getDailySummary(activeDate()!);
+        if (summary) {
+          setSelectedDaySummary(summary);
+        }
+      }
+      const timeStr = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      setLastUpdated(timeStr);
+    } catch (err) {
+      console.error("Error refreshing trading journal data:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Fetch selected day summary and open drawer on the right
   const handleDayClick = async (date: string) => {
@@ -32,9 +70,23 @@ export default function TradingJournal() {
   const handleSaveTrade = async (date: string, trade: Partial<Trade>) => {
     await saveTrade(date, trade);
     // Refetch resources to dynamically update calendar heatmap, banner stats, and tooltips
-    refetchDays();
-    refetchPerf();
-    refetchAllTimePerf();
+    await Promise.all([
+      refetchDays(),
+      refetchPerf(),
+      refetchAllTimePerf(),
+    ]);
+    if (activeDate() === date) {
+      const summary = await getDailySummary(date);
+      if (summary) {
+        setSelectedDaySummary(summary);
+      }
+    }
+    const timeStr = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    setLastUpdated(timeStr);
   };
 
   const handlePrevMonth = () => {
@@ -62,6 +114,29 @@ export default function TradingJournal() {
           <div>
             <h1 class="text-2xl sm:text-3xl font-cormorant font-bold text-forest">Trading Journal</h1>
             <p class="text-xs text-earth">Monitor execution quality, psychology, and performance stats.</p>
+          </div>
+
+          <div class="flex items-center gap-2 sm:gap-3">
+            <Show when={lastUpdated()}>
+              <span class="text-[11px] text-earth hidden sm:inline font-outfit">
+                Updated {lastUpdated()}
+              </span>
+            </Show>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing()}
+              title="Update data from database"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-forest/15 bg-white text-forest hover:bg-forest hover:text-white transition-all text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer group"
+            >
+              <span
+                class={`material-icons text-base transition-transform ${
+                  isRefreshing() ? "animate-spin" : "group-hover:rotate-180 duration-500"
+                }`}
+              >
+                refresh
+              </span>
+              <span class="font-outfit">{isRefreshing() ? "Updating..." : "Update Data"}</span>
+            </button>
           </div>
         </div>
 
