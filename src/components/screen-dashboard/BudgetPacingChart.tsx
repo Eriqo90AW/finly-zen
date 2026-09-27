@@ -192,9 +192,10 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
         categories: data.map((d) => d.date),
         labels: {
           style: { colors: "#5C6B5E", fontSize: "10px", fontFamily: "Outfit" },
-          rotate: 0,
-          rotateAlways: false,
-          hideOverlappingLabels: true,
+          rotate: -45,
+          rotateAlways: true,
+          hideOverlappingLabels: false,
+          trim: false,
         },
         axisBorder: { show: false },
         axisTicks: { show: false },
@@ -225,7 +226,7 @@ export const BudgetPacingChart = (props: BudgetPacingChartProps) => {
           top: -12,
           right: 0,
           bottom: 0,
-          left: 4,
+          left: 24,
         },
       },
       markers: {

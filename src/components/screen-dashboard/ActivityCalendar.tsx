@@ -1,16 +1,29 @@
 import { For, createMemo, createSignal, createEffect, Show } from "solid-js";
-import { getDateRange, isDateInRange } from "../../utils/date";
+import { getDateRange, isDateInRange, resolveCalendarMonth } from "../../utils/date";
 import { formatRupiah, formatMonth } from "../../utils/format";
 import { Tooltip } from "../modules/Tooltip";
 import { state } from "../../store";
 import type { ActivityCalendarProps } from "../../types";
 
 export const ActivityCalendar = (props: ActivityCalendarProps) => {
-  const [viewMonth, setViewMonth] = createSignal(state.ui.currentMonth);
+  const dateRange = createMemo(() =>
+    getDateRange(state.ui.currentMonth, state.ui.datePeriod),
+  );
 
-  // Sync with global month if it changes
+  const defaultViewMonth = () =>
+    resolveCalendarMonth(
+      dateRange(),
+      new Date(),
+      new Date(state.ui.currentMonth),
+    ).toISOString();
+
+  const [viewMonth, setViewMonth] = createSignal(defaultViewMonth());
+
+  // While today is inside the period, open on today's month.
   createEffect(() => {
-    setViewMonth(state.ui.currentMonth);
+    state.ui.currentMonth;
+    state.ui.datePeriod;
+    setViewMonth(defaultViewMonth());
   });
 
   const handleNextMonth = () => {
@@ -24,10 +37,6 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
     d.setMonth(d.getMonth() - 1);
     setViewMonth(d.toISOString());
   };
-
-  const dateRange = createMemo(() =>
-    getDateRange(state.ui.currentMonth, state.ui.datePeriod),
-  );
 
   const calendarDays = createMemo(() => {
     const current = new Date(viewMonth());
@@ -190,7 +199,11 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
                     group-hover:ring-2 group-hover:ring-forest`}
                     style={{
                       "background-color": getIntensityColor(amount()),
-                      opacity: day.isCurrentMonth ? 1 : 0.25,
+                      opacity:
+                        day.isCurrentMonth ||
+                        isDateInRange(day.date, dateRange().start, dateRange().end)
+                          ? 1
+                          : 0.25,
                     }}
                   >
                     <span

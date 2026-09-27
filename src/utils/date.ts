@@ -12,8 +12,9 @@ export const getDateRange = (currentMonthStr: string, period: DatePeriod): { sta
   }
 
   if (period === "21-20") {
-    const start = new Date(year, month - 1, 21, 0, 0, 0, 0);
-    const end = new Date(year, month, 20, 23, 59, 59, 999);
+    // 21st of the shown month through the 20th of the next month
+    const start = new Date(year, month, 21, 0, 0, 0, 0);
+    const end = new Date(year, month + 1, 20, 23, 59, 59, 999);
     return { start, end };
   }
 
@@ -34,6 +35,20 @@ export const isDateInRange = (dateStr: string | Date, start: Date, end: Date): b
   const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
   return d >= start && d <= end;
 };
+
+export function resolveCalendarMonth(
+  period: { start: Date; end: Date },
+  today: Date,
+  headerMonth: Date,
+): Date {
+  const anchor = today >= period.start && today <= period.end ? today : headerMonth;
+  return new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+}
+
+export function localDateFromYmd(ymd: string): Date {
+  const [year, month, day] = ymd.split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
+}
 
 export function getLocalYmd(dateInput: string | Date): string {
   const d = new Date(dateInput);

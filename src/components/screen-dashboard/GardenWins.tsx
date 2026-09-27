@@ -1,6 +1,6 @@
 import { For, createMemo, Show } from "solid-js";
 import { state } from "../../store";
-import { getDateRange, isDateInRange } from "../../utils/date";
+import { getDateRange, getLocalYmd, isDateInRange, localDateFromYmd } from "../../utils/date";
 import { formatRupiah } from "../../utils/format";
 import TrendingDownIcon from "@suid/icons-material/TrendingDown";
 import TrendingUpIcon from "@suid/icons-material/TrendingUp";
@@ -10,6 +10,12 @@ import EmojiEventsIcon from "@suid/icons-material/EmojiEventsOutlined";
 import LightbulbIcon from "@suid/icons-material/LightbulbOutlined";
 import { isTransferTransaction } from "../../utils/transferUtils";
 import type { GardenWinsProps } from "../../types";
+
+const formatSpendDate = (ymd: string) =>
+  localDateFromYmd(ymd).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  });
 
 export const GardenWins = (props: GardenWinsProps) => {
   const stats = createMemo(() => {
@@ -37,7 +43,7 @@ export const GardenWins = (props: GardenWinsProps) => {
     transactions.forEach((t) => {
       if (isTransferTransaction(t)) return;
 
-      const dateKey = new Date(t.date).toISOString().split("T")[0];
+      const dateKey = getLocalYmd(t.date);
 
       if (!t.isRecurring) {
         const streakAmount = t.type === "expense" ? t.amount : -t.amount;
@@ -84,7 +90,7 @@ export const GardenWins = (props: GardenWinsProps) => {
     currentPeriodDates.forEach((date) => {
       if (date > endForMetrics) return;
 
-      const dateKey = date.toISOString().split("T")[0];
+      const dateKey = getLocalYmd(date);
       const dailySpend = netSpendForStreak[dateKey] || 0;
       const netExpense = netSpendForInsights[dateKey] || 0;
 
@@ -107,9 +113,12 @@ export const GardenWins = (props: GardenWinsProps) => {
 
     let streak = 0;
     let streakDate = new Date(endForMetrics);
+    const periodStartKey = getLocalYmd(currentPeriod.start);
 
     while (true) {
-      const dateKey = streakDate.toISOString().split("T")[0];
+      const dateKey = getLocalYmd(streakDate);
+      if (dateKey < periodStartKey) break;
+
       const dailySpend = netSpendForStreak[dateKey] || 0;
 
       if (dailySpend <= dailyBudget) {
@@ -127,7 +136,7 @@ export const GardenWins = (props: GardenWinsProps) => {
     let totalExpensesPrev = 0;
 
     prevPeriodDates.forEach((date) => {
-      const dateKey = date.toISOString().split("T")[0];
+      const dateKey = getLocalYmd(date);
       const dailySpend = netSpendForStreak[dateKey] || 0;
       const netExpense = netSpendForInsights[dateKey] || 0;
 
@@ -251,10 +260,7 @@ export const GardenWins = (props: GardenWinsProps) => {
                 </p>
                 <p class="text-[10px] text-forest/40 font-medium">
                   {stats()!.lowestSpend.date
-                    ? new Date(stats()!.lowestSpend.date).toLocaleDateString(
-                        "id-ID",
-                        { day: "numeric", month: "short" },
-                      )
+                    ? formatSpendDate(stats()!.lowestSpend.date)
                     : "No data"}
                 </p>
               </div>
@@ -276,10 +282,7 @@ export const GardenWins = (props: GardenWinsProps) => {
                 </p>
                 <p class="text-[10px] text-forest/40 font-medium">
                   {stats()!.highestSpend.date
-                    ? new Date(stats()!.highestSpend.date).toLocaleDateString(
-                        "id-ID",
-                        { day: "numeric", month: "short" },
-                      )
+                    ? formatSpendDate(stats()!.highestSpend.date)
                     : "No data"}
                 </p>
               </div>

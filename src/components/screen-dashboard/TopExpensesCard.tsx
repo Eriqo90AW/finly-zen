@@ -1,4 +1,5 @@
 import { createSignal, createMemo, Show, For } from "solid-js";
+import { Portal } from "solid-js/web";
 import { state, setCategoryBudget } from "../../store";
 import { formatRupiah } from "../../utils/format";
 import { getCategoryDefaultTarget, getCategoryFallbackColor } from "../../config/defaults";
@@ -12,7 +13,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
   } | null>(null);
   const [editInputVal, setEditInputVal] = createSignal("");
 
-  // 1. Top 3 Most Expensive Expense Transactions (excluding internal transfers, account filtered)
+  // Expense transactions for this period, ranked by amount (transfers excluded)
   const topExpenses = createMemo(() => {
     const data = props.transactions || [];
     return data
@@ -21,8 +22,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
         if (isTransferTransaction(t)) return false;
         return true;
       })
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 3);
+      .sort((a, b) => b.amount - a.amount);
   });
 
   // 2. Category Targets & Period Spends
@@ -78,6 +78,10 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
     return result;
   });
 
+  const targetsTotal = createMemo(() =>
+    categoryTargets().reduce((sum, item) => sum + item.target, 0),
+  );
+
   const handleOpenEdit = (category: string, currentTarget: number) => {
     setEditingCategory({ category, target: currentTarget });
     setEditInputVal(currentTarget > 0 ? currentTarget.toString() : "");
@@ -97,7 +101,6 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
 
   return (
     <div class="premium-card p-4 sm:p-6 flex flex-col h-full cursor-default min-h-[300px]">
-      {/* 1. Top 3 Expensive Single Transactions */}
       <div class="flex flex-col shrink-0">
         <div class="flex items-center justify-between mb-2">
           <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-1.5">
@@ -119,7 +122,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
           </Show>
         </div>
 
-        <div class="space-y-1.5">
+        <div class="max-h-36 overflow-y-auto pr-1 custom-scrollbar-thin space-y-1.5">
           <Show
             when={!props.loading}
             fallback={
@@ -138,17 +141,17 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
             >
               <For each={topExpenses()}>
                 {(tx, idx) => (
-                  <div class="flex items-center justify-between p-1.5 rounded-lg bg-spring/[0.06] hover:bg-forest/[0.06] transition-colors group">
+                  <div class="flex items-center justify-between h-11 px-1.5 rounded-lg bg-spring/[0.06] hover:bg-forest/[0.06] transition-colors group">
                     <div class="flex items-center gap-2 min-w-0 pr-2">
                       <span
-                        class={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${
+                        class={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 tabular-nums ${
                           idx() === 0
                             ? "bg-amber-500/20 text-amber-700"
                             : idx() === 1
                             ? "bg-slate-400/20 text-slate-700"
                             : idx() === 2
                             ? "bg-amber-700/20 text-amber-800"
-                            : "bg-forest/10 text-forest/70"
+                            : "text-forest/50"
                         }`}
                       >
                         {idx() + 1}
@@ -187,13 +190,15 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
       <div class="w-full border-t border-forest/10 my-3 shrink-0" />
 
       {/* SECTION 2: CATEGORY TARGETS */}
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div class="flex-1 basis-0 flex flex-col min-h-0 overflow-hidden">
         <div class="flex items-center justify-between mb-2">
           <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-1.5">
             <span class="material-icons !text-base text-forest">track_changes</span>
             Category Targets
           </h4>
-          <span class="text-[9px] text-earth/60 italic">Click target to edit</span>
+          <span class="text-xs font-bold font-outfit text-forest shrink-0">
+            {formatRupiah(targetsTotal())}
+          </span>
         </div>
 
         <div class="flex-1 max-h-[220px] lg:max-h-none overflow-y-auto pr-1 custom-scrollbar-thin space-y-2 min-h-0">
@@ -281,48 +286,62 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
         </div>
       </div>
 
-      {/* QUICK EDIT MODAL / OVERLAY */}
+      {/* QUICK EDIT MODAL */}
       <Show when={editingCategory()}>
-        <div class="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 p-5 rounded-2xl flex flex-col justify-center animate-fade-in">
-          <h5 class="text-sm font-bold text-forest font-outfit mb-1">
-            Set Period Target: {editingCategory()?.category}
-          </h5>
-          <p class="text-[11px] text-earth/70 mb-3">
-            Enter the target spending limit for this category.
-          </p>
+        <Portal>
+          <div
+            class="fixed inset-0 z-50 flex items-center justify-center bg-forest/40 backdrop-blur-xs p-4 sm:p-6 animate-fade-in"
+            onClick={() => setEditingCategory(null)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="period-target-title"
+              class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative overflow-hidden border border-forest/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-forest to-spring"></div>
+              <h5 id="period-target-title" class="text-sm font-bold text-forest font-outfit mb-1">
+                Set Period Target: {editingCategory()?.category}
+              </h5>
+              <p class="text-[11px] text-earth/70 mb-3">
+                Enter the target spending limit for this category.
+              </p>
 
-          <form onSubmit={handleSaveEdit} class="space-y-3">
-            <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-earth/60">
-                Rp
-              </span>
-              <input
-                type="text"
-                value={editInputVal()}
-                onInput={(e) => setEditInputVal(e.currentTarget.value)}
-                placeholder="e.g. 2500000"
-                autofocus
-                class="w-full pl-9 pr-3 py-1.5 text-sm font-outfit font-bold border border-forest/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest/30 bg-white text-forest"
-              />
-            </div>
+              <form onSubmit={handleSaveEdit} class="space-y-3">
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-earth/60">
+                    Rp
+                  </span>
+                  <input
+                    type="text"
+                    value={editInputVal()}
+                    onInput={(e) => setEditInputVal(e.currentTarget.value)}
+                    placeholder="e.g. 2500000"
+                    autofocus
+                    class="w-full pl-9 pr-3 py-1.5 text-sm font-outfit font-bold border border-forest/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest/30 bg-white text-forest"
+                  />
+                </div>
 
-            <div class="flex justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setEditingCategory(null)}
-                class="px-3 py-1 text-xs font-semibold text-earth hover:text-forest bg-forest/5 hover:bg-forest/10 rounded-lg transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-3 py-1 text-xs font-semibold text-white bg-forest hover:bg-forest/90 rounded-lg transition-colors shadow-sm cursor-pointer"
-              >
-                Save Target
-              </button>
+                <div class="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingCategory(null)}
+                    class="px-3 py-1 text-xs font-semibold text-earth hover:text-forest bg-forest/5 hover:bg-forest/10 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-3 py-1 text-xs font-semibold text-white bg-forest hover:bg-forest/90 rounded-lg transition-colors shadow-sm cursor-pointer"
+                  >
+                    Save Target
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
+          </div>
+        </Portal>
       </Show>
 
       {/* Inline scrollbar styling */}
