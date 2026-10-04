@@ -166,8 +166,11 @@ export const TransactionDrawer = () => {
     if (cats.length === 0) return;
 
     if (currentType === "income") {
-      const incomeCat = cats.find((c) => c.name.toLowerCase() === "income");
-      if (incomeCat) setCategoryId(incomeCat.id);
+      const currentCatName = cats.find((c) => c.id === categoryId())?.name.toLowerCase();
+      if (!categoryId() || (currentCatName !== "income" && currentCatName !== "transfer")) {
+        const incomeCat = cats.find((c) => c.name.toLowerCase() === "income");
+        if (incomeCat) setCategoryId(incomeCat.id);
+      }
     } else {
       const currentCatName = cats.find((c) => c.id === categoryId())?.name.toLowerCase();
       if (!categoryId() || currentCatName === "income" || currentCatName === "debt") {
@@ -231,11 +234,15 @@ export const TransactionDrawer = () => {
     "Indomaret",
   ];
 
-  // Exclude 'Debt' and 'income' appropriately
+  // Exclude 'Debt' and 'income' appropriately.
+  // Income allows 'Income' + 'Transfer'; expense allows everything except 'Income'/'Debt'.
   const filteredCategories = createMemo(() => {
     const cats = categories() || [];
     if (type() === "income") {
-      return cats.filter((c) => c.name.toLowerCase() === "income");
+      return cats.filter((c) => {
+        const n = c.name.toLowerCase();
+        return n === "income" || n === "transfer";
+      });
     } else {
       return cats.filter(
         (c) =>
