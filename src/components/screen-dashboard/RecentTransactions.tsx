@@ -201,6 +201,29 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
     return list;
   };
 
+  const groupedTransactions = createMemo(() => {
+    const groups = new Map<string, { label: string; total: number; transactions: Transaction[] }>();
+    const dateKey = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit",
+    });
+    const dateLabel = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long", year: "numeric",
+    });
+
+    for (const transaction of sortedTransactions()) {
+      const date = new Date(transaction.date);
+      const key = dateKey.format(date);
+      let group = groups.get(key);
+      if (!group) {
+        group = { label: dateLabel.format(date), total: 0, transactions: [] };
+        groups.set(key, group);
+      }
+      group.transactions.push(transaction);
+      group.total += transaction.type?.toLowerCase() === "income" ? transaction.amount : -transaction.amount;
+    }
+    return Array.from(groups.values());
+  });
+
   const headerClass = (key: SortKey) =>
     `px-3 sm:px-6 py-3 sm:py-4 font-semibold cursor-pointer select-none transition-colors hover:text-forest group${key === "amount" ? " text-right" : ""}`;
 
@@ -695,7 +718,48 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
               </tr>
             </thead>
             <tbody class="text-xs sm:text-sm divide-y divide-forest/5">
-              <For each={sortedTransactions()}>
+              <For each={groupedTransactions()}>
+                {(group) => (
+                  <>
+                    <tr class="bg-sage/50 text-forest">
+                      <th scope="rowgroup" class="sm:hidden pl-3.5 pr-2 py-2 text-left text-[10px] font-bold">
+                        {group.label}
+                      </th>
+                      <th colspan="4" scope="rowgroup" class="hidden sm:table-cell pl-6 pr-2 py-2 text-left text-xs font-bold">
+                        {group.label}
+                      </th>
+                      <td
+                        colspan="2"
+                        class="sm:hidden pr-3.5 py-2 text-right text-[10px] font-bold whitespace-nowrap"
+                      >
+                        <span
+                          class="inline-block rounded-full px-2 py-1"
+                          classList={{
+                            "bg-red-50 text-red-600": group.total < 0,
+                            "bg-green-50 text-green-600": group.total > 0,
+                            "bg-forest/5 text-forest": group.total === 0,
+                          }}
+                        >
+                          {group.total > 0 ? "+" : ""}{formatRupiah(group.total)}
+                        </span>
+                      </td>
+                      <td
+                        class="hidden sm:table-cell px-6 py-2 text-right text-xs font-bold whitespace-nowrap"
+                      >
+                        <span
+                          class="inline-block rounded-full px-2 py-1"
+                          classList={{
+                            "bg-red-50 text-red-600": group.total < 0,
+                            "bg-green-50 text-green-600": group.total > 0,
+                            "bg-forest/5 text-forest": group.total === 0,
+                          }}
+                        >
+                          {group.total > 0 ? "+" : ""}{formatRupiah(group.total)}
+                        </span>
+                      </td>
+                      <td class="hidden sm:table-cell" />
+                    </tr>
+                    <For each={group.transactions}>
                 {(t) => {
                   const isPending = () => isTransactionPending(t.id);
                   return (
@@ -864,6 +928,9 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
                     </tr>
                   );
                 }}
+                    </For>
+                  </>
+                )}
               </For>
             </tbody>
           </table>
