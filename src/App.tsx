@@ -1,6 +1,6 @@
 import { ParentProps, Show, onMount, createSignal, createEffect } from "solid-js";
 import MainLayout from "./components/layout/MainLayout";
-import { state, setState, setupPersistence } from "./store";
+import { state, setState, setupPersistence, loadSyncedBudgets, clearBudgetSync } from "./store";
 import { setupPortfolioPersistence, loadPortfolios } from "./store/portfolioStore";
 import { setupPriceAlertPersistence } from "./store/priceAlertStore";
 import { setupIntelligencePersistence } from "./store/intelligenceStore";
@@ -45,8 +45,10 @@ const AppContent = (props: ParentProps) => {
     const u = user();
     if (u && !isLoading()) {
       checkUserAccounts(u.id);
+      void loadSyncedBudgets(u.id);
     } else {
       setNeedsOnboarding(false);
+      clearBudgetSync();
     }
   });
 

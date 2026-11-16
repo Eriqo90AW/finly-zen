@@ -12,9 +12,9 @@ export const getDateRange = (currentMonthStr: string, period: DatePeriod): { sta
   }
 
   if (period === "21-20") {
-    // 21st of the shown month through the 20th of the next month
-    const start = new Date(year, month, 21, 0, 0, 0, 0);
-    const end = new Date(year, month + 1, 20, 23, 59, 59, 999);
+    // The selected month is the month in which the period ends
+    const start = new Date(year, month - 1, 21, 0, 0, 0, 0);
+    const end = new Date(year, month, 20, 23, 59, 59, 999);
     return { start, end };
   }
 

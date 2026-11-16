@@ -1,0 +1,11 @@
+{
+  "name": "finly-security-repair-verification",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node verify.mjs && node indexes.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.14"
+  }
+}

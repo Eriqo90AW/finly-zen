@@ -88,6 +88,8 @@ export interface TooltipProps {
   class?: string;
   position?: "top" | "left" | "right" | "bottom";
   overlayBgClass?: string;
+  contentClass?: string;
+  delayMs?: number;
 }
 
 export interface TopExpensesAndTargetsProps {

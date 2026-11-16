@@ -228,7 +228,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
     `px-3 sm:px-6 py-3 sm:py-4 font-semibold cursor-pointer select-none transition-colors hover:text-forest group${key === "amount" ? " text-right" : ""}`;
 
   return (
-    <div class="col-span-12 premium-card cursor-default flex flex-col min-h-0 sm:min-h-[420px] lg:h-[500px]">
+    <div class="col-span-12 premium-card cursor-default flex flex-col min-h-0 sm:min-h-[452px] lg:h-[532px]">
       <div class="p-3.5 sm:p-6 border-b border-forest/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
         <div class="flex items-center justify-between sm:justify-start gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
           <h4 class="font-outfit font-bold text-forest text-sm sm:text-base whitespace-nowrap">Recent Transactions</h4>
@@ -620,7 +620,7 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
         </div>
       </div>
       <Show when={!props.loading && sortedTransactions().length > 0}>
-        <div class="overflow-x-hidden sm:overflow-x-auto overflow-y-auto flex-1 h-[380px] min-h-[380px] max-h-[380px] sm:h-auto sm:min-h-0 sm:max-h-none custom-scrollbar rounded-b-2xl">
+        <div class="overflow-x-hidden sm:overflow-x-auto overflow-y-auto flex-1 h-[412px] min-h-[412px] max-h-[412px] sm:h-auto sm:min-h-0 sm:max-h-none custom-scrollbar rounded-b-2xl">
           <table class="w-full min-w-0 sm:min-w-[640px] text-left font-outfit relative">
             <thead class="bg-sage text-earth text-[9px] sm:text-[10px] uppercase tracking-widest sticky top-0 z-10 border-b border-forest/10 shadow-xs">
               <tr>
@@ -938,14 +938,14 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
       </Show>
 
       <Show when={props.loading}>
-        <div class="p-12 text-center text-earth/50 animate-pulse flex-1 flex flex-col items-center justify-center h-[380px] min-h-[380px] max-h-[380px] sm:h-auto sm:min-h-0 sm:max-h-none">
+        <div class="p-12 text-center text-earth/50 animate-pulse flex-1 flex flex-col items-center justify-center h-[412px] min-h-[412px] max-h-[412px] sm:h-auto sm:min-h-0 sm:max-h-none">
           <span class="material-icons text-4xl mb-2">sync</span>
           <p class="text-sm">Fetching your garden data...</p>
         </div>
       </Show>
 
       <Show when={!props.loading && sortedTransactions().length === 0}>
-        <div class="p-12 text-center text-earth/50 flex-1 flex flex-col items-center justify-center h-[380px] min-h-[380px] max-h-[380px] sm:h-auto sm:min-h-0 sm:max-h-none">
+        <div class="p-12 text-center text-earth/50 flex-1 flex flex-col items-center justify-center h-[412px] min-h-[412px] max-h-[412px] sm:h-auto sm:min-h-0 sm:max-h-none">
           <span class="material-icons text-4xl mb-2">eco</span>
           <p class="text-sm">
             {typeFilter() === "expense"

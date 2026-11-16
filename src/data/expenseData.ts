@@ -50,23 +50,20 @@ export function mapTransactionDetail(t: any): Transaction {
 
 export async function getTransactions(): Promise<Transaction[]> {
   const userId = await resolveUserId();
-  let query = supabase
-    .from("view_transactions_detailed")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (userId) {
-    query = query.eq("user_id", userId);
+  const pageSize = 500;
+  const rows: any[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    let query = supabase.from("view_transactions_detailed").select("*")
+      .order("created_at", { ascending: false })
+      .order("transaction_id", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    if (userId) query = query.eq("user_id", userId);
+    const { data, error } = await query;
+    if (error) throw new Error(`Failed to load transactions: ${error.message}`);
+    rows.push(...(data || []));
+    if (!data || data.length < pageSize) break;
   }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("Error fetching transactions:", error);
-    return [];
-  }
-
-  return (data || []).map(mapTransactionDetail);
+  return rows.map(mapTransactionDetail);
 }
 
 export async function getCategories() {

@@ -1,6 +1,6 @@
 import { createSignal, createMemo, Show, For } from "solid-js";
 import { Portal } from "solid-js/web";
-import { state, setCategoryBudget } from "../../store";
+import { state, setCategoryBudget, budgetSyncError } from "../../store";
 import { formatRupiah } from "../../utils/format";
 import { getCategoryDefaultTarget, getCategoryFallbackColor } from "../../config/defaults";
 import { isTransferTransaction } from "../../utils/transferUtils";
@@ -101,6 +101,7 @@ export const TopExpensesAndTargetsCard = (props: TopExpensesAndTargetsProps) => 
 
   return (
     <div class="premium-card p-4 sm:p-6 flex flex-col h-full cursor-default min-h-[300px]">
+      <Show when={budgetSyncError()}><p role="alert" class="text-xs text-red-700">Budget sync: {budgetSyncError()}</p></Show>
       <div class="flex flex-col shrink-0">
         <div class="flex items-center justify-between mb-2">
           <h4 class="font-outfit font-bold text-forest text-sm flex items-center gap-1.5">

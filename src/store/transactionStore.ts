@@ -225,7 +225,9 @@ export async function refreshTransactions(): Promise<void> {
   try {
     const data = await getTransactions();
     setConfirmedTransactions(data);
+    setError(null);
   } catch (err) {
+    setError(err instanceof Error ? err.message : "Failed to refresh transactions");
     console.error("Failed to refresh transactions in background:", err);
   }
 }
@@ -390,6 +392,9 @@ export async function updateTransactionOptimistically(
         return next;
       });
     });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("finly:data-changed", { detail: { source: "update_transaction", id: params.id } }));
+    }
   } catch (err) {
     // 3. Rollback on failure (removes patch overlay, restoring original snapshot)
     batch(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { addTransactions, getAccountsWithBalances } from "./expenseData";
+import { addTransactions, getAccountsWithBalances, getTransactions } from "./expenseData";
 import { supabase } from "../lib/supabase";
 import type { AddTransactionParams } from "../types";
 
@@ -195,7 +195,7 @@ describe("getAccountsWithBalances", () => {
       if (table === "view_transactions_detailed") {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({ order: vi.fn().mockReturnValue({ range: vi.fn().mockReturnValue({
               eq: vi.fn().mockResolvedValue({
                 data: [
                   {
@@ -225,7 +225,7 @@ describe("getAccountsWithBalances", () => {
                 ],
                 error: null,
               }),
-            }),
+            }) }) }),
           }),
         };
       }
@@ -251,3 +251,23 @@ describe("getAccountsWithBalances", () => {
   });
 });
 
+
+
+describe("transaction pagination", () => {
+  it("loads every page using stable ordering", async () => {
+    const ranges: number[] = [];
+    const order = vi.fn().mockReturnThis();
+    const range = vi.fn().mockImplementation((start: number) => { ranges.push(start); return { eq: vi.fn().mockResolvedValue({ data: start === 0 ? Array.from({length: 500}, (_, i) => ({ transaction_id: String(i) })) : [{ transaction_id: "last" }], error: null }) }; });
+    vi.mocked(supabase.from).mockReturnValue({ select: () => ({ order, range }) } as any);
+    const result = await getTransactions();
+    expect(result).toHaveLength(501);
+    expect(ranges).toEqual([0, 500]);
+    expect(order).toHaveBeenCalledWith("created_at", { ascending: false });
+    expect(order).toHaveBeenCalledWith("transaction_id", { ascending: false });
+  });
+  it("rejects instead of returning partial history when a later page fails", async () => {
+    const query: any = { order: () => query, range: (start: number) => ({ eq: async () => start ? { data: null, error: { message: "network" } } : { data: Array.from({length: 500}, () => ({})), error: null } }) };
+    vi.mocked(supabase.from).mockReturnValue({ select: () => query } as any);
+    await expect(getTransactions()).rejects.toThrow("network");
+  });
+});

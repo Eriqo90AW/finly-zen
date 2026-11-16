@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { getDateRange, getLocalYmd, isDateInRange, resolveCalendarMonth } from "../utils/date";
 
 describe("getDateRange 21-20", () => {
-  it("starts on the 21st of the shown month and ends on the 20th of the next month", () => {
-    const september = new Date(2026, 8, 15, 12, 0, 0, 0).toISOString();
+  it("starts on the 21st of the previous month and ends on the 20th of the shown month", () => {
+    const september = new Date(2026, 9, 15, 12, 0, 0, 0).toISOString();
     const { start, end } = getDateRange(september, "21-20");
 
     expect(start.getFullYear()).toBe(2026);
@@ -23,7 +23,7 @@ describe("getDateRange 21-20", () => {
   });
 
   it("rolls December into January of the next year", () => {
-    const december = new Date(2026, 11, 1, 12, 0, 0, 0).toISOString();
+    const december = new Date(2027, 0, 1, 12, 0, 0, 0).toISOString();
     const { start, end } = getDateRange(december, "21-20");
 
     expect(start.getFullYear()).toBe(2026);
@@ -35,7 +35,7 @@ describe("getDateRange 21-20", () => {
   });
 
   it("opens a cross-month period on today's month", () => {
-    const september = new Date(2026, 8, 15, 12, 0, 0, 0).toISOString();
+    const september = new Date(2026, 9, 15, 12, 0, 0, 0).toISOString();
     const period = getDateRange(september, "21-20");
     const today = new Date(2026, 8, 27, 6, 39, 0, 0);
     const view = resolveCalendarMonth(period, today, new Date(2026, 8, 1));

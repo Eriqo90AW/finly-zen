@@ -180,6 +180,8 @@ export const ActivityCalendar = (props: ActivityCalendarProps) => {
               return (
                 <Tooltip
                   class="relative group w-full h-full"
+                  contentClass="w-max"
+                  delayMs={500}
                   content={
                     <div class="flex flex-col items-center">
                       <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">

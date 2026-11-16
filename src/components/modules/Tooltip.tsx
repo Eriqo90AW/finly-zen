@@ -12,7 +12,7 @@ export const Tooltip = (_props: TooltipProps) => {
     setHoverActive(true);
     timeoutId = window.setTimeout(() => {
       setShow(true);
-    }, 2000);
+    }, props.delayMs ?? 2000);
   };
 
   const handleMouseLeave = () => {
@@ -79,7 +79,7 @@ export const Tooltip = (_props: TooltipProps) => {
           text-white text-xs font-outfit rounded-xl 
           transition-all duration-200 ease-out
           pointer-events-none 
-          w-64 max-w-[90vw] 
+          ${props.contentClass ?? "w-64"} max-w-[90vw] 
           z-50 shadow-2xl flex flex-col gap-1
           ${show() ? "opacity-100 visible scale-100" : "opacity-0 invisible scale-95"}
         `}

@@ -188,18 +188,7 @@ const Transactions = () => {
                               color: t.categoryColor || "var(--color-forest)",
                             }}
                           >
-                            <Show
-                              when={formatIconName(t.categoryIcon)}
-                              fallback={
-                                <span class="material-icons !text-[20px]">
-                                  receipt_long
-                                </span>
-                              }
-                            >
-                              <span class="material-icons !text-[20px]">
-                                {formatIconName(t.categoryIcon)}
-                              </span>
-                            </Show>
+                            <span class="material-icons !text-[20px] !leading-none w-5 h-5 text-center" aria-hidden="true">{formatIconName(t.categoryIcon) || "receipt_long"}</span>
                           </div>
                           <div class="min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">

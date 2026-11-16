@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
     env.AI_BASE_URL ||
     env.VITE_AI_BASE_URL ||
     env.VITE_OPENCODE_BASE_URL ||
-    "https://openagent.ercloud.site/v1";
+    "https://openagent.erqo.cloud/v1";
   const aiApiKey =
     env.AI_API_KEY ||
     env.VITE_AI_API_KEY ||
@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
   const marketModel = env.MARKET_MODEL || env.VITE_MARKET_MODEL || "market_quant";
   const defaultModel = env.DEFAULT_MODEL || env.VITE_DEFAULT_MODEL || "finly";
 
-  const targetHost = aiBaseUrl.replace(/\/v1\/?$/, "").replace(/\/+$/, "") || "https://openagent.ercloud.site";
+  const targetHost = aiBaseUrl.replace(/\/v1\/?$/, "").replace(/\/+$/, "") || "https://openagent.erqo.cloud";
 
   const proxyConfig = {
     "/openagent-proxy": {
@@ -69,7 +69,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3077,
       host: "0.0.0.0",
-      allowedHosts: ["finlyzen.ercloud.site"],
+      allowedHosts: ["finlyzen.erqo.cloud"],
       proxy: proxyConfig,
     },
     build: {
@@ -77,7 +77,7 @@ export default defineConfig(({ mode }) => {
     },
     preview: {
       host: "0.0.0.0",
-      allowedHosts: ["finlyzen.ercloud.site"],
+      allowedHosts: ["finlyzen.erqo.cloud"],
       proxy: proxyConfig,
     },
     define: {

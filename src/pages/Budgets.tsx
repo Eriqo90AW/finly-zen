@@ -1,135 +1,43 @@
-import { For, createSignal, createMemo, Show } from "solid-js";
-import { state } from "../store";
-import { transactions } from "../store/transactionStore";
-import { SolidApexCharts } from 'solid-apexcharts';
-import { ApexOptions } from "apexcharts";
-import ChevronRightIcon from "@suid/icons-material/ChevronRight";
+import { createMemo, createSignal, For, onMount, Show } from "solid-js";
+import { SolidApexCharts } from "solid-apexcharts";
+import type { ApexOptions } from "apexcharts";
+import { state, setCategoryBudget, budgetSyncError, budgetSyncLoading, budgetSyncReady } from "../store";
+import { transactions, isTransactionsLoading, transactionsError } from "../store/transactionStore";
+import { getAccounts } from "../data/expenseData";
+import type { Account } from "../types";
+import { getDateRange } from "../utils/date";
+import { summarizeBudgets } from "../utils/budgetSummary";
 import { formatRupiah } from "../utils/format";
-
-const CategoryCard = (props: { category: string, budget: number, spent: number }) => {
-  const [isExpanded, setIsExpanded] = createSignal(false);
-  const percent = () => Math.min((props.spent / props.budget) * 100, 100);
-  const status = () => {
-    const p = percent();
-    if (p >= 100) return { label: "Exceeded", color: "text-rose-500", bg: "bg-rose-500/10" };
-    if (p > 80) return { label: "Caution", color: "text-amber-500", bg: "bg-amber-500/10" };
-    return { label: "Healthy", color: "text-forest", bg: "bg-forest/10" };
-  };
-
-  const miniChartOptions: ApexOptions = {
-    chart: { type: 'bar', sparkline: { enabled: true } },
-    colors: [status().color.includes('forest') ? '#1A4D2E' : status().color.includes('amber') ? '#E8A020' : '#D94F4F'],
-    plotOptions: { bar: { borderRadius: 2, columnWidth: '60%' } },
-    tooltip: { enabled: false }
-  };
-
-  // SVG ring logic
-  const strokeDasharray = () => `${(percent() / 100) * 126} 126`;
-
-  return (
-    <div 
-      class={`premium-card p-6 flex flex-col transition-all duration-500 cursor-pointer ${isExpanded() ? 'col-span-1 shadow-2xl ring-1 ring-forest/20' : ''}`}
-      onClick={() => setIsExpanded(!isExpanded())}
-    >
-      <div class="flex items-start justify-between">
-        <div class="space-y-1">
-          <p class="text-[10px] font-bold text-earth uppercase tracking-widest">{props.category}</p>
-          <h4 class="text-xl font-outfit font-bold text-forest">{formatRupiah(props.spent)} <span class="text-sm font-normal text-earth">/ {formatRupiah(props.budget)}</span></h4>
-        </div>
-        <div class="relative w-12 h-12 flex items-center justify-center">
-           <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 50 50">
-             <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="transparent" class="text-forest/5" />
-             <circle 
-              cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="transparent" 
-              stroke-dasharray={strokeDasharray()} stroke-linecap="round" class={status().color} 
-             />
-           </svg>
-           <ChevronRightIcon 
-            class={`absolute text-xs text-forest transition-transform duration-300 ${isExpanded() ? 'rotate-90' : ''}`} 
-            sx={{ fontSize: 16 }} 
-           />
-        </div>
-      </div>
-
-      <div class="mt-6 flex items-center justify-between">
-         <span class={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${status().bg} ${status().color}`}>
-            {status().label}
-         </span>
-         <p class="text-xs font-outfit text-earth">
-            {formatRupiah(props.budget - props.spent)} left
-         </p>
-      </div>
-
-      <div class={`transition-all duration-500 overflow-hidden ${isExpanded() ? 'h-24 mt-6 pt-6 border-t border-forest/5 opacity-100' : 'h-0 opacity-0'}`}>
-         <div class="h-full">
-            <Show when={isExpanded()}>
-              <SolidApexCharts options={miniChartOptions} series={[{ data: [12, 18, 14, 22, 19, 25, 20] }]} type="bar" height="100%" />
-            </Show>
-         </div>
-      </div>
-    </div>
-  );
-};
+import { MoneyFramework } from "../components/screen-budgets/MoneyFramework";
 
 const Budgets = () => {
-  const overallOptions: ApexOptions = {
-    chart: { type: 'line', toolbar: { show: false } },
-    colors: ['#E8F5EC', '#1A4D2E'],
-    stroke: { width: [0, 4], curve: 'smooth' },
-    plotOptions: { bar: { columnWidth: '50%' } },
-    labels: ['Food', 'Transport', 'Ent.', 'Shop.', 'Health', 'Utils'],
-    legend: { show: false },
-    grid: { borderColor: 'rgba(26,77,46,0.05)' },
-    yaxis: { labels: { style: { fontFamily: 'Outfit' } } },
-    xaxis: { labels: { style: { fontFamily: 'Outfit' } } },
-  };
-
-  const budgetActualSeries = [
-    { name: 'Budgeted', type: 'column', data: [5000000, 3000000, 2000000, 4000000, 1500000, 2500000] },
-    { name: 'Actual', type: 'line', data: [4200000, 3400000, 1500000, 4100000, 1000000, 2200000] }
-  ];
-
-  return (
-    <div class="space-y-6 sm:space-y-8 animate-fade-in-up">
-      <h2 class="text-2xl sm:text-3xl font-cormorant text-forest">Monthly Growth & Budgets</h2>
-      
-      {/* Overview Chart */}
-      <div class="premium-card p-4 sm:p-6 lg:p-8 bg-white min-h-[300px] lg:h-[350px]">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
-           <div>
-              <h3 class="text-base sm:text-lg font-outfit font-bold text-forest">Performance vs Target</h3>
-              <p class="text-xs text-earth">Tracking all categories for April 2026</p>
-           </div>
-           <div class="flex gap-4">
-              <div class="flex items-center gap-2">
-                 <div class="w-3 h-3 rounded-full bg-sage" />
-                 <span class="text-[10px] font-bold text-earth uppercase tracking-widest">Budgeted</span>
-              </div>
-              <div class="flex items-center gap-2">
-                 <div class="w-3 h-3 rounded-full bg-forest" />
-                 <span class="text-[10px] font-bold text-earth uppercase tracking-widest">Actual</span>
-              </div>
-           </div>
-        </div>
-        <div class="h-[200px] sm:h-[220px]">
-           <SolidApexCharts options={overallOptions} series={budgetActualSeries} type="line" height="100%" />
-        </div>
-      </div>
-
-      {/* Category Grid */}
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 pb-20">
-        <For each={state.budgets}>
-          {(b) => (
-            <CategoryCard 
-              category={b.category} 
-              budget={b.limit} 
-              spent={(transactions() || []).filter(t => t.category?.toLowerCase() === b.category?.toLowerCase() && t.type === "expense").reduce((sum, t) => sum + t.amount, 0)} 
-            />
-          )}
-        </For>
-      </div>
+  const [accounts, setAccounts] = createSignal<Account[]>([]);
+  const [selectedAccount, setSelectedAccount] = createSignal("");
+  const [editing, setEditing] = createSignal<string | null>(null);
+  const [amount, setAmount] = createSignal("");
+  onMount(async () => setAccounts(await getAccounts()));
+  const period = createMemo(() => getDateRange(state.ui.currentMonth, state.ui.datePeriod));
+  const categories = createMemo(() => summarizeBudgets(transactions(), state.budgets, period().start, period().end, selectedAccount()));
+  const chartOptions = (): ApexOptions => ({ chart: { type: "bar", toolbar: { show: false } }, colors: ["#CBE9D4", "#1A4D2E"], plotOptions: { bar: { horizontal: false, columnWidth: "65%" } }, xaxis: { categories: categories().map(c => c.name) }, yaxis: { labels: { formatter: value => formatRupiah(value) } }, tooltip: { y: { formatter: value => formatRupiah(value) } }, legend: { position: "top" }, grid: { borderColor: "rgba(26,77,46,0.05)" } });
+  const series = () => [{ name: "Budgeted", data: categories().map(c => c.limit ?? 0) }, { name: "Actual", data: categories().map(c => c.spent) }];
+  const edit = (name: string, limit: number | null) => { setEditing(name); setAmount(limit == null ? "" : String(limit)); };
+  const save = (e: Event) => { e.preventDefault(); const name = editing(); const value = Number(amount()); if (!name || !Number.isFinite(value) || value < 0) return; setCategoryBudget(name, value); setEditing(null); };
+  return <div class="space-y-6 sm:space-y-8 animate-fade-in-up">
+    <div class="flex flex-wrap items-center justify-between gap-3"><h2 class="text-2xl sm:text-3xl font-cormorant text-forest">Monthly Growth &amp; Budgets</h2>
+      <label class="text-sm font-bold text-forest">Account <select class="ml-2 rounded-lg border border-forest/20 bg-white px-3 py-2" value={selectedAccount()} onChange={e => setSelectedAccount(e.currentTarget.value)}><option value="">All Accounts</option><For each={accounts()}>{a => <option value={a.id}>{a.name}</option>}</For></select></label>
     </div>
-  );
+    <Show when={budgetSyncError()}><p role="alert" class="text-red-700">Budget sync: {budgetSyncError()}</p></Show>
+    <Show when={transactionsError()}><p role="alert" class="text-red-700">{transactionsError()}</p></Show>
+    <MoneyFramework accountId={selectedAccount()} />
+    <section class="premium-card p-4 sm:p-6 lg:p-8 bg-white"><h3 class="text-lg font-outfit font-bold text-forest">Performance vs Target</h3><p class="text-xs text-earth">{period().start.toLocaleDateString()} - {period().end.toLocaleDateString()}. Unbudgeted categories show a zero target.</p>
+      <Show when={!isTransactionsLoading() && !budgetSyncLoading() && budgetSyncReady()} fallback={<p>{budgetSyncError() ? "Budget data unavailable." : "Loading budgets..."}</p>}><Show when={categories().length} fallback={<p class="mt-4 text-earth">No budgets or spending in this period.</p>}><div class="h-[280px]"><SolidApexCharts options={chartOptions()} series={series()} type="bar" height="100%" /></div></Show></Show>
+    </section>
+    <Show when={budgetSyncReady() && !isTransactionsLoading()}><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 pb-20"><For each={categories()}>{c => {
+      const percent = () => c.limit ? Math.min(100, c.spent / c.limit * 100) : 0;
+      const status = () => c.limit === null ? "Unbudgeted" : c.spent > c.limit ? "Exceeded" : c.spent >= c.limit * .8 ? "Caution" : "Healthy";
+      return <article class="premium-card p-6 space-y-4"><div class="flex justify-between gap-3"><div><p class="text-xs font-bold text-earth uppercase">{c.name}</p><p class="font-bold text-forest text-xl">{formatRupiah(c.spent)} <span class="text-sm font-normal text-earth">/ {c.limit === null ? "No budget" : formatRupiah(c.limit)}</span></p></div><button type="button" class="text-sm text-forest underline" onClick={() => edit(c.name,c.limit)}>Edit</button></div><div class="h-2 rounded bg-sage/30"><div class="h-2 rounded bg-forest" style={{ width: `${percent()}%` }} /></div><div class="flex justify-between text-xs"><span>{status()}</span><Show when={c.limit !== null}><span>{c.spent > c.limit! ? `${formatRupiah(c.spent-c.limit!)} over` : `${formatRupiah(c.limit!-c.spent)} left`}</span></Show></div></article>;
+    }}</For></div></Show>
+    <Show when={editing()}><form onSubmit={save} class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"><div class="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4"><h3 class="font-bold text-forest">Budget for {editing()}</h3><label class="block">Recurring limit <input class="border rounded w-full p-2" type="number" min="0" step="1" required value={amount()} onInput={e => setAmount(e.currentTarget.value)} /></label><p class="text-xs text-earth">Use zero for no budget. This limit applies to every period and all accounts.</p><div class="flex gap-4"><button class="bg-forest text-white rounded px-4 py-2" type="submit">Save</button><button type="button" onClick={() => setEditing(null)}>Cancel</button></div></div></form></Show>
+  </div>;
 };
-
 export default Budgets;
