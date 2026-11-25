@@ -1,15 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   saveBatchTransactions,
   finishBatchAction,
   cancelPendingAction,
   resetConversation,
+  endIntelligenceSession,
   sendIntelligenceMessage,
 } from "./chatOrchestrator";
 import {
   intelligenceState,
   setIntelligenceState,
-  clearIntelligenceChat,
+  switchIntelligenceUser,
 } from "../../store/intelligenceStore";
 import * as expenseDataModule from "../../data/expenseData";
 import * as hermesModule from "../../lib/hermesClient";
@@ -64,7 +65,12 @@ vi.mock("../../lib/userContext", () => ({
 describe("chatOrchestrator Multi-Entry & Batch Lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    clearIntelligenceChat("finly");
+    switchIntelligenceUser("user-123");
+  });
+
+  afterEach(() => {
+    endIntelligenceSession();
+    switchIntelligenceUser(null);
   });
 
   it("saves valid selected drafts, locks them as saved, and finishes when all complete", async () => {

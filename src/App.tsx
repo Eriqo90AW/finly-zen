@@ -1,11 +1,11 @@
-import { ParentProps, Show, onMount, createSignal, createEffect } from "solid-js";
+import { ParentProps, Show, onMount, createSignal, createEffect, createMemo, on } from "solid-js";
 import MainLayout from "./components/layout/MainLayout";
-import { state, setState, setupPersistence, loadSyncedBudgets, clearBudgetSync } from "./store";
+import { state, setupPersistence, loadSyncedBudgets, clearBudgetSync } from "./store";
 import { setupPortfolioPersistence, loadPortfolios } from "./store/portfolioStore";
 import { setupPriceAlertPersistence } from "./store/priceAlertStore";
-import { setupIntelligencePersistence } from "./store/intelligenceStore";
+import { setupIntelligencePersistence, switchIntelligenceUser } from "./store/intelligenceStore";
+import { endIntelligenceSession } from "./services/intelligence/chatOrchestrator";
 import { fetchUsdRate } from "./data/portfolioData";
-import { resolveUserId } from "./lib/userContext";
 import { setUsdRateOnce } from "./utils/format";
 import AddIcon from "@suid/icons-material/Add";
 import { useLocation } from "@solidjs/router";
@@ -17,6 +17,7 @@ import {
   openCreateTransaction,
   initializeTransactions,
   setupTransactionListener,
+  resetTransactionStore,
 } from "./store/transactionStore";
 
 const AppContent = (props: ParentProps) => {
@@ -27,49 +28,46 @@ const AppContent = (props: ParentProps) => {
 
   const location = useLocation();
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [needsOnboarding, setNeedsOnboarding] = createSignal(false);
+  const [accountStatus, setAccountStatus] = createSignal<"loading" | "setup" | "ready" | "error">("loading");
+  const activeUserId = createMemo(() => isLoading() ? null : user()?.id ?? null);
 
   onMount(async () => {
     const rate = await fetchUsdRate();
     setUsdRateOnce(rate);
   });
 
-  createEffect(() => {
-    if (isAuthenticated() && !isLoading()) {
-      initializeTransactions();
+  createEffect(on(activeUserId, (uid) => {
+    endIntelligenceSession();
+    switchIntelligenceUser(uid);
+    resetTransactionStore(Boolean(uid));
+    setAccountStatus("loading");
+    if (uid) {
+      void initializeTransactions();
       setupTransactionListener();
-    }
-  });
-
-  createEffect(() => {
-    const u = user();
-    if (u && !isLoading()) {
-      checkUserAccounts(u.id);
-      void loadSyncedBudgets(u.id);
+      void checkUserAccounts(uid);
+      void loadSyncedBudgets(uid);
     } else {
-      setNeedsOnboarding(false);
       clearBudgetSync();
     }
-  });
+  }));
 
   const checkUserAccounts = async (uid: string) => {
+    setAccountStatus("loading");
     try {
-      const accs = await getAccounts();
-      if (accs.length === 0) {
-        setNeedsOnboarding(true);
-      } else {
-        setNeedsOnboarding(false);
+      const accounts = await getAccounts(uid);
+      if (activeUserId() === uid) {
+        setAccountStatus(accounts.some(account => !account.setup_pending) ? "ready" : "setup");
       }
-    } catch (e) {
-      console.error("Failed to check user accounts:", e);
+    } catch (error) {
+      if (activeUserId() === uid) setAccountStatus("error");
+      console.error("Failed to check user accounts:", error);
     }
   };
 
   const handleOnboardingComplete = async () => {
-    setNeedsOnboarding(false);
-    await resolveUserId();
-    await loadPortfolios();
-    await initializeTransactions(true);
+    setAccountStatus("ready");
+    window.dispatchEvent(new CustomEvent("finly:accounts-changed"));
+    await Promise.all([loadPortfolios(), initializeTransactions(true)]);
   };
 
   const isPublicPage = () => {
@@ -103,15 +101,24 @@ const AppContent = (props: ParentProps) => {
         </MainLayout>
 
         {/* First Time Onboarding Wizard */}
-        <Show when={needsOnboarding() && user()}>
-          <FirstTimeSetupModal
-            userId={user()!.id}
-            onComplete={handleOnboardingComplete}
-          />
+        <Show when={accountStatus() === "setup" && activeUserId()} keyed>
+          {uid => (
+            <FirstTimeSetupModal
+              userId={uid}
+              onComplete={() => { if (activeUserId() === uid) void handleOnboardingComplete(); }}
+            />
+          )}
+        </Show>
+
+        <Show when={accountStatus() === "error" && activeUserId()}>
+          <div role="alert" class="fixed bottom-6 left-4 z-50 premium-card p-4 bg-white">
+            <p>We couldn’t load your accounts.</p>
+            <button class="text-forest underline" onClick={() => void checkUserAccounts(activeUserId()!)}>Retry</button>
+          </div>
         </Show>
 
         {/* Global Add Button - Hidden on Stock / Management pages */}
-        <Show when={!shouldHideAddButton()}>
+        <Show when={activeUserId() && accountStatus() === "ready" && !shouldHideAddButton()}>
           <button
             onClick={() => openCreateTransaction()}
             class="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 lg:bottom-10 lg:right-12 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-spring text-white rounded-full flex items-center justify-center shadow-2xl transition-all z-40 group cursor-pointer hover:bg-forest duration-300 active:scale-95"

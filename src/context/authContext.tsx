@@ -38,9 +38,9 @@ export const AuthProvider = (props: ParentProps) => {
     try {
       const { data, error } = await supabase.auth.getSession();
       if (!error && data.session) {
+        setCachedUserId(data.session.user.id);
         setSession(data.session);
         setUser(data.session.user);
-        setCachedUserId(data.session.user.id);
       } else {
         setSession(null);
         setUser(null);
@@ -55,9 +55,9 @@ export const AuthProvider = (props: ParentProps) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setCachedUserId(newSession?.user?.id ?? null);
       setSession(newSession);
       setUser(newSession?.user ?? null);
-      setCachedUserId(newSession?.user?.id ?? null);
       setIsLoading(false);
     });
 

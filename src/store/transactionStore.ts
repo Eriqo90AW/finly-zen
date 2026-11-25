@@ -202,33 +202,47 @@ export function removeToast(id: string) {
   setToasts((prev) => prev.filter((t) => t.id !== id));
 }
 
+let ledgerSession = 0;
+let latestRead = 0;
+let ledgerActive = true;
+
 // Data Fetching & Sync
 export async function initializeTransactions(force = false): Promise<void> {
   if (isInitialized() && !force) return;
 
+  const read = ++latestRead;
   setIsLoading(true);
   setError(null);
   try {
     const data = await getTransactions();
+    if (read !== latestRead) return;
     setConfirmedTransactions(data);
     setIsInitialized(true);
   } catch (err) {
+    if (read !== latestRead) return;
     const msg = err instanceof Error ? err.message : "Failed to load transactions";
     setError(msg);
     console.error("Failed to initialize transactions:", err);
   } finally {
-    setIsLoading(false);
+    if (read === latestRead) setIsLoading(false);
   }
 }
 
 export async function refreshTransactions(): Promise<void> {
+  if (!ledgerActive) return;
+  const read = ++latestRead;
   try {
     const data = await getTransactions();
+    if (read !== latestRead) return;
     setConfirmedTransactions(data);
+    setIsInitialized(true);
     setError(null);
   } catch (err) {
+    if (read !== latestRead) return;
     setError(err instanceof Error ? err.message : "Failed to refresh transactions");
     console.error("Failed to refresh transactions in background:", err);
+  } finally {
+    if (read === latestRead) setIsLoading(false);
   }
 }
 
@@ -250,6 +264,7 @@ export async function createTransactionOptimistically(
   params: AddTransactionParams,
   displayMeta: TransactionDisplayMeta,
 ): Promise<void> {
+  const session = ledgerSession;
   const tempId = crypto.randomUUID();
   const dateStr = params.createdAt ? params.createdAt.toISOString() : new Date().toISOString();
 
@@ -286,6 +301,7 @@ export async function createTransactionOptimistically(
   // 2. Perform network request in background
   try {
     const rawResult = await addTransaction(params);
+    if (session !== ledgerSession) return;
     const authoritative = mapTransactionDetail(rawResult);
 
     batch(() => {
@@ -299,6 +315,7 @@ export async function createTransactionOptimistically(
       });
     });
   } catch (err) {
+    if (session !== ledgerSession) return;
     // 3. Rollback on failure
     batch(() => {
       setOptimisticAdditions((prev) => prev.filter((a) => a.tempId !== tempId));
@@ -330,6 +347,7 @@ export async function updateTransactionOptimistically(
   params: UpdateTransactionParams,
   displayMeta: TransactionDisplayMeta,
 ): Promise<void> {
+  const session = ledgerSession;
   const currentList = transactions();
   const original = currentList.find((t) => t.id === params.id);
 
@@ -374,6 +392,7 @@ export async function updateTransactionOptimistically(
   // 2. Perform network request in background
   try {
     const rawResult = await updateTransaction(params);
+    if (session !== ledgerSession) return;
     const authoritative = mapTransactionDetail(rawResult);
 
     batch(() => {
@@ -396,6 +415,7 @@ export async function updateTransactionOptimistically(
       window.dispatchEvent(new CustomEvent("finly:data-changed", { detail: { source: "update_transaction", id: params.id } }));
     }
   } catch (err) {
+    if (session !== ledgerSession) return;
     // 3. Rollback on failure (removes patch overlay, restoring original snapshot)
     batch(() => {
       setOptimisticPatches((prev) => {
@@ -427,12 +447,15 @@ export async function updateTransactionOptimistically(
 }
 
 // Reset store state (used for testing and user logout)
-export function resetTransactionStore() {
+export function resetTransactionStore(active = true) {
+  ledgerSession += 1;
+  latestRead += 1;
+  ledgerActive = active;
   batch(() => {
     setConfirmedTransactions([]);
     setOptimisticAdditions([]);
     setOptimisticPatches(new Map());
-    setPendingIds(new Set());
+    setPendingIds(new Set<string>());
     setIsLoading(false);
     setError(null);
     setIsInitialized(false);

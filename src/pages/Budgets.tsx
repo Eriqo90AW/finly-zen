@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, onMount, Show } from "solid-js";
+import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { SolidApexCharts } from "solid-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { state, setCategoryBudget, budgetSyncError, budgetSyncLoading, budgetSyncReady } from "../store";
@@ -15,7 +15,20 @@ const Budgets = () => {
   const [selectedAccount, setSelectedAccount] = createSignal("");
   const [editing, setEditing] = createSignal<string | null>(null);
   const [amount, setAmount] = createSignal("");
-  onMount(async () => setAccounts(await getAccounts()));
+  const [accountError, setAccountError] = createSignal("");
+  const loadAccounts = async () => {
+    try {
+      setAccounts(await getAccounts());
+      setAccountError("");
+    } catch {
+      setAccountError("Couldn’t load accounts.");
+    }
+  };
+  onMount(() => {
+    void loadAccounts();
+    window.addEventListener("finly:accounts-changed", loadAccounts);
+  });
+  onCleanup(() => window.removeEventListener("finly:accounts-changed", loadAccounts));
   const period = createMemo(() => getDateRange(state.ui.currentMonth, state.ui.datePeriod));
   const categories = createMemo(() => summarizeBudgets(transactions(), state.budgets, period().start, period().end, selectedAccount()));
   const chartOptions = (): ApexOptions => ({ chart: { type: "bar", toolbar: { show: false } }, colors: ["#CBE9D4", "#1A4D2E"], plotOptions: { bar: { horizontal: false, columnWidth: "65%" } }, xaxis: { categories: categories().map(c => c.name) }, yaxis: { labels: { formatter: value => formatRupiah(value) } }, tooltip: { y: { formatter: value => formatRupiah(value) } }, legend: { position: "top" }, grid: { borderColor: "rgba(26,77,46,0.05)" } });
@@ -26,6 +39,7 @@ const Budgets = () => {
     <div class="flex flex-wrap items-center justify-between gap-3"><h2 class="text-2xl sm:text-3xl font-cormorant text-forest">Monthly Growth &amp; Budgets</h2>
       <label class="text-sm font-bold text-forest">Account <select class="ml-2 rounded-lg border border-forest/20 bg-white px-3 py-2" value={selectedAccount()} onChange={e => setSelectedAccount(e.currentTarget.value)}><option value="">All Accounts</option><For each={accounts()}>{a => <option value={a.id}>{a.name}</option>}</For></select></label>
     </div>
+    <Show when={accountError()}><p role="alert" class="text-red-700">{accountError()} <button class="underline" onClick={loadAccounts}>Retry</button></p></Show>
     <Show when={budgetSyncError()}><p role="alert" class="text-red-700">Budget sync: {budgetSyncError()}</p></Show>
     <Show when={transactionsError()}><p role="alert" class="text-red-700">{transactionsError()}</p></Show>
     <MoneyFramework accountId={selectedAccount()} />

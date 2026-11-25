@@ -63,11 +63,7 @@ export async function resolveUserId(): Promise<string> {
     console.error("Error fetching session in resolveUserId:", err);
   }
 
-  const accounts = await getAccounts();
-  const fromAccount = accounts.find((a) => a.user_id)?.user_id;
-  const resolved = fromAccount || DEFAULT_USER_ID;
-  cachedUserId = resolved;
-  return resolved;
+  return DEFAULT_USER_ID;
 }
 
 export function getUserIdSync(): string {

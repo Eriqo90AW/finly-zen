@@ -1,3 +1,4 @@
+import { chatOwner } from "../../store/intelligenceStore";
 import { ParentProps, createEffect, createSignal, Show } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import Sidebar from "./Sidebar";
@@ -81,12 +82,12 @@ const MainLayout = (props: ParentProps) => {
           </div>
         </main>
 
-        <AddExpenseSlideOver />
+        <Show when={chatOwner()} keyed>{(_uid) => <AddExpenseSlideOver />}</Show>
         <TransactionToastRegion />
       </div>
 
       {/* Right Insights Sidebar */}
-      <InsightsSidebar />
+      <Show when={chatOwner()} keyed>{(_uid) => <InsightsSidebar />}</Show>
     </div>
   );
 };

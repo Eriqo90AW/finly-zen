@@ -19,7 +19,7 @@ import { GardenWins } from "../components/screen-dashboard/GardenWins";
 import { TopExpensesAndTargetsCard } from "../components/screen-dashboard/TopExpensesCard";
 import { BudgetPacingChart } from "../components/screen-dashboard/BudgetPacingChart";
 import { DEFAULT_CONFIG } from "../config/defaults";
-import { isTransferTransaction } from "../utils/transferUtils";
+import { isCashFlowTransaction } from "../utils/transferUtils";
 
 const Dashboard = () => {
   const [dailyBudget, setDailyBudget] = createSignal(DEFAULT_CONFIG.dailyBudget);
@@ -35,7 +35,7 @@ const Dashboard = () => {
     return data.filter((t) => {
       const inDate = isDateInRange(t.date, start, end);
       if (!inDate) return false;
-      if (isTransferTransaction(t)) return false;
+      if (!isCashFlowTransaction(t)) return false;
       return true;
     });
   });
@@ -44,7 +44,7 @@ const Dashboard = () => {
   const allFilteredTransactions = createMemo(() => {
     const data = transactions() || [];
     return data.filter((t) => {
-      if (isTransferTransaction(t)) return false;
+      if (!isCashFlowTransaction(t)) return false;
       return true;
     });
   });

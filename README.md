@@ -1,38 +1,37 @@
-## Usage
+# Finly Zen
 
-Those templates dependencies are maintained via [pnpm](https://pnpm.io) via `pnpm up -Lri`.
+Finly Zen is a Solid and Vite app for tracking personal finances, investments, and savings.
 
-This is the reason you see a `pnpm-lock.yaml`. That being said, any package manager will work. This file can be safely be removed once you clone a template.
+## Local development
+
+Use Node.js 22.12 or later and pnpm. The project pins pnpm in `package.json` and requires it for dependency installation.
 
 ```bash
-$ npm install # or pnpm install or yarn install
+corepack enable pnpm
+pnpm install --frozen-lockfile
+cp .env.example .env
 ```
 
-### Learn more on the [Solid Website](https://solidjs.com) and come chat with us on our [Discord](https://discord.com/invite/solidjs)
+Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env` for your Supabase project. The example file lists the optional settings.
 
-## Available Scripts
+```bash
+pnpm dev
+```
 
-In the project directory, you can run:
+Open [http://localhost:3077](http://localhost:3077). If the Corepack shim cannot be enabled on your machine, you can run the same commands through `corepack pnpm`.
 
-### `npm run dev` or `npm start`
+## Checks and build
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```bash
+pnpm test:run
+pnpm build
+pnpm serve
+```
 
-The page will reload if you make edits.<br>
-
-### `npm run build`
-
-Builds the app for production to the `dist` folder.<br>
-It correctly bundles Solid in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+The test suite runs with placeholder Supabase settings and does not require a live database.
 
 ## Deployment
 
-You can deploy the `dist` folder to any static host provider (netlify, surge, now, etc.)
+Apply the SQL migrations in `supabase/migrations` to your Supabase project before deploying the corresponding frontend. The ledger and setup changes require `20261125000000_ledger_and_setup.sql`.
 
-## This project was created with the [Solid CLI](https://github.com/solidjs-community/solid-cli)
-
-pushed by finly zen agent
+Build with `pnpm build` and publish `dist/` to a static host. Configure the host to serve `index.html` for app routes such as `/reports` and `/payday-planner`.

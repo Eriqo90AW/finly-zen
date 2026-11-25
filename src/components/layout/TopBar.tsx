@@ -159,6 +159,7 @@ const TopBar = (props: TopBarProps) => {
     if (p === "/transactions") return "Transactions";
     if (p === "/budgets") return "Budgets";
     if (p === "/goals") return "Goals";
+    if (p === "/payday-planner") return "Payday planner";
     if (p === "/reports") return "Reports";
     if (p.startsWith("/stock")) return currentStockData()?.ticker || params.ticker || "Markets";
     if (p === "/markets/list") return "Market Cap List";

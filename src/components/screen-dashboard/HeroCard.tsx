@@ -11,7 +11,7 @@ import {
 import { state, toggleShowAllTime, setSelectedAccount } from "../../store";
 import { formatRupiah } from "../../utils/format";
 import { getDateRange, isDateInRange } from "../../utils/date";
-import { isTransferTransaction } from "../../utils/transferUtils";
+import { isCashFlowTransaction } from "../../utils/transferUtils";
 import type { HeroCardProps } from "../../types";
 
 export const HeroCard = (props: HeroCardProps) => {
@@ -76,6 +76,14 @@ export const HeroCard = (props: HeroCardProps) => {
         );
     const accList = accounts();
     const now = new Date();
+    const balances = new Map<string, number>();
+    let totalBalance = 0;
+    for (const t of props.allTransactions) {
+      if (new Date(t.date) > now) continue;
+      const change = t.type === "income" ? t.amount : -t.amount;
+      totalBalance += change;
+      if (t.accountName) balances.set(t.accountName, (balances.get(t.accountName) ?? 0) + change);
+    }
 
     // Pre-calculate monthly divisor
     let monthlyDivisor;
@@ -104,8 +112,7 @@ export const HeroCard = (props: HeroCardProps) => {
 
     // Single pass aggregation for performance
     for (const t of dataSource) {
-      const isTransfer = isTransferTransaction(t);
-      if (!isAllTime && isTransfer) continue;
+      if (!isCashFlowTransaction(t)) continue;
 
       const amount = t.amount || 0;
       const type = t.type;
@@ -137,7 +144,8 @@ export const HeroCard = (props: HeroCardProps) => {
     // Finalize stats and calculate daily averages
     return accList.map((acc) => {
       const s = statsMap.get(acc.name);
-      const net = s.income - s.expenses;
+      const balance = acc.name === "All Accounts" ? totalBalance : balances.get(acc.name) ?? 0;
+      const net = isAllTime ? balance : s.income - s.expenses;
 
       let divisor = monthlyDivisor;
       if (isAllTime) {
@@ -156,6 +164,7 @@ export const HeroCard = (props: HeroCardProps) => {
       return {
         ...s,
         net,
+        balance,
         dailyAvg: s.expenses / divisor,
         dailyAvgNonRecurring: s.nonRecurringExpenses / divisor,
       };
@@ -323,6 +332,9 @@ export const HeroCard = (props: HeroCardProps) => {
                       index() === activeIndex() ? displayTotal() : stats.net,
                     )}
                   </h3>
+                  <p class="text-xs text-forest/70">
+                    {state.ui.showAllTime ? "Available balance" : `Monthly net cash flow · Available ${formatRupiah(stats.balance)}`}
+                  </p>
                 </div>
 
                 <div class="h-px bg-forest/10 w-full my-2" />

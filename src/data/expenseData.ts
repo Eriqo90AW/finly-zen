@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { formatHexColor } from "../utils/format";
-import { resolveUserId, getUserIdSync } from "../lib/userContext";
+import { resolveUserId } from "../lib/userContext";
+import { buildTransferHistory } from "../utils/transferUtils";
 import type {
   Transaction,
   TransactionType,
@@ -45,6 +46,8 @@ export function mapTransactionDetail(t: any): Transaction {
     date: t.created_at || (t.date ? new Date(t.date).toISOString() : new Date().toISOString()),
     note: t.note || "",
     isRecurring: Boolean(t.is_recurring ?? t.isRecurring),
+    entryKind: t.entry_kind ?? t.entryKind,
+    transferId: t.transfer_id ?? t.transferId ?? undefined,
   };
 }
 
@@ -89,8 +92,8 @@ export async function getCategories() {
   })) as Category[];
 }
 
-export async function getAccounts() {
-  const userId = await resolveUserId();
+export async function getAccounts(activeUserId?: string) {
+  const userId = activeUserId ?? (await resolveUserId());
   let query = supabase
     .from("accounts")
     .select("*")
@@ -103,8 +106,7 @@ export async function getAccounts() {
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching accounts:", error);
-    return [] as Account[];
+    throw new Error(`Failed to load accounts: ${error.message}`);
   }
   return (data || []).map((acc) => ({
     ...acc,
@@ -164,79 +166,14 @@ export async function createDefaultUserData(
   initialBalance: number = 0,
   selectedCategoryNames?: string[]
 ): Promise<{ accountId: string }> {
-  // 1. Create default "Main" account
-  const { data: newAccount, error: accError } = await supabase
-    .from("accounts")
-    .insert({
-      user_id: userId,
-      name: "Main",
-      color: "#1a4d2e",
-    })
-    .select("id")
-    .single();
-
-  if (accError) {
-    console.error("Error creating default account:", accError);
-    throw new Error(`Failed to create Main account: ${accError.message}`);
-  }
-
-  // 2. Default starter categories definitions
-  const standardCategories = [
-    { name: "Food & Dining", icon: "restaurant", color: "#d47b5a" },
-    { name: "Transport", icon: "directions_car", color: "#52c278" },
-    { name: "Bills & Utilities", icon: "receipt_long", color: "#6366f1" },
-    { name: "Shopping", icon: "shopping_bag", color: "#f43f5e" },
-    { name: "Investments", icon: "trending_up", color: "#1a4d2e" },
-    { name: "Health & Wellness", icon: "favorite", color: "#a78bfa" },
-    { name: "Salary", icon: "payments", color: "#10b981" },
-    { name: "Debt", icon: "swap_horiz", color: "#80631d" },
-  ];
-
-  const categoriesToInsert = standardCategories
-    .filter((cat) => {
-      if (cat.name === "Debt" || cat.name === "Salary") return true; // always include utility categories
-      if (!selectedCategoryNames || selectedCategoryNames.length === 0) return true;
-      return selectedCategoryNames.includes(cat.name);
-    })
-    .map((cat) => ({
-      user_id: userId,
-      name: cat.name,
-      icon: cat.icon,
-      color: cat.color,
-    }));
-
-  const { error: catError } = await supabase
-    .from("categories")
-    .insert(categoriesToInsert);
-
-  if (catError) {
-    console.error("Error creating default categories:", catError);
-  }
-
-  // 3. If initial balance > 0, log an initial balance transaction
-  if (initialBalance > 0 && newAccount?.id) {
-    // Find Salary or Income category
-    const { data: cats } = await supabase
-      .from("categories")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("name", "Salary")
-      .maybeSingle();
-
-    await supabase.from("transactions").insert({
-      user_id: userId,
-      account_id: newAccount.id,
-      category_id: cats?.id || null,
-      name: "Initial Balance",
-      amount: initialBalance,
-      type: "income",
-      is_recurring: false,
-      note: "Starting balance on Main account",
-      created_at: new Date().toISOString(),
-    });
-  }
-
-  return { accountId: newAccount.id };
+  const { data, error } = await supabase.rpc("complete_finance_setup", {
+    p_user_id: userId,
+    p_opening_balance: initialBalance,
+    p_categories: selectedCategoryNames ?? null,
+  });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Setup did not return an account.");
+  return { accountId: data };
 }
 
 export async function addTransaction(
@@ -392,8 +329,11 @@ export async function addTransfer(
   params: AddTransferParams,
 ): Promise<{ expense: any; income: any }> {
   try {
-    // 1. Get Accounts to resolve names
-    const accounts = await getAccounts();
+    if (params.fromAccountId === params.toAccountId || !Number.isFinite(params.amount) || params.amount <= 0) {
+      throw new Error("Choose two different accounts and a positive amount");
+    }
+    const userId = params.userId ?? (await resolveUserId());
+    const accounts = await getAccounts(userId);
     const fromAccount = accounts.find((a) => a.id === params.fromAccountId);
     const toAccount = accounts.find((a) => a.id === params.toAccountId);
 
@@ -417,27 +357,32 @@ export async function addTransfer(
       ? params.createdAt.toISOString()
       : new Date().toISOString();
 
+    const transferId = crypto.randomUUID();
     const expensePayload = {
       account_id: params.fromAccountId,
-      user_id: params.userId || fromAccount.user_id,
+      user_id: userId,
+      entry_kind: "transfer",
+      transfer_id: transferId,
       name: `Transfer to ${toAccount.name}`,
       type: "expense",
       amount: params.amount,
       category_id: debtCategory.id,
       note: params.note || `Inter-account transfer to ${toAccount.name}`,
-      is_recurring: true,
+      is_recurring: false,
       created_at: timestamp,
     };
 
     const incomePayload = {
       account_id: params.toAccountId,
-      user_id: params.userId || toAccount.user_id,
+      user_id: userId,
+      entry_kind: "transfer",
+      transfer_id: transferId,
       name: `Transfer from ${fromAccount.name}`,
       type: "income",
       amount: params.amount,
       category_id: debtCategory.id,
       note: params.note || `Inter-account transfer from ${fromAccount.name}`,
-      is_recurring: true,
+      is_recurring: false,
       created_at: timestamp,
     };
 
@@ -460,108 +405,7 @@ export async function addTransfer(
 }
 
 export async function getTransferHistory(): Promise<TransferRecord[]> {
-  try {
-    const { data, error } = await supabase
-      .from("view_transactions_detailed")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching transfer history:", error);
-      return [];
-    }
-
-    const debtTransactions = (data || []).filter(
-      (t) => t.category_name?.toLowerCase() === "debt",
-    );
-
-    const expenses = debtTransactions.filter((t) => t.transaction_type === "expense");
-    const incomes = debtTransactions.filter((t) => t.transaction_type === "income");
-
-    const matchedIncomeIds = new Set<string>();
-    const records: TransferRecord[] = [];
-
-    // Pair expenses with incomes
-    for (const exp of expenses) {
-      // Find matching income with same amount and close timestamp
-      const expTime = new Date(exp.created_at).getTime();
-      const matchedInc = incomes.find((inc) => {
-        if (matchedIncomeIds.has(inc.transaction_id)) return false;
-        if (inc.amount !== exp.amount) return false;
-        const incTime = new Date(inc.created_at).getTime();
-        return Math.abs(expTime - incTime) < 5000; // within 5s
-      });
-
-      if (matchedInc) {
-        matchedIncomeIds.add(matchedInc.transaction_id);
-        records.push({
-          id: exp.transaction_id,
-          transactionIds: [exp.transaction_id, matchedInc.transaction_id],
-          fromAccountId: exp.account_id,
-          fromAccountName: exp.account_name,
-          fromAccountColor: formatHexColor(exp.account_color),
-          toAccountId: matchedInc.account_id,
-          toAccountName: matchedInc.account_name,
-          toAccountColor: formatHexColor(matchedInc.account_color),
-          amount: exp.amount,
-          date: exp.created_at,
-          note: exp.note,
-          isRecurring: exp.is_recurring,
-        });
-      } else {
-        // Unmatched expense: check if name contains "Transfer to [Name]"
-        let toName = "Unknown Account";
-        const match = exp.transaction_name?.match(/Transfer to (.+)/i);
-        if (match && match[1]) {
-          toName = match[1].trim();
-        }
-
-        records.push({
-          id: exp.transaction_id,
-          transactionIds: [exp.transaction_id],
-          fromAccountId: exp.account_id,
-          fromAccountName: exp.account_name,
-          fromAccountColor: formatHexColor(exp.account_color),
-          toAccountName: toName,
-          amount: exp.amount,
-          date: exp.created_at,
-          note: exp.note,
-          isRecurring: exp.is_recurring,
-        });
-      }
-    }
-
-    // Handle any unmatched remaining incomes
-    for (const inc of incomes) {
-      if (matchedIncomeIds.has(inc.transaction_id)) continue;
-      let fromName = "Unknown Account";
-      const match = inc.transaction_name?.match(/Transfer from (.+)/i);
-      if (match && match[1]) {
-        fromName = match[1].trim();
-      }
-
-      records.push({
-        id: inc.transaction_id,
-        transactionIds: [inc.transaction_id],
-        fromAccountName: fromName,
-        toAccountId: inc.account_id,
-        toAccountName: inc.account_name,
-        toAccountColor: formatHexColor(inc.account_color),
-        amount: inc.amount,
-        date: inc.created_at,
-        note: inc.note,
-        isRecurring: inc.is_recurring,
-      });
-    }
-
-    // Sort by date descending
-    records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    return records;
-  } catch (e) {
-    console.error("Failed to get transfer history:", e);
-    return [];
-  }
+  return buildTransferHistory(await getTransactions());
 }
 
 export async function deleteTransfer(transactionIds: string[]): Promise<void> {

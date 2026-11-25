@@ -28,7 +28,7 @@ interface Props {
 
 export const BatchTransactionReview = (props: Props) => {
   const [categoriesResource] = createResource(getCategories);
-  const [accountsResource] = createResource(getAccounts);
+  const [accountsResource, { refetch: refetchAccounts }] = createResource(() => getAccounts());
 
   const [expandedDraftIds, setExpandedDraftIds] = createSignal<Set<string>>(new Set());
   const [isSaving, setIsSaving] = createSignal(false);
@@ -37,7 +37,7 @@ export const BatchTransactionReview = (props: Props) => {
   const [bulkDateValue, setBulkDateValue] = createSignal(new Date().toISOString().split("T")[0]);
 
   const categories = () => categoriesResource() || [];
-  const accounts = () => accountsResource() || [];
+  const accounts = () => accountsResource.error ? [] : accountsResource() || [];
 
   const currentAction = () =>
     intelligenceState.pendingAction?.kind === "transaction-batch"
@@ -173,6 +173,11 @@ export const BatchTransactionReview = (props: Props) => {
 
   return (
     <div class="flex flex-col flex-1 min-h-0 bg-page-bg">
+      <Show when={accountsResource.error}>
+        <p role="alert" class="p-3 text-sm text-red-700">
+          Accounts couldn’t be loaded. <button type="button" class="underline" onClick={() => void refetchAccounts()}>Retry</button>
+        </p>
+      </Show>
       {/* Header */}
       <div class="p-3.5 bg-white border-b border-forest/10 shrink-0 space-y-2">
         <div class="flex items-center justify-between gap-2">

@@ -63,6 +63,10 @@ const Sidebar = (props: SidebarProps) => {
           <FlagIcon />
           <span class="font-outfit">Goals</span>
         </A>
+        <A href="/payday-planner" class={`nav-link ${isActive("/payday-planner") ? "active" : ""}`}>
+          <span class="material-icons" aria-hidden="true">event_available</span>
+          <span class="font-outfit">Payday planner</span>
+        </A>
         <A href="/reports" class={`nav-link ${isActive("/reports") ? "active" : ""}`}>
           <AssessmentIcon />
           <span class="font-outfit">Reports</span>

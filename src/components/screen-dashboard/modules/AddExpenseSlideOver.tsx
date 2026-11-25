@@ -6,6 +6,7 @@ import {
   createMemo,
   createEffect,
   onCleanup,
+  onMount,
 } from "solid-js";
 import {
   drawerState,
@@ -84,8 +85,15 @@ export const TransactionDrawer = () => {
   let previousActiveElement: HTMLElement | null = null;
 
   // Data Resources
-  const [categories] = createResource(getCategories);
-  const [accounts] = createResource(getAccounts);
+  const [categories, { refetch: refetchCategories }] = createResource(getCategories);
+  const [accountResource, { refetch: refetchAccounts }] = createResource(() => getAccounts());
+  const accounts = () => accountResource.error ? [] : accountResource();
+  const reloadSetupData = () => {
+    void refetchAccounts();
+    void refetchCategories();
+  };
+  onMount(() => window.addEventListener("finly:accounts-changed", reloadSetupData));
+  onCleanup(() => window.removeEventListener("finly:accounts-changed", reloadSetupData));
   const [transferHistory, { refetch: refetchTransfers }] = createResource(
     () => (isOpen() && type() === "transfer" ? true : false),
     async (shouldFetch) => {
@@ -477,6 +485,11 @@ export const TransactionDrawer = () => {
           onSubmit={handleSubmit}
           class="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6 sm:space-y-8 pb-32 will-change-scroll contain-paint overscroll-contain"
         >
+          <Show when={accountResource.error}>
+            <p role="alert" class="text-sm text-red-700">
+              Accounts couldn’t be loaded. <button type="button" class="underline" onClick={() => void refetchAccounts()}>Retry</button>
+            </p>
+          </Show>
           {/* Type Toggle: 3 Tabs */}
           <div class="flex p-1 bg-page-bg rounded-2xl border border-forest/5">
             <button
@@ -573,7 +586,7 @@ export const TransactionDrawer = () => {
               </label>
               <div class="space-y-2">
                 <Show
-                  when={!accounts.loading}
+                  when={!accountResource.loading}
                   fallback={<div class="h-12 bg-page-bg rounded-2xl animate-pulse" />}
                 >
                   <For each={accounts()}>
@@ -655,7 +668,7 @@ export const TransactionDrawer = () => {
               </label>
               <div class="space-y-2">
                 <Show
-                  when={!accounts.loading}
+                  when={!accountResource.loading}
                   fallback={<div class="h-12 bg-page-bg rounded-2xl animate-pulse" />}
                 >
                   <For each={accounts()}>
@@ -779,7 +792,7 @@ export const TransactionDrawer = () => {
                   Transfer History
                 </h4>
                 <span class="text-[10px] text-earth/60 font-outfit">
-                  {transferHistory()?.length || 0} Transfers
+                  {transferHistory.error ? "History unavailable" : `${transferHistory()?.length || 0} transfers`}
                 </span>
               </div>
 
@@ -793,10 +806,12 @@ export const TransactionDrawer = () => {
                   }
                 >
                   <Show
-                    when={(transferHistory() || []).length > 0}
+                    when={!transferHistory.error && (transferHistory() || []).length > 0}
                     fallback={
                       <div class="p-6 text-center text-xs text-earth/40 bg-page-bg/50 rounded-xl">
-                        No previous transfers recorded.
+                        <Show when={transferHistory.error} fallback="No previous transfers recorded.">
+                          <button type="button" class="underline text-forest" onClick={() => void refetchTransfers()}>Retry transfer history</button>
+                        </Show>
                       </div>
                     }
                   >
@@ -820,6 +835,7 @@ export const TransactionDrawer = () => {
                               </span>
                             </div>
                             <p class="text-[10px] text-earth/60 mt-0.5">
+                              {item.needsReview && "Needs review · "}
                               {new Date(item.date).toLocaleDateString("id-ID", {
                                 day: "numeric",
                                 month: "short",
@@ -833,8 +849,8 @@ export const TransactionDrawer = () => {
                             </span>
                             <button
                               type="button"
-                              title="Delete Transfer"
-                              disabled={isDeletingTransfer()}
+                              title={item.needsReview ? "Review this entry in Transactions" : "Delete Transfer"}
+                              disabled={isDeletingTransfer() || item.needsReview}
                               onClick={() => setTransferToDelete(item)}
                               class="w-6 h-6 rounded-lg flex items-center justify-center text-earth/40 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
                             >
@@ -985,7 +1001,7 @@ export const TransactionDrawer = () => {
               </label>
               <div class="space-y-2">
                 <Show
-                  when={!accounts.loading}
+                  when={!accountResource.loading}
                   fallback={
                     <div class="h-12 bg-page-bg rounded-2xl animate-pulse" />
                   }

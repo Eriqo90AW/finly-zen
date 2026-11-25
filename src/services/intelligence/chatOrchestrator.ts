@@ -9,6 +9,8 @@ import {
 } from "./tools";
 import {
   addMessage,
+  chatOwner,
+  chatSessionVersion,
   appendToMessage,
   appendToReasoning,
   clearIntelligenceChat as rawClearIntelligenceChat,
@@ -52,6 +54,11 @@ export function stopIntelligenceStream(): void {
   setActiveToolLabel(null);
 }
 
+export function endIntelligenceSession() {
+  stopIntelligenceStream();
+  resolvePendingAction("");
+}
+
 function waitForPendingActionDecision(): Promise<string> {
   return new Promise((resolve) => {
     pendingActionResolver = resolve;
@@ -67,6 +74,7 @@ export async function saveBatchTransactions(): Promise<void> {
   const action = intelligenceState.pendingAction;
   if (!action || action.kind !== "transaction-batch") return;
 
+  const session = chatSessionVersion();
   const validDraftsToSave = action.drafts.filter(
     (d) => d.selected && (d.status === "ready" || d.status === "failed"),
   );
@@ -82,6 +90,7 @@ export async function saveBatchTransactions(): Promise<void> {
 
   try {
     const ctx = await buildUserContext(action.originatingPath);
+    if (session !== chatSessionVersion()) return;
 
     const items = validDraftsToSave.map((d) => ({
       name: d.name,
@@ -96,6 +105,7 @@ export async function saveBatchTransactions(): Promise<void> {
     }));
 
     const results = await addTransactions(items, 4);
+    if (session !== chatSessionVersion()) return;
 
     for (let i = 0; i < validDraftsToSave.length; i++) {
       const draft = validDraftsToSave[i];
@@ -124,6 +134,7 @@ export async function saveBatchTransactions(): Promise<void> {
       await finishBatchAction();
     }
   } catch (err) {
+    if (session !== chatSessionVersion()) return;
     const message = err instanceof Error ? err.message : "Batch save failed";
     setIntelligenceError(message);
     for (const draft of validDraftsToSave) {
@@ -220,6 +231,7 @@ export async function confirmTransferAction(): Promise<void> {
   const action = intelligenceState.pendingAction;
   if (!action || action.kind !== "transfer") return;
 
+  const session = chatSessionVersion();
   stopIntelligenceStream();
   setPendingAction(null);
 
@@ -227,6 +239,7 @@ export async function confirmTransferAction(): Promise<void> {
 
   try {
     const result = await action.execute();
+    if (session !== chatSessionVersion()) return;
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -251,6 +264,7 @@ export async function confirmTransferAction(): Promise<void> {
       }),
     );
   } catch (e) {
+    if (session !== chatSessionVersion()) return;
     const message = e instanceof Error ? e.message : "Transfer failed";
     setIntelligenceError(message);
     addMessage(model, {
@@ -267,8 +281,10 @@ export async function confirmTransferAction(): Promise<void> {
       }),
     );
   } finally {
-    setStreaming(false);
-    setActiveToolLabel(null);
+    if (session === chatSessionVersion()) {
+      setStreaming(false);
+      setActiveToolLabel(null);
+    }
   }
 }
 
@@ -325,6 +341,7 @@ export function resetConversation(profile?: string): void {
 async function callModel(
   systemPrompt: string,
   model: string,
+  signal: AbortSignal,
 ): Promise<ChatCompletionResponse> {
   const messages = getApiMessages(model);
   const assistantId = createMessageId();
@@ -346,14 +363,15 @@ async function callModel(
     model,
     tools,
     stream: true,
-    signal: currentAbortController?.signal,
+    signal,
     callbacks: {
       onToken: (token) => appendToMessage(model, assistantId, token),
       onReasoningToken: (token) => appendToReasoning(model, assistantId, token),
-      onToolCallStart: (label) => setActiveToolLabel(label),
+      onToolCallStart: (label) => { if (!signal.aborted) setActiveToolLabel(label); },
     },
   });
 
+  signal.throwIfAborted();
   const assistantMessage = response.choices[0]?.message;
   updateMessage(model, assistantId, {
     content: assistantMessage?.content || "",
@@ -369,17 +387,20 @@ async function runAgentLoop(
   systemPrompt: string,
   pathname: string,
   model: string,
+  signal: AbortSignal,
 ): Promise<void> {
+  const session = chatSessionVersion();
   let rounds = 0;
 
-  while (rounds < MAX_TOOL_ROUNDS) {
+  while (rounds < MAX_TOOL_ROUNDS && !signal.aborted) {
     rounds += 1;
-    const response = await callModel(systemPrompt, model);
+    const response = await callModel(systemPrompt, model, signal);
     const toolCalls = response.choices[0]?.message?.tool_calls;
 
     if (!toolCalls?.length) break;
 
     const ctx = await buildUserContext(pathname);
+    signal.throwIfAborted();
 
     // Check if there are transaction proposals that should be consolidated into one batch
     const transactionToolCalls = toolCalls.filter(
@@ -406,6 +427,7 @@ async function runAgentLoop(
         toolCall.id,
       );
 
+      signal.throwIfAborted();
       let toolContent: string;
       if (outcome.kind === "pending") {
         setPendingAction(outcome.pendingAction);
@@ -414,6 +436,7 @@ async function runAgentLoop(
         toolContent = JSON.stringify(outcome.data);
       }
 
+      if (session !== chatSessionVersion()) return;
       addMessage(model, {
         id: createMessageId(),
         role: "tool",
@@ -423,6 +446,7 @@ async function runAgentLoop(
         createdAt: Date.now(),
       });
 
+      if (signal.aborted) return;
       setActiveToolLabel(null);
     }
 
@@ -437,6 +461,7 @@ async function runAgentLoop(
           tc.id,
         );
 
+        signal.throwIfAborted();
         let toolContent: string;
         if (outcome.kind === "pending") {
           setPendingAction(outcome.pendingAction);
@@ -445,6 +470,7 @@ async function runAgentLoop(
           toolContent = JSON.stringify(outcome.data);
         }
 
+        if (session !== chatSessionVersion()) return;
         addMessage(model, {
           id: createMessageId(),
           role: "tool",
@@ -470,6 +496,7 @@ async function runAgentLoop(
             tc.id,
           );
 
+          signal.throwIfAborted();
           if (outcome.kind === "pending" && outcome.pendingAction.kind === "transaction-batch") {
             const batch = outcome.pendingAction;
             consolidatedDrafts.push(...batch.drafts);
@@ -497,6 +524,7 @@ async function runAgentLoop(
 
           setPendingAction(combinedAction);
           const batchDecisionJson = await waitForPendingActionDecision();
+          if (session !== chatSessionVersion()) return;
 
           // Post tool message for every consolidated tool call
           for (const tId of toolCallIds) {
@@ -526,9 +554,18 @@ export async function sendIntelligenceMessage(
   const trimmed = text.trim();
   if (!trimmed && !attachment) return;
 
+  if (!chatOwner()) return;
+  const session = chatSessionVersion();
   const currentPath =
     pathname || (typeof window !== "undefined" ? window.location.pathname : "/");
-  const ctx = await buildUserContext(currentPath);
+  let ctx: Awaited<ReturnType<typeof buildUserContext>>;
+  try {
+    ctx = await buildUserContext(currentPath);
+  } catch {
+    if (session === chatSessionVersion()) setIntelligenceError("Your financial data couldn’t be loaded. Try again.");
+    return;
+  }
+  if (session !== chatSessionVersion() || intelligenceState.isStreaming) return;
   const model = ctx.currentPage.model || "finly";
 
   setActiveProfile(model);
@@ -542,7 +579,8 @@ export async function sendIntelligenceMessage(
 
   setIntelligenceError(null);
   setStreaming(true);
-  currentAbortController = new AbortController();
+  const controller = new AbortController();
+  currentAbortController = controller;
 
   const userMessageId = createMessageId();
 
@@ -567,9 +605,9 @@ export async function sendIntelligenceMessage(
       ocrConfidence = ocrResult.confidence;
     } catch (ocrErr) {
       console.warn("[OCR] Error extracting text:", ocrErr);
-    } finally {
-      setActiveToolLabel(null);
     }
+    if (controller.signal.aborted) return;
+    setActiveToolLabel(null);
 
     const confidenceLabel = ocrConfidence > 0 ? ` (OCR Confidence: ${Math.round(ocrConfidence)}%)` : "";
     const ocrSnippet = ocrText
@@ -595,9 +633,9 @@ export async function sendIntelligenceMessage(
 
   try {
     const systemPrompt = formatContextForPrompt(ctx);
-    await runAgentLoop(systemPrompt, currentPath, model);
+    await runAgentLoop(systemPrompt, currentPath, model, controller.signal);
   } catch (e: unknown) {
-    if (e instanceof DOMException && e.name === "AbortError") {
+    if (controller.signal.aborted) {
       // User requested stop
     } else {
       const message = e instanceof Error ? e.message : "Something went wrong";
@@ -610,9 +648,11 @@ export async function sendIntelligenceMessage(
       });
     }
   } finally {
-    setStreaming(false);
-    setActiveToolLabel(null);
-    currentAbortController = null;
+    if (currentAbortController === controller) {
+      setStreaming(false);
+      setActiveToolLabel(null);
+      currentAbortController = null;
+    }
   }
 }
 

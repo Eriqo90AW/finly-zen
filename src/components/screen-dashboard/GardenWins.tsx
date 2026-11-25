@@ -8,7 +8,7 @@ import WhatshotIcon from "@suid/icons-material/Whatshot";
 import EnergySavingsLeafIcon from "@suid/icons-material/EnergySavingsLeaf";
 import EmojiEventsIcon from "@suid/icons-material/EmojiEventsOutlined";
 import LightbulbIcon from "@suid/icons-material/LightbulbOutlined";
-import { isTransferTransaction } from "../../utils/transferUtils";
+import { isCashFlowTransaction } from "../../utils/transferUtils";
 import type { GardenWinsProps } from "../../types";
 
 const formatSpendDate = (ymd: string) =>
@@ -41,7 +41,7 @@ export const GardenWins = (props: GardenWinsProps) => {
     const totalExpensesForInsights: Record<string, number> = {};
 
     transactions.forEach((t) => {
-      if (isTransferTransaction(t)) return;
+      if (!isCashFlowTransaction(t)) return;
 
       const dateKey = getLocalYmd(t.date);
 
@@ -164,7 +164,7 @@ export const GardenWins = (props: GardenWinsProps) => {
 
     transactions.forEach((t) => {
       if (t.type !== "expense") return;
-      if (isTransferTransaction(t)) return;
+      if (!isCashFlowTransaction(t)) return;
 
       if (isDateInRange(t.date, currentPeriod.start, currentPeriod.end)) {
         curMonthTotal += t.amount;

@@ -1,17 +1,17 @@
 {
   "name": "vite-template-solid",
-  "version": "0.0.0",
+  "version": "1.84.0",
   "description": "",
   "type": "module",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
+    "preinstall": "node -e \"if (!process.env.npm_config_user_agent?.startsWith('pnpm/')) { console.error('This project requires pnpm. Run pnpm install.'); process.exit(1); }\"",
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "test": "vitest src/test/",
-    "test:run": "vitest run src/test/",
-    "test:coverage": "vitest run src/test/ --coverage"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "license": "MIT",
   "devDependencies": {
@@ -38,5 +38,6 @@
     "solid-js": "^1.9.9",
     "solid-transition-group": "^0.3.0",
     "tesseract.js": "^7.0.0"
-  }
+  },
+  "packageManager": "pnpm@10.34.9"
 }

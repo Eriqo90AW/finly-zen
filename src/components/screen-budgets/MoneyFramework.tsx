@@ -4,7 +4,7 @@ import { getAccounts } from "../../data/expenseData";
 import { state } from "../../store";
 import { transactions, isTransactionsLoading, transactionsError } from "../../store/transactionStore";
 import { getDateRange, isDateInRange } from "../../utils/date";
-import { isTransferTransaction } from "../../utils/transferUtils";
+import { isCashFlowTransaction } from "../../utils/transferUtils";
 import { formatRupiah } from "../../utils/format";
 import type { Account } from "../../types";
 
@@ -32,7 +32,7 @@ export function MoneyFramework(props: { accountId?: string }) {
     finally { setLoading(false); }
   }
   onMount(load);
-  const nonTransfers = createMemo(() => transactions().filter(t => !isTransferTransaction(t)));
+  const nonTransfers = createMemo(() => transactions().filter(t => isCashFlowTransaction(t)));
   const selected = createMemo(() => {
     const { start, end } = getDateRange(state.ui.currentMonth, state.ui.datePeriod);
     const items = nonTransfers().filter(t => isDateInRange(t.date, start, end) && (!props.accountId || t.accountId === props.accountId));

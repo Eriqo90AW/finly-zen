@@ -1,9 +1,12 @@
-import { createStore, reconcile } from "solid-js/store";
-import { createEffect, onMount } from "solid-js";
-import type { ChatMessage, PendingAction } from "../types/intelligence";
+import { createStore, produce, reconcile } from "solid-js/store";
+import { batch, createEffect, createSignal } from "solid-js";
+import type { ChatMessage, PendingAction, TransactionDraft } from "../types/intelligence";
 
 const STORAGE_KEY = "finly_zen_hermes_chat_v2";
-const LEGACY_STORAGE_KEY = "finly_zen_intelligence_chat_v1";
+const [chatOwner, setChatOwner] = createSignal<string | null>(null);
+export { chatOwner };
+let sessionVersion = 0;
+export const chatSessionVersion = () => sessionVersion;
 
 interface IntelligenceState {
   activeProfile: string;
@@ -14,7 +17,7 @@ interface IntelligenceState {
   error: string | null;
 }
 
-const DEFAULT_STATE: IntelligenceState = {
+const emptyIntelligenceState = (): IntelligenceState => ({
   activeProfile: "finly",
   profileMessages: {
     finly: [],
@@ -24,82 +27,58 @@ const DEFAULT_STATE: IntelligenceState = {
   pendingAction: null,
   activeToolLabel: null,
   error: null,
-};
+});
 
 export const [intelligenceState, setIntelligenceState] =
-  createStore<IntelligenceState>(DEFAULT_STATE);
+  createStore<IntelligenceState>(emptyIntelligenceState());
+
+export function switchIntelligenceUser(userId: string | null) {
+  if (chatOwner() === userId) return;
+  sessionVersion += 1;
+  const next = emptyIntelligenceState();
+
+  try {
+    const saved = userId && localStorage.getItem(`${STORAGE_KEY}:${userId}`);
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<IntelligenceState>;
+      next.activeProfile = parsed.activeProfile || "finly";
+      for (const [profile, messages] of Object.entries(parsed.profileMessages ?? {})) {
+        if (Array.isArray(messages)) next.profileMessages[profile] = persistableMessages(messages);
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load chat history", error);
+  }
+
+  batch(() => {
+    setIntelligenceState(reconcile(next));
+    setChatOwner(userId);
+  });
+}
+
+function persistableMessages(messages: ChatMessage[]) {
+  return messages
+    .filter(m => (m.role === "user" || m.role === "assistant") && (m.content?.trim() || m.imageBase64))
+    .map(({ tool_calls, isStreaming, isOcrProcessing, ...message }) => message);
+}
 
 export function setupIntelligencePersistence() {
-  onMount(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as {
-          activeProfile?: string;
-          profileMessages?: Record<string, ChatMessage[]>;
-        };
-        if (parsed.profileMessages) {
-          const cleaned: Record<string, ChatMessage[]> = {};
-          for (const [k, msgs] of Object.entries(parsed.profileMessages)) {
-            cleaned[k] = Array.isArray(msgs)
-              ? msgs
-                  .filter((m) => m.role === "user" || m.role === "assistant")
-                  .map((m) => {
-                    const { tool_calls, isStreaming, isOcrProcessing, ...rest } = m;
-                    return rest as ChatMessage;
-                  })
-              : [];
-          }
-          setIntelligenceState(
-            reconcile({
-              ...DEFAULT_STATE,
-              activeProfile: parsed.activeProfile || "finly",
-              profileMessages: {
-                finly: cleaned.finly || [],
-                market_quant: cleaned.market_quant || [],
-                ...cleaned,
-              },
-            }),
-          );
-          return;
-        }
-      }
-
-      // Check legacy single-thread storage
-      const legacySaved = localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (legacySaved) {
-        const legacyParsed = JSON.parse(legacySaved) as { messages?: ChatMessage[] };
-        if (Array.isArray(legacyParsed.messages)) {
-          setIntelligenceState(
-            "profileMessages",
-            "finly",
-            legacyParsed.messages.filter((m) => m.role === "user" || m.role === "assistant"),
-          );
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load Hermes chat history", e);
-    }
-  });
-
   createEffect(() => {
-    const sanitizeForPersistence = (m: ChatMessage): ChatMessage => {
-      const { tool_calls, isStreaming, isOcrProcessing, ...rest } = m;
-      return rest as ChatMessage;
-    };
-
-    const persistable = {
+    const userId = chatOwner();
+    if (!userId) return;
+    const persisted = {
       activeProfile: intelligenceState.activeProfile,
       profileMessages: Object.fromEntries(
-        Object.entries(intelligenceState.profileMessages).map(([p, msgs]) => [
-          p,
-          msgs
-            .filter((m) => (m.role === "user" || m.role === "assistant") && Boolean(m.content?.trim() || m.imageBase64))
-            .map(sanitizeForPersistence),
+        Object.entries(intelligenceState.profileMessages).map(([profile, messages]) => [
+          profile, persistableMessages(messages),
         ]),
       ),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+    try {
+      localStorage.setItem(`${STORAGE_KEY}:${userId}`, JSON.stringify(persisted));
+    } catch (error) {
+      console.error("Failed to save chat history", error);
+    }
   });
 }
 
@@ -180,6 +159,18 @@ export function clearIntelligenceChat(profile?: string) {
   });
 }
 
+function patchDrafts(
+  matches: (draft: TransactionDraft) => boolean,
+  update: (draft: TransactionDraft) => Partial<TransactionDraft>,
+) {
+  setIntelligenceState("pendingAction", produce(action => {
+    if (action?.kind !== "transaction-batch") return;
+    for (const draft of action.drafts) {
+      if (matches(draft)) Object.assign(draft, update(draft));
+    }
+  }));
+}
+
 export function updateBatchDraft(
   draftId: string,
   patch: Partial<TransactionDraft>,
@@ -237,11 +228,9 @@ export function updateBatchDraft(
     }
   }
 
-  setIntelligenceState(
-    "pendingAction",
-    "drafts",
+  patchDrafts(
     (d: TransactionDraft) => d.id === draftId,
-    updated,
+    () => updated,
   );
 }
 
@@ -252,12 +241,9 @@ export function toggleDraftSelection(draftId: string) {
   const draft = currentAction.drafts.find((d) => d.id === draftId);
   if (!draft || draft.status === "saved") return;
 
-  setIntelligenceState(
-    "pendingAction",
-    "drafts",
+  patchDrafts(
     (d: TransactionDraft) => d.id === draftId,
-    "selected",
-    (s: boolean) => !s,
+    draft => ({ selected: !draft.selected }),
   );
 }
 
@@ -265,12 +251,9 @@ export function selectAllValidDrafts(select: boolean) {
   const currentAction = intelligenceState.pendingAction;
   if (!currentAction || currentAction.kind !== "transaction-batch") return;
 
-  setIntelligenceState(
-    "pendingAction",
-    "drafts",
+  patchDrafts(
     (d: TransactionDraft) => d.status !== "saved" && d.status !== "excluded",
     (prev: TransactionDraft) => ({
-      ...prev,
       selected: select ? (prev.status === "ready" || prev.status === "failed") : false,
     }),
   );
@@ -288,23 +271,17 @@ export function toggleExcludeDraft(draftId: string) {
   if (isExcluded) {
     const hasErrors = draft.errors && Object.keys(draft.errors).length > 0;
     const newStatus = hasErrors ? "invalid" : "ready";
-    setIntelligenceState(
-      "pendingAction",
-      "drafts",
+    patchDrafts(
       (d: TransactionDraft) => d.id === draftId,
-      (prev: TransactionDraft) => ({
-        ...prev,
+      () => ({
         status: newStatus,
         selected: !hasErrors,
       }),
     );
   } else {
-    setIntelligenceState(
-      "pendingAction",
-      "drafts",
+    patchDrafts(
       (d: TransactionDraft) => d.id === draftId,
-      (prev: TransactionDraft) => ({
-        ...prev,
+      () => ({
         status: "excluded",
         selected: false,
       }),
@@ -316,9 +293,7 @@ export function applyAccountToSelectedDrafts(accountId: string, accountName: str
   const currentAction = intelligenceState.pendingAction;
   if (!currentAction || currentAction.kind !== "transaction-batch") return;
 
-  setIntelligenceState(
-    "pendingAction",
-    "drafts",
+  patchDrafts(
     (d: TransactionDraft) => d.selected && d.status !== "saved" && d.status !== "excluded",
     (prev: TransactionDraft) => {
       const updatedErrors = { ...(prev.errors || {}) };
@@ -326,7 +301,6 @@ export function applyAccountToSelectedDrafts(accountId: string, accountName: str
       const isValid = Object.keys(updatedErrors).length === 0;
 
       return {
-        ...prev,
         accountId,
         accountName,
         errors: isValid ? undefined : updatedErrors,
@@ -340,12 +314,9 @@ export function applyDateToSelectedDrafts(date: string) {
   const currentAction = intelligenceState.pendingAction;
   if (!currentAction || currentAction.kind !== "transaction-batch") return;
 
-  setIntelligenceState(
-    "pendingAction",
-    "drafts",
+  patchDrafts(
     (d: TransactionDraft) => d.selected && d.status !== "saved" && d.status !== "excluded",
-    "date",
-    date,
+    () => ({ date }),
   );
 }
 
@@ -358,12 +329,9 @@ export function updateDraftStatus(
   const currentAction = intelligenceState.pendingAction;
   if (!currentAction || currentAction.kind !== "transaction-batch") return;
 
-  setIntelligenceState(
-    "pendingAction",
-    "drafts",
+  patchDrafts(
     (d: TransactionDraft) => d.id === draftId,
     (prev: TransactionDraft) => ({
-      ...prev,
       status,
       errorMessage: errorMessage || undefined,
       savedTransactionId: savedTransactionId || prev.savedTransactionId,

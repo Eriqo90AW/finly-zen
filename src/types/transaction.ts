@@ -1,5 +1,7 @@
 export type TransactionType = "income" | "expense";
 
+export type LedgerEntryKind = "regular" | "opening_balance" | "transfer";
+
 export interface AddTransactionParams {
   accountId?: string;
   userId?: string;
@@ -29,6 +31,8 @@ export interface TransactionDetailModel {
   note?: string;
   is_recurring: boolean;
   attachment_url?: string;
+  entry_kind?: LedgerEntryKind;
+  transfer_id?: string | null;
   user_id?: string;
 }
 
@@ -47,6 +51,8 @@ export type Transaction = {
   date: string;
   note: string;
   isRecurring?: boolean;
+  entryKind?: LedgerEntryKind;
+  transferId?: string;
 };
 
 export interface UpdateTransactionParams {
@@ -75,6 +81,7 @@ export interface AddTransferParams {
 export interface TransferRecord {
   id: string;
   transactionIds: string[];
+  needsReview?: boolean;
   fromAccountId?: string;
   fromAccountName: string;
   fromAccountColor?: string;

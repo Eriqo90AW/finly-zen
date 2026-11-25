@@ -14,4 +14,6 @@ export interface Account {
   user_id?: string;
   created_at?: string;
   balance?: number;
+  setup_pending?: boolean;
+  currency?: string;
 }

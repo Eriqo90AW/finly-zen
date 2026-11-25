@@ -14,6 +14,7 @@ import Transactions from "./pages/Transactions";
 import Budgets from "./pages/Budgets";
 import Goals from "./pages/Goals";
 import Reports from "./pages/Reports";
+import PaydayPlanner from "./pages/PaydayPlanner";
 import StockDashboard from "./pages/StockDashboard";
 import Portfolio from "./pages/Portfolio";
 import Dividend from "./pages/Dividend";
@@ -67,6 +68,7 @@ render(
       <Route path="/transactions" component={withAuth(Transactions)} />
       <Route path="/budgets" component={withAuth(Budgets)} />
       <Route path="/goals" component={withAuth(Goals)} />
+      <Route path="/payday-planner" component={withAuth(PaydayPlanner)} />
       <Route path="/reports" component={withAuth(Reports)} />
       <Route path="/stock/:ticker" component={withAuth(StockDashboard)} />
       <Route path="/markets/list" component={withAuth(MarketCapList)} />
