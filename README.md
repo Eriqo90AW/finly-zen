@@ -34,3 +34,5 @@ Your app is ready to be deployed!
 You can deploy the `dist` folder to any static host provider (netlify, surge, now, etc.)
 
 ## This project was created with the [Solid CLI](https://github.com/solidjs-community/solid-cli)
+
+pushed by finly zen agent
