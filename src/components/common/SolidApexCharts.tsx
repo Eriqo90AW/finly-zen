@@ -1,15 +1,18 @@
 import { createEffect, mergeProps, on, onCleanup, onMount } from "solid-js";
 import { unwrap } from "solid-js/store";
-import ApexCharts, { ApexOptions } from "apexcharts";
+import ApexCharts, { type ApexOptions } from "apexcharts";
+
+type ApexEventHandler = (...args: never[]) => unknown;
+type ApexChartType = NonNullable<ApexOptions["chart"]>["type"];
 
 export interface SolidApexChartsProps {
   type?: string;
-  series?: any[];
+  series?: ApexOptions["series"];
   width?: string | number;
   height?: string | number;
-  options?: ApexOptions | Record<string, any>;
+  options?: ApexOptions | Record<string, unknown>;
   ref?: (chart: ApexCharts | undefined) => void;
-  [key: `on${string}`]: any;
+  [key: `on${string}`]: ApexEventHandler | undefined;
 }
 
 export const SolidApexCharts = (props: SolidApexChartsProps) => {
@@ -21,7 +24,7 @@ export const SolidApexCharts = (props: SolidApexChartsProps) => {
     {
       height: "auto",
       width: "100%",
-      series: [],
+      series: [] as NonNullable<ApexOptions["series"]>,
       type: "line",
     },
     props,
@@ -41,33 +44,28 @@ export const SolidApexCharts = (props: SolidApexChartsProps) => {
       chart = null;
     }
 
-    const newOptions: Record<string, any> = {
-      chart: {
-        type: merged.type,
-        height: merged.height,
-        width: merged.width,
-        events: {},
-      },
-      series: unwrap(merged.series) || [],
-    };
-
-    for (const key in props) {
-      if (key.startsWith("on") && typeof (props as any)[key] === "function") {
+    const chartEvents: Record<string, ApexEventHandler> = {};
+    const propRecord = props as Record<string, unknown>;
+    for (const key in propRecord) {
+      const value = propRecord[key];
+      if (key.startsWith("on") && typeof value === "function") {
         const eventKey = key.charAt(2).toLowerCase() + key.slice(3);
-        newOptions.chart.events[eventKey] = (props as any)[key];
+        chartEvents[eventKey] = value as ApexEventHandler;
       }
     }
 
-    const rawOptions = unwrap(merged.options) || {};
-    const config = {
+    const rawOptions = (unwrap(merged.options) || {}) as ApexOptions;
+    const config: ApexOptions = {
       ...rawOptions,
-      ...newOptions,
+      series: unwrap(merged.series) || [],
       chart: {
         ...(rawOptions.chart || {}),
-        ...(newOptions.chart || {}),
+        type: merged.type as ApexChartType,
+        height: merged.height,
+        width: merged.width,
         events: {
           ...(rawOptions.chart?.events || {}),
-          ...(newOptions.chart?.events || {}),
+          ...chartEvents,
         },
       },
     };
@@ -112,7 +110,7 @@ export const SolidApexCharts = (props: SolidApexChartsProps) => {
       (options) => {
         if (chart && isMounted) {
           try {
-            chart.updateOptions(unwrap(options) || {});
+            chart.updateOptions((unwrap(options) || {}) as ApexOptions);
           } catch {
             // safe update
           }

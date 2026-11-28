@@ -1,151 +1,82 @@
+import { useLocation, useParams } from "@solidjs/router";
+import { Show, createSignal, onCleanup, onMount } from "solid-js";
+import { setState, state } from "../../store";
+import { portfolioState } from "../../store/portfolioStore";
+import { currentStockData } from "../../store/stockContext";
+import type { IDXMarketStatus, MarketStatus } from "../../types";
+import { getIDXMarketStatus, getMarketStatus } from "../../utils/marketTime";
 import SearchBar from "./SearchBar";
-import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
-import ChevronRightIcon from "@suid/icons-material/ChevronRight";
-import { useLocation, useNavigate, useParams } from "@solidjs/router";
-import { state, setState, nextMonth, prevMonth, resetAppState } from "../../store";
+import { TopBarDateControlsDesktop, TopBarDateControlsMobile } from "./TopBarDateControls";
 import {
-  portfolioState,
-  setCurrencyView,
-  refreshPortfolio,
-  loadPortfolios,
-  quickPortfolioSearch,
-  setQuickPortfolioSearch,
-  resetPortfolioState,
-} from "../../store/portfolioStore";
+  TopBarDividendHeaderDesktop,
+  TopBarDividendHeaderMobile,
+  TopBarJournalHeaderDesktop,
+  TopBarJournalHeaderMobile,
+} from "./TopBarMarketNavControls";
 import {
-  formatUSD,
-  formatUSDCompact,
-  getUsdRate,
-  formatRupiah,
-  setUsdExchangeRate,
-} from "../../utils/format";
-import { fetchUsdRate } from "../../data/portfolioData";
-import { Show, createSignal, For } from "solid-js";
-import { currentStockData, isStockLoading } from "../../store/stockContext";
-import { getMarketStatus, getIDXMarketStatus } from "../../utils/marketTime";
-import { onCleanup, onMount } from "solid-js";
-import type { MarketStatus, IDXMarketStatus } from "../../types";
-import { getPortfolioColor } from "../../utils/colors";
-import { refreshDividends, isDividendsRefreshing } from "../../data/dividendData";
-import { useAuth } from "../../context/authContext";
+  TopBarPortfolioControlsDesktop,
+  TopBarPortfolioControlsMobile,
+} from "./TopBarPortfolioControls";
+import TopBarProfileMenu from "./TopBarProfileMenu";
+import { TopBarStockHeaderDesktop, TopBarStockHeaderMobile } from "./TopBarStockHeader";
 
 interface TopBarProps {
   onToggleSidebar?: () => void;
 }
 
+function getWibDateTime(): string {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const wibDate = new Date(utc + 3600000 * 7);
+
+  const dateStr = wibDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  });
+
+  const timeStr = wibDate.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  return `${dateStr} • ${timeStr}`;
+}
+
 const TopBar = (props: TopBarProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const params = useParams();
+
   const isStockPage = () => location.pathname.startsWith("/stock");
-  const isPortfolioPage = () => 
-    location.pathname.startsWith("/portfolio") || 
-    location.pathname === "/quick-portfolio";
+  const isPortfolioPage = () =>
+    location.pathname.startsWith("/portfolio") || location.pathname === "/quick-portfolio";
   const isDividendPage = () => location.pathname.startsWith("/dividend");
   const isJournalPage = () => location.pathname.startsWith("/trading-journal");
 
-  const [marketStatus, setMarketStatus] =
-    createSignal<MarketStatus>(getMarketStatus());
-  const [idxMarketStatus, setIdxMarketStatus] =
-    createSignal<IDXMarketStatus>(getIDXMarketStatus());
-
-  // Real-time WIB clock helper
-  const getWibDateTime = () => {
-    const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-    const wibDate = new Date(utc + 3600000 * 7);
-
-    const dateStr = wibDate.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-    });
-
-    const timeStr = wibDate.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-
-    return `${dateStr} • ${timeStr}`;
-  };
-
+  const [marketStatus, setMarketStatus] = createSignal<MarketStatus>(getMarketStatus());
+  const [idxMarketStatus, setIdxMarketStatus] = createSignal<IDXMarketStatus>(getIDXMarketStatus());
   const [wibTime, setWibTime] = createSignal(getWibDateTime());
-  const [isSwitcherOpen, setIsSwitcherOpen] = createSignal(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = createSignal(false);
-  const [isRefreshingUsd, setIsRefreshingUsd] = createSignal(false);
 
-  const { user, signOut } = useAuth();
-
-  let timer: any;
+  let timer: ReturnType<typeof setInterval> | undefined;
   onMount(() => {
     timer = setInterval(() => {
       setMarketStatus(getMarketStatus());
       setIdxMarketStatus(getIDXMarketStatus());
       setWibTime(getWibDateTime());
     }, 1000);
-    window.addEventListener("click", handleClickOutside);
   });
 
   onCleanup(() => {
     clearInterval(timer);
-    window.removeEventListener("click", handleClickOutside);
   });
-
-  const handleClickOutside = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest(".portfolio-switcher-container")) {
-      setIsSwitcherOpen(false);
-    }
-    if (!target.closest(".profile-menu-container")) {
-      setIsProfileMenuOpen(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    setIsProfileMenuOpen(false);
-    await signOut();
-    resetAppState();
-    resetPortfolioState();
-    navigate("/", { replace: true });
-  };
-
-  const userDisplayName = () => {
-    const u = user();
-    return (
-      u?.user_metadata?.full_name ||
-      u?.user_metadata?.name ||
-      state.settings.userName ||
-      (u?.email ? u.email.split("@")[0] : "Master Gardener")
-    );
-  };
-
-  const userAvatarUrl = () => {
-    const u = user();
-    if (u?.user_metadata?.avatar_url) return u.user_metadata.avatar_url;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName())}&background=1A4D2E&color=fff`;
-  };
 
   const activePortfolioName = () => {
     if (location.pathname === "/quick-portfolio") return "Quick Portfolio";
     if (!params.id) return "Overview";
     const found = portfolioState.portfolios.find((p) => p.id === params.id);
     return found ? found.name : "Portfolio";
-  };
-
-  const handleSwitchPortfolio = (id: string) => {
-    setIsSwitcherOpen(false);
-    if (id) {
-      const found = portfolioState.portfolios.find(p => p.id === id);
-      if (found && found.name === "Quick Portfolio") {
-        navigate("/quick-portfolio");
-      } else {
-        navigate(`/portfolio/${id}`);
-      }
-    } else {
-      navigate("/portfolio");
-    }
   };
 
   const formattedDate = () => {
@@ -177,6 +108,7 @@ const TopBar = (props: TopBarProps) => {
         <div class="flex items-center gap-3 lg:gap-6 min-w-0">
           {/* Mobile Hamburger Button */}
           <button
+            type="button"
             onClick={() => props.onToggleSidebar?.()}
             class="lg:hidden w-10 h-10 rounded-xl bg-sage/40 flex items-center justify-center text-forest hover:bg-sage transition-colors cursor-pointer shrink-0"
             aria-label="Toggle navigation menu"
@@ -201,434 +133,28 @@ const TopBar = (props: TopBarProps) => {
                   fallback={
                     <Show
                       when={isJournalPage()}
-                      fallback={
-                        <div class="flex items-center gap-4">
-                          <button
-                            onClick={() => navigate(-1)}
-                            class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer"
-                          >
-                            <ChevronLeftIcon />
-                          </button>
-                          <div class="h-8 w-px bg-forest/10 mx-1" />
-
-                          <Show
-                            when={currentStockData()}
-                            fallback={
-                              <div class="flex items-center gap-2">
-                                <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider uppercase">
-                                  {params.ticker}
-                                </span>
-                                <span class="text-xs text-earth font-medium animate-ellipsis">
-                                  Loading data
-                                </span>
-                              </div>
-                            }
-                          >
-                            <div class="flex flex-col">
-                              <div class="flex items-center gap-2">
-                                <h2 class="text-xl font-cormorant font-bold text-forest leading-none max-w-[30rem] line-clamp-1">
-                                  {currentStockData()?.company_name}
-                                </h2>
-                                <span class="bg-forest text-white text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wider">
-                                  {currentStockData()?.ticker}
-                                </span>
-                                <span class="bg-sage text-forest text-[10px] px-1.5 py-0.5 rounded font-medium">
-                                  {currentStockData()?.exchange}
-                                </span>
-                              </div>
-                              <div class="flex items-center gap-3 mt-1">
-                                <span class="text-sm font-outfit font-bold text-forest">
-                                  {formatUSD(
-                                    currentStockData()?.valuation.active_price ||
-                                    currentStockData()?.valuation.current_price ||
-                                    0,
-                                  )}
-                                </span>
-                                <span class="text-[10px] text-earth font-medium">
-                                  Mkt Cap:{" "}
-                                  {formatUSDCompact(
-                                    currentStockData()?.valuation.market_cap || 0,
-                                  )}
-                                </span>
-                                <span class="text-[9px] text-earth/60 uppercase tracking-widest">
-                                  As of:{" "}
-                                  {new Date(
-                                    currentStockData()?.as_of || "",
-                                  ).toLocaleDateString()}
-                                </span>
-
-                                {/* Market Timing Indicator */}
-                                <div class="flex items-center gap-2 px-2 py-0.5 bg-sage/30 rounded-full border border-forest/5">
-                                  <div
-                                    class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
-                                  ></div>
-                                  <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
-                                    {marketStatus().session}
-                                  </span>
-                                </div>
-
-                                <Show when={isStockLoading()}>
-                                  <div class="flex items-center gap-1.5">
-                                    <span class="text-[9px] text-forest font-bold uppercase tracking-widest animate-ellipsis">
-                                      Loading
-                                    </span>
-                                  </div>
-                                </Show>
-                              </div>
-                            </div>
-                          </Show>
-                        </div>
-                      }
+                      fallback={<TopBarStockHeaderDesktop marketStatus={marketStatus} />}
                     >
-                      {/* Custom Trading Journal Navbar */}
-                      <div class="flex items-center gap-4 flex-nowrap shrink-0">
-                        <h2 class="text-xl font-cormorant font-bold text-forest leading-none whitespace-nowrap">
-                          Trading Journal
-                        </h2>
-                        <div class="h-6 w-px bg-forest/10 mx-1 shrink-0" />
-                        
-                        <nav class="flex items-center gap-2">
-                          <a 
-                            href="/trading-journal" 
-                            class="px-3 py-1.5 bg-sage text-forest text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors border border-forest/5"
-                          >
-                            Overview
-                          </a>
-                          <a 
-                            href="#" 
-                            onClick={(e) => { e.preventDefault(); alert("Analytics feature coming soon!"); }} 
-                            class="px-3 py-1.5 text-earth hover:text-forest text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors"
-                          >
-                            Analytics
-                          </a>
-                          <a 
-                            href="#" 
-                            onClick={(e) => { e.preventDefault(); alert("Watchlists feature coming soon!"); }} 
-                            class="px-3 py-1.5 text-earth hover:text-forest text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors"
-                          >
-                            Watchlist
-                          </a>
-                        </nav>
-
-                        {/* Clock & Market status indicator */}
-                        <div class="flex items-center gap-3 ml-4 shrink-0">
-                          <div class="flex items-center justify-between px-3 py-1.5 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[10px] font-bold w-[10.5rem] overflow-hidden text-nowrap">
-                            <div class="flex items-center gap-1 truncate">
-                              <span class="material-icons !text-[14px] text-forest/50 shrink-0">
-                                schedule
-                              </span>
-                              <span class="truncate">{wibTime()}</span>
-                            </div>
-                          </div>
-                          
-                          <div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-sage/30 rounded-xl border border-forest/5">
-                            <div class={`w-1.5 h-1.5 rounded-full ${marketStatus().color} animate-pulse-soft`}></div>
-                            <span class="text-[9px] font-bold text-forest uppercase tracking-tight">
-                              US: {marketStatus().session}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      <TopBarJournalHeaderDesktop wibTime={wibTime} marketStatus={marketStatus} />
                     </Show>
                   }
                 >
-                  {/* Dividend Page Mode */}
-                  <div class="flex items-center gap-4 flex-nowrap shrink-0">
-                    <button
-                      onClick={() => navigate(-1)}
-                      class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 cursor-pointer shrink-0"
-                    >
-                      <ChevronLeftIcon />
-                    </button>
-                    <div class="h-8 w-px bg-forest/10 mx-1 shrink-0" />
-
-                    <div class="flex flex-col shrink-0 min-w-0">
-                      <h2 class="text-xl font-cormorant font-bold text-forest leading-none whitespace-nowrap">
-                        IDX Dividend Calendar
-                      </h2>
-                      <div class="flex items-center gap-3 mt-1 whitespace-nowrap">
-                        <span class="text-[10px] text-earth font-medium">
-                          Indonesia Stock Exchange
-                        </span>
-                        <div class="w-px h-3 bg-forest/10" />
-                        <span class="text-[10px] text-earth font-medium">
-                          2025 - 2026
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* WIB Clock */}
-                    <div class="flex items-center justify-between px-3 py-2.5 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[11px] font-bold w-[11.6rem] overflow-hidden text-nowrap shrink-0 ml-4">
-                      <div class="flex items-center gap-1.5 truncate">
-                        <span class="material-icons !text-[16.5px] text-forest/50 shrink-0">
-                          schedule
-                        </span>
-                        <span class="truncate">{wibTime()}</span>
-                      </div>
-                      <span class="text-forest/80 uppercase text-[11px] shrink-0">
-                        WIB
-                      </span>
-                    </div>
-
-                    {/* IDX Market Status */}
-                    <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 shrink-0 whitespace-nowrap">
-                      <div
-                        class={`w-2 h-2 rounded-full ${idxMarketStatus().color} animate-pulse-soft`}
-                      ></div>
-                      <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
-                        IDX: {idxMarketStatus().session}
-                      </span>
-                      <span class="text-[9px] text-forest/60 font-semibold lowercase">
-                        ({idxMarketStatus().timeRemaining} left)
-                      </span>
-                    </div>
-
-                    {/* Manual Sync Button */}
-                    <button
-                      onClick={() => refreshDividends(true)}
-                      disabled={isDividendsRefreshing()}
-                      title="Sync Dividends"
-                      class="flex items-center gap-1.5 px-3 py-2 bg-sage/40 hover:bg-sage/70 active:scale-95 transition-all rounded-xl border border-forest/10 text-forest text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
-                    >
-                      <span class={`material-icons !text-sm ${isDividendsRefreshing() ? "animate-spin" : ""}`}>
-                        sync
-                      </span>
-                      <span>{isDividendsRefreshing() ? "Syncing..." : "Sync"}</span>
-                    </button>
-                  </div>
+                  <TopBarDividendHeaderDesktop
+                    wibTime={wibTime}
+                    idxMarketStatus={idxMarketStatus}
+                  />
                 </Show>
               }
             >
               <Show
                 when={isPortfolioPage()}
-                fallback={
-                  <>
-                    {/* Month Navigator (Expense Routes) */}
-                    <div class="flex items-center gap-3">
-                      <button
-                        onClick={prevMonth}
-                        class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 hover:cursor-pointer"
-                      >
-                        <ChevronLeftIcon />
-                      </button>
-                      <h2 class="text-lg font-outfit font-bold text-forest min-w-[140px] text-center">
-                        {formattedDate()}
-                      </h2>
-                      <button
-                        onClick={nextMonth}
-                        class="w-9 h-9 rounded-xl hover:bg-sage/50 flex items-center justify-center text-forest transition-colors border border-forest/5 hover:cursor-pointer"
-                      >
-                        <ChevronRightIcon />
-                      </button>
-                    </div>
-
-                    {/* Date Period Selector */}
-                    <div class="relative group">
-                      <select
-                        value={state.ui.datePeriod}
-                        onInput={(e) =>
-                          setState("ui", "datePeriod", e.currentTarget.value as any)
-                        }
-                        class="appearance-none bg-sage/20 border border-forest/10 rounded-xl px-4 py-2 pr-10 font-outfit text-xs font-bold text-forest focus:outline-none focus:ring-2 focus:ring-forest/20 transition-all cursor-pointer hover:bg-sage/30"
-                      >
-                        <option value="1-30">1 - 30</option>
-                        <option value="21-20">21 - 20</option>
-                        <option value="25-25">25 - 25</option>
-                      </select>
-                      <span class="material-icons absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 pointer-events-none text-lg">
-                        expand_more
-                      </span>
-                    </div>
-                  </>
-                }
+                fallback={<TopBarDateControlsDesktop formattedDate={formattedDate} />}
               >
-                <div class="flex items-center gap-2">
-                  {/* Ticking WIB Clock */}
-                  <div class="flex items-center justify-between px-3 py-2.5 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[11px] font-bold w-[11.6rem] overflow-hidden text-nowrap shrink-0">
-                    <div class="flex items-center gap-1.5 truncate">
-                      <span class="material-icons !text-[16.5px] text-forest/50 shrink-0">
-                        schedule
-                      </span>
-                      <span class="truncate">{wibTime()}</span>
-                    </div>
-                    <span class="text-forest/80 uppercase text-[11px] shrink-0">
-                      WIB
-                    </span>
-                  </div>
-
-                  {/* Active Portfolio Quick Switcher Dropdown */}
-                  <div class="relative portfolio-switcher-container shrink-0">
-                    <button
-                      onClick={() => setIsSwitcherOpen(!isSwitcherOpen())}
-                      class="flex items-center gap-2 px-3 py-1.5 bg-sage/20 rounded-xl border border-forest/5 text-forest/80 text-[10px] font-bold hover:bg-sage/30 hover:border-forest/10 transition-all cursor-pointer"
-                    >
-                      <span class="material-icons !text-[14px] text-forest/60">
-                        account_balance_wallet
-                      </span>
-                      <span class="truncate max-w-[120px]">
-                        {activePortfolioName()}
-                      </span>
-                      <span
-                        class="material-icons text-[14px] text-forest/60 transition-transform duration-200"
-                        classList={{ "rotate-180": isSwitcherOpen() }}
-                      >
-                        expand_more
-                      </span>
-                    </button>
-
-                    <Show when={isSwitcherOpen()}>
-                      <div class="absolute top-[calc(100%+6px)] left-0 min-w-[200px] bg-white border border-forest/10 rounded-xl shadow-premium z-50 p-1 flex flex-col gap-0.5 animate-slide-down">
-                        <button
-                          onClick={() => handleSwitchPortfolio("")}
-                          class="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-bold text-left transition-colors cursor-pointer"
-                          classList={{
-                            "bg-sage/40 text-forest": !params.id && location.pathname === "/portfolio",
-                            "text-forest/70 hover:bg-sage/30 hover:text-forest":
-                              !!params.id || location.pathname === "/quick-portfolio",
-                          }}
-                        >
-                          <span class="material-icons !text-[14px] text-forest/50">
-                            grid_view
-                          </span>
-                          <span>All Portfolios (Overview)</span>
-                        </button>
-
-                        <div class="h-px bg-forest/5 my-1" />
-
-                        <div class="max-h-48 overflow-y-auto">
-                          <For each={portfolioState.portfolios}>
-                            {(p) => {
-                              const pColor = getPortfolioColor(p.name);
-                              const isActive = () => {
-                                if (location.pathname === "/quick-portfolio") {
-                                  return p.name === "Quick Portfolio";
-                                }
-                                return p.id === params.id;
-                              };
-                              return (
-                                <button
-                                  onClick={() => handleSwitchPortfolio(p.id)}
-                                  class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-bold text-left transition-colors cursor-pointer"
-                                  classList={{
-                                    "bg-sage/40 text-forest": isActive(),
-                                    "text-forest/70 hover:bg-sage/30 hover:text-forest":
-                                      !isActive(),
-                                  }}
-                                >
-                                  <div class="flex items-center gap-2 min-w-0">
-                                    <div
-                                      class="w-2.5 h-2.5 rounded-full shrink-0"
-                                      style={{ "background-color": pColor }}
-                                    />
-                                    <span class="truncate max-w-[130px]">
-                                      {p.name}
-                                    </span>
-                                  </div>
-                                  <Show when={isActive()}>
-                                    <span class="material-icons !text-[12px] text-forest">
-                                      check
-                                    </span>
-                                  </Show>
-                                </button>
-                              );
-                            }}
-                          </For>
-                        </div>
-                      </div>
-                    </Show>
-                  </div>
-
-                  {/* Vertical Divider */}
-                  <div class="w-px h-6 mx-2 bg-forest/10" />
-
-                  {/* Market Session Indicator */}
-                  <div class="flex items-center gap-2 px-3 py-2.5 bg-sage/30 rounded-xl border border-forest/5 min-w-[13rem] whitespace-nowrap shrink-0">
-                    <div
-                      class={`w-2 h-2 rounded-full ${marketStatus().color} animate-pulse-soft`}
-                    ></div>
-                    <span class="text-[10px] font-bold text-forest uppercase tracking-tight">
-                      US: {marketStatus().session}
-                    </span>
-                    <span class="text-[9px] text-forest/60 font-semibold lowercase">
-                      ({marketStatus().timeRemaining} left)
-                    </span>
-                  </div>
-
-                  {/* Unified Exchange Rate & Currency Toggle Capsule */}
-                  <div class="flex items-center gap-3 pl-3 pr-1 py-1 bg-sage/30 rounded-xl border border-forest/5 text-forest/80 text-[10px] font-bold shrink-0">
-                    <div class="flex items-center gap-1.5">
-                      <span class="material-icons !text-[14px] text-forest/50">
-                        currency_exchange
-                      </span>
-                      <span>1 USD = {formatRupiah(getUsdRate())}</span>
-                      <button
-                        onClick={async () => {
-                          if (isRefreshingUsd()) return;
-                          setIsRefreshingUsd(true);
-                          try {
-                            const rate = await fetchUsdRate();
-                            setUsdExchangeRate(rate);
-                          } catch (err) {
-                            console.error(err);
-                          } finally {
-                            setIsRefreshingUsd(false);
-                          }
-                        }}
-                        class="ml-1 flex items-center justify-center p-0.5 rounded hover:bg-forest/10 transition-colors text-forest/60 hover:text-forest cursor-pointer"
-                        classList={{ "animate-spin": isRefreshingUsd() }}
-                        title="Refresh Exchange Rate"
-                      >
-                        <span class="material-icons !text-[12px]">sync</span>
-                      </button>
-                    </div>
-
-                    <div class="w-px h-4 bg-forest/10" />
-
-                    <div class="flex bg-sage/10 p-[0.125rem] rounded-lg border border-forest/5 shrink-0">
-                      <button
-                        onClick={() => setCurrencyView("IDR")}
-                        class={`px-3 py-1 rounded-md text-[9px] font-bold transition-all cursor-pointer ${portfolioState.currencyView === "IDR" ? "bg-forest text-white shadow-sm" : "text-forest/60 hover:text-forest"}`}
-                      >
-                        IDR
-                      </button>
-                      <button
-                        onClick={() => setCurrencyView("USD")}
-                        class={`px-3 py-1 rounded-md text-[9px] font-bold transition-all cursor-pointer ${portfolioState.currencyView === "USD" ? "bg-forest text-white shadow-sm" : "text-forest/60 hover:text-forest"}`}
-                      >
-                        USD
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Refresh Button */}
-                  <button
-                    onClick={() => {
-                      if (location.pathname === "/quick-portfolio") {
-                        const qp = portfolioState.portfolios.find(p => p.name === "Quick Portfolio");
-                        if (qp) refreshPortfolio(qp.id);
-                      } else if (params.id) {
-                        refreshPortfolio(params.id);
-                      } else {
-                        loadPortfolios();
-                      }
-                    }}
-                    disabled={
-                      portfolioState.isRefreshing || portfolioState.isLoading
-                    }
-                    class="w-10 h-[2.15rem] rounded-xl flex items-center justify-center bg-sage/30 border border-forest/6 text-forest/80 hover:bg-sage/30 hover:border-forest/10 hover:text-forest transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/refresh"
-                    title="Refresh Portfolio Data"
-                  >
-                    <span
-                      class="material-icons !text-[18px] group-hover/refresh:rotate-180 transition-transform duration-500"
-                      classList={{
-                        "animate-spin":
-                          portfolioState.isRefreshing || portfolioState.isLoading,
-                      }}
-                    >
-                      sync
-                    </span>
-                  </button>
-                </div>
+                <TopBarPortfolioControlsDesktop
+                  wibTime={wibTime}
+                  marketStatus={marketStatus}
+                  activePortfolioName={activePortfolioName}
+                />
               </Show>
             </Show>
           </div>
@@ -643,6 +169,7 @@ const TopBar = (props: TopBarProps) => {
           </div>
 
           <button
+            type="button"
             onClick={() => setState("ui", "insightsOpen", !state.ui.insightsOpen)}
             class={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
               state.ui.insightsOpen
@@ -655,61 +182,7 @@ const TopBar = (props: TopBarProps) => {
             <span class="material-icons text-xl sm:text-2xl">eco</span>
           </button>
 
-          {/* User Profile with Dropdown */}
-          <div class="relative profile-menu-container pl-2 sm:pl-4 border-l border-forest/10">
-            <button
-              type="button"
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen())}
-              class="flex items-center gap-2 sm:gap-3 hover:opacity-90 transition-opacity cursor-pointer group text-left"
-              aria-label="User profile menu"
-            >
-              <div class="text-right hidden sm:block">
-                <p class="text-xs sm:text-sm font-outfit font-semibold text-forest line-clamp-1 max-w-[120px] sm:max-w-[140px]">
-                  {userDisplayName()}
-                </p>
-                <p class="text-[9px] sm:text-[10px] text-earth uppercase tracking-widest">
-                  Master Gardener
-                </p>
-              </div>
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-forest/10 flex items-center justify-center overflow-hidden border border-forest/10 shadow-sm group-hover:ring-2 group-hover:ring-forest/20 transition-all">
-                <img
-                  src={userAvatarUrl()}
-                  alt="Avatar"
-                  class="w-full h-full object-cover"
-                />
-              </div>
-            </button>
-
-            {/* Profile Dropdown Menu */}
-            <Show when={isProfileMenuOpen()}>
-              <div class="absolute right-0 top-[calc(100%+8px)] sm:top-[calc(100%+12px)] w-60 sm:w-64 bg-white border border-forest/10 rounded-2xl shadow-2xl z-50 p-2 flex flex-col gap-1 animate-slide-down">
-                {/* User Details Header */}
-                <div class="p-3 border-b border-forest/10">
-                  <p class="text-xs font-bold text-forest font-outfit truncate">
-                    {userDisplayName()}
-                  </p>
-                  <p class="text-[11px] text-earth font-outfit truncate">
-                    {user()?.email || "No email"}
-                  </p>
-                  <div class="mt-2 flex items-center gap-1.5">
-                    <span class="bg-sage text-forest text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
-                      {user()?.app_metadata?.provider === "google" ? "Google Account" : "Email Auth"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Menu Items */}
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-terracotta hover:bg-terracotta/10 rounded-xl transition-colors text-left cursor-pointer"
-                >
-                  <span class="material-icons text-base">logout</span>
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            </Show>
-          </div>
+          <TopBarProfileMenu />
         </div>
       </div>
 
@@ -723,152 +196,21 @@ const TopBar = (props: TopBarProps) => {
               fallback={
                 <Show
                   when={isJournalPage()}
-                  fallback={
-                    /* Stock Mobile Subrow */
-                    <div class="flex items-center gap-2 shrink-0 py-1">
-                      <button
-                        onClick={() => navigate(-1)}
-                        class="w-7 h-7 rounded-lg bg-sage/50 flex items-center justify-center text-forest shrink-0"
-                      >
-                        <ChevronLeftIcon class="w-4 h-4" />
-                      </button>
-                      <span class="bg-forest text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                        {params.ticker}
-                      </span>
-                      <Show when={currentStockData()}>
-                        <span class="text-xs font-outfit font-bold text-forest shrink-0">
-                          {formatUSD(
-                            currentStockData()?.valuation.active_price ||
-                            currentStockData()?.valuation.current_price ||
-                            0,
-                          )}
-                        </span>
-                        <div class="flex items-center gap-1 px-1.5 py-0.5 bg-sage/40 rounded-full shrink-0">
-                          <div class={`w-1.5 h-1.5 rounded-full ${marketStatus().color}`}></div>
-                          <span class="text-[8px] font-bold text-forest uppercase">{marketStatus().session}</span>
-                        </div>
-                      </Show>
-                    </div>
-                  }
+                  fallback={<TopBarStockHeaderMobile marketStatus={marketStatus} />}
                 >
-                  {/* Journal Mobile Subrow */}
-                  <div class="flex items-center gap-2 shrink-0 py-1">
-                    <a href="/trading-journal" class="px-2.5 py-1 bg-sage text-forest text-[9px] font-bold uppercase rounded-lg shrink-0">
-                      Overview
-                    </a>
-                    <div class="flex items-center gap-1 px-2 py-1 bg-sage/20 rounded-lg text-[9px] font-bold text-forest/80 shrink-0">
-                      <span class="material-icons !text-[12px] text-forest/50">schedule</span>
-                      <span>{wibTime()}</span>
-                    </div>
-                  </div>
+                  <TopBarJournalHeaderMobile wibTime={wibTime} />
                 </Show>
               }
             >
-              {/* Dividend Mobile Subrow */}
-              <div class="flex items-center gap-2 shrink-0 py-1">
-                <button
-                  onClick={() => navigate(-1)}
-                  class="w-7 h-7 rounded-lg bg-sage/50 flex items-center justify-center text-forest shrink-0"
-                >
-                  <ChevronLeftIcon class="w-4 h-4" />
-                </button>
-                <div class="flex items-center gap-1 px-2 py-1 bg-sage/20 rounded-lg text-[9px] font-bold text-forest/80 shrink-0">
-                  <span class="material-icons !text-[12px] text-forest/50">schedule</span>
-                  <span>{wibTime()}</span>
-                </div>
-                <div class="flex items-center gap-1 px-2 py-1 bg-sage/30 rounded-lg text-[9px] font-bold text-forest shrink-0">
-                  <div class={`w-1.5 h-1.5 rounded-full ${idxMarketStatus().color}`}></div>
-                  <span>IDX: {idxMarketStatus().session}</span>
-                </div>
-                <button
-                  onClick={() => refreshDividends(true)}
-                  disabled={isDividendsRefreshing()}
-                  class="flex items-center gap-1 px-2 py-1 bg-sage/40 rounded-lg text-[9px] font-bold text-forest shrink-0"
-                >
-                  <span class={`material-icons !text-[11px] ${isDividendsRefreshing() ? "animate-spin" : ""}`}>sync</span>
-                  <span>Sync</span>
-                </button>
-              </div>
+              <TopBarDividendHeaderMobile wibTime={wibTime} idxMarketStatus={idxMarketStatus} />
             </Show>
           }
         >
           <Show
             when={isPortfolioPage()}
-            fallback={
-              /* Expense Pages Mobile Subrow (Month nav + Date range) */
-              <div class="flex items-center gap-2 shrink-0 py-1 w-full justify-between">
-                <div class="flex items-center gap-1.5">
-                  <button
-                    onClick={prevMonth}
-                    class="w-7 h-7 rounded-lg bg-sage/40 flex items-center justify-center text-forest"
-                  >
-                    <ChevronLeftIcon class="w-4 h-4" />
-                  </button>
-                  <span class="text-xs font-outfit font-bold text-forest px-1">
-                    {formattedDate()}
-                  </span>
-                  <button
-                    onClick={nextMonth}
-                    class="w-7 h-7 rounded-lg bg-sage/40 flex items-center justify-center text-forest"
-                  >
-                    <ChevronRightIcon class="w-4 h-4" />
-                  </button>
-                </div>
-
-                <select
-                  value={state.ui.datePeriod}
-                  onInput={(e) => setState("ui", "datePeriod", e.currentTarget.value as any)}
-                  class="bg-sage/30 border border-forest/10 rounded-lg px-2.5 py-1 text-[10px] font-bold text-forest"
-                >
-                  <option value="1-30">1 - 30</option>
-                  <option value="21-20">21 - 20</option>
-                  <option value="25-25">25 - 25</option>
-                </select>
-              </div>
-            }
+            fallback={<TopBarDateControlsMobile formattedDate={formattedDate} />}
           >
-            {/* Portfolio Mobile Subrow */}
-            <div class="flex items-center gap-2 shrink-0 py-1">
-              <div class="flex items-center gap-1 px-2 py-1 bg-sage/20 rounded-lg text-[9px] font-bold text-forest/80 shrink-0">
-                <span class="material-icons !text-[12px] text-forest/50">schedule</span>
-                <span>{wibTime()}</span>
-              </div>
-
-              <div class="flex items-center gap-1 px-2 py-1 bg-sage/30 rounded-lg text-[9px] font-bold text-forest/80 shrink-0">
-                <span>1 USD = {formatRupiah(getUsdRate())}</span>
-              </div>
-
-              <div class="flex bg-sage/20 p-0.5 rounded-lg border border-forest/5 shrink-0">
-                <button
-                  onClick={() => setCurrencyView("IDR")}
-                  class={`px-2 py-0.5 rounded text-[8px] font-bold ${portfolioState.currencyView === "IDR" ? "bg-forest text-white" : "text-forest/60"}`}
-                >
-                  IDR
-                </button>
-                <button
-                  onClick={() => setCurrencyView("USD")}
-                  class={`px-2 py-0.5 rounded text-[8px] font-bold ${portfolioState.currencyView === "USD" ? "bg-forest text-white" : "text-forest/60"}`}
-                >
-                  USD
-                </button>
-              </div>
-
-              <button
-                onClick={() => {
-                  if (location.pathname === "/quick-portfolio") {
-                    const qp = portfolioState.portfolios.find(p => p.name === "Quick Portfolio");
-                    if (qp) refreshPortfolio(qp.id);
-                  } else if (params.id) {
-                    refreshPortfolio(params.id);
-                  } else {
-                    loadPortfolios();
-                  }
-                }}
-                class="w-7 h-7 rounded-lg bg-sage/40 flex items-center justify-center text-forest shrink-0"
-              >
-                <span class="material-icons !text-[14px]">sync</span>
-              </button>
-            </div>
+            <TopBarPortfolioControlsMobile wibTime={wibTime} />
           </Show>
         </Show>
       </div>

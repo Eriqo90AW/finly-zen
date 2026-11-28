@@ -18,10 +18,22 @@ export async function importLocalGoals(): Promise<void> {
   if (starterError) throw starterError;
 }
 
+interface SavingsGoalRow {
+  id: string;
+  name: string;
+  emoji: string;
+  target: number | string;
+  current_amount: number | string;
+  target_date: string;
+  created_at: string;
+  last_watered_at: string | null;
+}
+
 export async function loadGarden(): Promise<GardenGoal[]> {
   const { data, error } = await supabase.rpc("get_savings_goals");
   if (error) throw error;
-  const goals: GardenGoal[] = (data || []).map((g: any) => ({
+  const rows = (data || []) as SavingsGoalRow[];
+  const goals: GardenGoal[] = rows.map((g) => ({
     id: g.id, name: g.name, emoji: g.emoji, target: Number(g.target), current: Number(g.current_amount),
     date: g.target_date, createdAt: g.created_at, lastWateredAt: g.last_watered_at,
   }));

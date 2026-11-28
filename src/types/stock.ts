@@ -36,7 +36,7 @@ export interface Valuation {
   ev_to_revenue: number;
   price_to_book: number;
   profit_margin: number;
-  quarterly_revenue: any[];
+  quarterly_revenue: unknown[];
 }
 
 export interface StandardizedFinancials {
@@ -53,7 +53,7 @@ export interface StandardizedFinancials {
   capex_ttm: number | null;
   eps_ttm: number;
   eps_forward: number;
-  quarterly_eps: any[];
+  quarterly_eps: unknown[];
   cash_and_equivalents: number | null;
   total_debt: number | null;
   net_cash: number | null;
@@ -141,6 +141,36 @@ export interface EarningsEstimates {
   }[];
 }
 
+export interface StockFundamentals {
+  summaryDetail?: {
+    marketCap?: number | null;
+    beta?: number | null;
+    previousClose?: number | null;
+    [key: string]: unknown;
+  };
+  summaryProfile?: {
+    longName?: string | null;
+    industry?: string | null;
+    sector?: string | null;
+    [key: string]: unknown;
+  };
+  price?: {
+    longName?: string | null;
+    shortName?: string | null;
+    preMarketPrice?: number | null;
+    afterHoursPrice?: number | null;
+    regularMarketPreviousClose?: number | null;
+    [key: string]: unknown;
+  };
+  financialData?: {
+    freeCashflow?: number | null;
+    totalDebt?: number | null;
+    totalCash?: number | null;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export interface StockData {
   ticker: string;
   company_name: string;
@@ -156,5 +186,5 @@ export interface StockData {
   advanced_ratios: AdvancedRatios;
   segment_data: SegmentData;
   earnings_estimates: EarningsEstimates;
-  fundamentals?: any;
+  fundamentals?: StockFundamentals;
 }

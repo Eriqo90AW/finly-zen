@@ -9,17 +9,30 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "test": "vitest src/test/",
-    "test:run": "vitest run src/test/",
-    "test:coverage": "vitest run src/test/ --coverage"
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check:arch": "depcruise src --config .dependency-cruiser.cjs",
+    "check:dead": "knip --include files,dependencies,unlisted,unresolved",
+    "check:dead:exports": "knip --include exports,types",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "check": "pnpm typecheck && pnpm lint && pnpm check:arch && pnpm check:dead && pnpm test:run"
   },
   "license": "MIT",
   "devDependencies": {
+    "@biomejs/biome": "^2.6.9",
     "@solidjs/testing-library": "^0.8.10",
     "@tailwindcss/vite": "^4.1.13",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/user-event": "^14.6.6",
+    "dependency-cruiser": "^18.9.0",
+    "happy-dom": "^21.0.4",
     "jsdom": "^30.0.1",
+    "knip": "^6.48.0",
     "solid-devtools": "^0.34.3",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
@@ -37,6 +50,7 @@
     "solid-apexcharts": "^0.6.0",
     "solid-js": "^1.9.9",
     "solid-transition-group": "^0.3.0",
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "zod": "^4.6.7"
   }
 }

@@ -9,7 +9,7 @@ import {
 } from "solid-js";
 import type { User, Session, AuthError } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { setCachedUserId } from "../lib/userContext";
+import { setCachedUserId } from "../lib/userSession";
 
 export interface AuthContextType {
   user: Accessor<User | null>;

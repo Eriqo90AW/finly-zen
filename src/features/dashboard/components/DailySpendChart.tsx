@@ -1,0 +1,287 @@
+import { createSignal, createMemo, createEffect, Show } from "solid-js";
+import { SolidApexCharts } from "solid-apexcharts";
+import type { ApexOptions, YAxisAnnotations } from "apexcharts";
+import { state } from "../../../store";
+import { Tooltip } from "../../../components/modules/Tooltip";
+import { getDateRange } from "../../../utils/date";
+import { formatRupiah, formatRupiahShort } from "../../../utils/format";
+import { EditDailyBudgetModal } from "./EditDailyBudgetModal";
+import type { DailySpendChartProps } from "../../../types";
+
+interface ChartContextWithElement {
+  el?: HTMLElement | null;
+}
+
+type PositionedYAxisAnnotation = YAxisAnnotations & {
+  position?: "front" | "back";
+};
+
+export const DailySpendChart = (props: DailySpendChartProps) => {
+  const [dayOffset, setDayOffset] = createSignal(0);
+  const [isEditBudgetOpen, setIsEditBudgetOpen] = createSignal(false);
+
+  // Reset offset when month or datePeriod changes
+  createEffect(() => {
+    state.ui.currentMonth;
+    state.ui.datePeriod;
+    setDayOffset(0);
+  });
+
+  const chartData = createMemo(() => {
+    const data = props.transactions || [];
+    const { end: periodEnd } = getDateRange(
+      state.ui.currentMonth,
+      state.ui.datePeriod,
+    );
+
+    // Use the period end as the base reference, but don't go past today if period includes today
+    const now = new Date();
+    const baseReferenceDate = periodEnd > now ? now : periodEnd;
+
+    // Apply offset in days
+    const referenceDate = new Date(baseReferenceDate);
+    referenceDate.setDate(referenceDate.getDate() + dayOffset());
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(referenceDate);
+      d.setDate(d.getDate() - (6 - i));
+
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const date = d.getDate();
+
+      const dayTransactions = data.filter((t) => {
+        const td = new Date(t.date);
+        return (
+          td.getFullYear() === y && td.getMonth() === m && td.getDate() === date
+        );
+      });
+
+      const amount = dayTransactions.reduce((acc, t) => {
+        if (t.isRecurring) return acc;
+        if (t.type === "expense") return acc + t.amount;
+        if (t.type === "income") return acc - t.amount;
+        return acc;
+      }, 0);
+
+      return {
+        date: d.toLocaleDateString("id-ID", { day: "numeric", month: "short" }),
+        amount,
+      };
+    });
+  });
+
+  const barChartOptions = (): ApexOptions => {
+    const data = chartData();
+    const maxSpent = Math.max(...data.map((d) => d.amount), 0);
+    const budget = props.dailyBudget();
+    const peak = Math.max(maxSpent, budget);
+    const calculatedMax = peak > 0 ? Math.ceil(peak * 1.15) : 500000;
+
+    const budgetAnnotation: PositionedYAxisAnnotation = {
+      y: budget,
+      borderColor: "#1A4D2E",
+      position: "front",
+      strokeDashArray: 3,
+      label: {
+        text: "Budget",
+        style: {
+          background: "#1A4D2E",
+          color: "#fff",
+          fontSize: "9px",
+          fontFamily: "Outfit",
+          padding: { left: 4, right: 4, top: 2, bottom: 2 },
+        },
+      },
+    };
+
+    return {
+      chart: {
+        type: "bar",
+        toolbar: { show: false },
+        animations: { enabled: true },
+        parentHeightOffset: 0,
+        events: {
+          updated: (chartContext) => {
+            const el = (chartContext as unknown as ChartContextWithElement).el;
+            const annotations = el?.querySelector(
+              ".apexcharts-yaxis-annotations",
+            );
+            const parent = annotations?.parentNode;
+            if (annotations && parent) {
+              parent.appendChild(annotations);
+            }
+          },
+        },
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 4,
+          borderRadiusApplication: "end",
+          columnWidth: "60%",
+          distributed: true,
+        },
+      },
+      colors: data.map((d) =>
+        d.amount > 1000000 || d.amount > budget ? "#EF4444" : "#52C278",
+      ),
+      dataLabels: { enabled: false },
+      tooltip: {
+        shared: true,
+        intersect: false,
+        custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+          const val = series[seriesIndex][dataPointIndex];
+          const category = w.globals.labels[dataPointIndex];
+          return `
+            <div class="px-3 py-1.5 bg-near-black text-white text-xs font-outfit rounded-lg shadow-xl flex flex-col items-center whitespace-nowrap">
+              <span class="text-white/80 text-[10px] uppercase tracking-wider mb-0.5">${category}</span>
+              <span class="font-bold">${formatRupiahShort(val)}</span>
+            </div>
+          `;
+        },
+      },
+      xaxis: {
+        categories: data.map((d) => d.date),
+        labels: {
+          style: { colors: "#5C6B5E", fontFamily: "Outfit", fontSize: "10px" },
+          rotate: 0,
+          rotateAlways: false,
+          hideOverlappingLabels: true,
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        tooltip: { enabled: false },
+      },
+      yaxis: {
+        min: 0,
+        max: calculatedMax,
+        tickAmount: 4,
+        labels: {
+          style: { colors: "#5C6B5E", fontFamily: "Outfit", fontSize: "10px" },
+          formatter: (value) => (value < 0 ? "" : formatRupiahShort(value)),
+          offsetX: -4,
+        },
+      },
+      grid: {
+        borderColor: "rgba(26,77,46,0.08)",
+        strokeDashArray: 4,
+        padding: {
+          top: 4,
+          right: 0,
+          bottom: 0,
+          left: -4,
+        },
+      },
+      annotations: {
+        yaxis: [budgetAnnotation],
+      },
+      legend: { show: false },
+    };
+  };
+
+  return (
+    <div class="w-full flex-1 premium-card p-3.5 sm:p-5 lg:p-6 flex flex-col relative cursor-default min-h-[280px] lg:h-[320px]">
+      <style>
+        {`
+          .apexcharts-tooltip {
+            top: 50% !important;
+            transform: translate(50%, -50%) !important;
+            transition: left 0.1s ease-out !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            pointer-events: none !important;
+          }
+          .apexcharts-tooltip.apexcharts-active {
+            margin: 0 !important;
+          }
+        `}
+      </style>
+      <div class="flex items-center justify-between gap-2 mb-2 sm:mb-4">
+        <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <h4 class="font-outfit font-bold text-forest text-sm sm:text-base whitespace-nowrap shrink-0">
+            Daily Spend
+          </h4>
+          <div class="flex items-center gap-0.5 bg-sage/15 rounded-lg p-0.5 border border-forest/10 shrink-0">
+            <button
+              type="button"
+              onClick={() => setDayOffset((prev) => prev - 1)}
+              class="w-5 h-5 sm:w-6 sm:h-6 rounded hover:bg-forest/10 flex items-center justify-center transition-colors text-forest cursor-pointer"
+              title="Previous day (shift 1 day back)"
+              aria-label="Previous day"
+            >
+              <span class="material-icons text-xs sm:text-sm">chevron_left</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDayOffset((prev) => Math.min(0, prev + 1))}
+              disabled={dayOffset() >= 0}
+              class={`w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center transition-colors ${
+                dayOffset() >= 0
+                  ? "text-earth/30 cursor-not-allowed"
+                  : "hover:bg-forest/10 text-forest cursor-pointer"
+              }`}
+              title="Next day (shift 1 day forward)"
+              aria-label="Next day"
+            >
+              <span class="material-icons text-xs sm:text-sm">chevron_right</span>
+            </button>
+          </div>
+          <Show when={dayOffset() !== 0}>
+            <button
+              type="button"
+              onClick={() => setDayOffset(0)}
+              class="text-[9px] sm:text-[10px] font-medium text-forest/70 hover:text-forest bg-forest/5 hover:bg-forest/10 px-1.5 py-0.5 rounded-full transition-colors cursor-pointer shrink-0"
+              title="Reset to today / latest"
+            >
+              Today
+            </button>
+          </Show>
+        </div>
+        <Tooltip content="Click to edit budget">
+          <div
+            class="text-[9px] sm:text-[10px] font-bold text-earth hover:text-forest uppercase tracking-wider cursor-pointer transition-colors flex items-center gap-1 group/edit shrink-0 ml-auto"
+            onClick={() => setIsEditBudgetOpen(true)}
+          >
+            <span class="material-icons text-[9px] sm:text-[10px] opacity-0 group-hover/edit:opacity-100 transition-opacity">
+              edit
+            </span>
+            <span>Budget: {formatRupiah(props.dailyBudget())}</span>
+          </div>
+        </Tooltip>
+      </div>
+      <div class="flex-1 min-h-[200px]">
+        <Show
+          when={!props.loading}
+          fallback={
+            <div class="w-full h-full flex items-center justify-center text-earth/30">
+              Loading...
+            </div>
+          }
+        >
+          <SolidApexCharts
+            options={barChartOptions()}
+            series={[
+              {
+                name: "Spent",
+                data: chartData().map((d) => d.amount),
+              },
+            ]}
+            type="bar"
+            height="100%"
+          />
+        </Show>
+      </div>
+
+      <EditDailyBudgetModal
+        isOpen={isEditBudgetOpen()}
+        onClose={() => setIsEditBudgetOpen(false)}
+        currentBudget={props.dailyBudget()}
+        onSave={(newBudget) => props.setDailyBudget(newBudget)}
+        title="Edit Daily Budget"
+        subtitle="Set your target daily spending allowance to calibrate velocity and bar chart threshold."
+      />
+    </div>
+  );
+};

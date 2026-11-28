@@ -1,10 +1,10 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import solidPlugin from "vite-plugin-solid";
 import devtools from "solid-devtools/vite";
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const aiBaseUrl =
     env.AI_BASE_URL ||
@@ -22,14 +22,14 @@ export default defineConfig(({ mode }) => {
 
   const targetHost = aiBaseUrl.replace(/\/v1\/?$/, "").replace(/\/+$/, "") || "https://openagent.erqo.cloud";
 
-  const proxyConfig = {
+  const proxyConfig: Record<string, ProxyOptions> = {
     "/openagent-proxy": {
       target: targetHost,
       changeOrigin: true,
       secure: false,
       rewrite: (path: string) => path.replace(/^\/openagent-proxy/, ""),
-      configure: (proxy: any) => {
-        proxy.on("proxyReq", (proxyReq: any) => {
+      configure: (proxy) => {
+        proxy.on("proxyReq", (proxyReq) => {
           proxyReq.removeHeader("origin");
           proxyReq.removeHeader("referer");
           if (aiApiKey) {
@@ -43,8 +43,8 @@ export default defineConfig(({ mode }) => {
       changeOrigin: true,
       secure: true,
       rewrite: (path: string) => path.replace(/^\/opencode-proxy/, ""),
-      configure: (proxy: any) => {
-        proxy.on("proxyReq", (proxyReq: any) => {
+      configure: (proxy) => {
+        proxy.on("proxyReq", (proxyReq) => {
           if (aiApiKey) {
             proxyReq.setHeader("Authorization", `Bearer ${aiApiKey}`);
           }
@@ -62,7 +62,11 @@ export default defineConfig(({ mode }) => {
         "solid-apexcharts": path.resolve(__dirname, "./src/components/common/SolidApexCharts.tsx"),
       },
     },
-    plugins: [devtools(), solidPlugin(), tailwindcss()],
+    plugins: [
+      ...(command === "serve" && mode === "development" ? [devtools()] : []),
+      solidPlugin(),
+      tailwindcss(),
+    ],
     optimizeDeps: {
       include: ["solid-js", "solid-js/store", "@solid-devtools/shared"],
     },
@@ -74,6 +78,29 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: "esnext",
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            const normalized = id.replace(/\\/g, "/");
+            const lastNodeModules = normalized.lastIndexOf("/node_modules/");
+            if (lastNodeModules === -1) return;
+            const pkgPath = normalized.slice(lastNodeModules + "/node_modules/".length);
+            if (pkgPath.startsWith("apexcharts/")) return "vendor-apexcharts";
+            if (pkgPath.startsWith("@suid/") || pkgPath.startsWith("@emotion/")) {
+              return "vendor-suid";
+            }
+            if (pkgPath.startsWith("@supabase/")) return "vendor-supabase";
+            if (
+              pkgPath.startsWith("solid-js/") ||
+              pkgPath.startsWith("@solidjs/router/") ||
+              pkgPath.startsWith("solid-transition-group/")
+            ) {
+              return "vendor-solid";
+            }
+            if (pkgPath.startsWith("tesseract.js/")) return "vendor-ocr";
+          },
+        },
+      },
     },
     preview: {
       host: "0.0.0.0",

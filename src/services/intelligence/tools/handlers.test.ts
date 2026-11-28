@@ -44,6 +44,7 @@ const mockUserContext: UserContext = {
   currentPage: {
     name: "Dashboard",
     path: "/",
+    category: "Expense",
     focus: "Overview",
     assistantName: "Finly",
     assistantRole: "Financial Assistant",

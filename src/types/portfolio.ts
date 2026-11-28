@@ -110,8 +110,39 @@ export interface PortfolioHoldingDB {
 }
 
 // --- API Response Interfaces ---
+export interface MultiStockSummaryDetail {
+  previousClose?: number | null;
+  marketCap?: number | null;
+  beta?: number | null;
+  [key: string]: unknown;
+}
+
+export interface MultiStockSummaryProfile {
+  longName?: string | null;
+  industry?: string | null;
+  sector?: string | null;
+  [key: string]: unknown;
+}
+
+export interface MultiStockPriceInfo {
+  longName?: string | null;
+  shortName?: string | null;
+  preMarketPrice?: number | null;
+  afterHoursPrice?: number | null;
+  regularMarketPreviousClose?: number | null;
+  [key: string]: unknown;
+}
+
+export interface MultiStockFinancialData {
+  freeCashflow?: number | null;
+  totalDebt?: number | null;
+  totalCash?: number | null;
+  [key: string]: unknown;
+}
+
 export interface MultiStockItem {
   symbol: string;
+  company_name?: string;
   success: boolean;
   logo_url: string;
   active_price: number;
@@ -126,10 +157,10 @@ export interface MultiStockItem {
   regular_change_percent?: number | null;
   extended_hours_price?: number;
   fundamentals: {
-    summaryDetail: Record<string, any>;
-    summaryProfile: Record<string, any>;
-    price: Record<string, any>;
-    financialData?: Record<string, any>;
+    summaryDetail: MultiStockSummaryDetail;
+    summaryProfile: MultiStockSummaryProfile;
+    price: MultiStockPriceInfo;
+    financialData?: MultiStockFinancialData;
   };
 }
 

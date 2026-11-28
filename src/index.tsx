@@ -1,27 +1,31 @@
 /* @refresh reload */
 import './index.css';
 import { render } from 'solid-js/web';
-import { Router, Route } from '@solidjs/router';
-import { Show, Component } from 'solid-js';
-import 'solid-devtools';
+import { Router, Route, type RouteSectionProps } from '@solidjs/router';
+import { Show, lazy, type Component } from 'solid-js';
+
+if (import.meta.env.DEV) {
+  void import("solid-devtools");
+}
 
 import App from './App';
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Transactions from "./pages/Transactions";
-import Budgets from "./pages/Budgets";
-import Goals from "./pages/Goals";
-import Reports from "./pages/Reports";
-import StockDashboard from "./pages/StockDashboard";
-import Portfolio from "./pages/Portfolio";
-import Dividend from "./pages/Dividend";
-import QuickPortfolio from "./pages/QuickPortfolio";
-import TradingJournal from "./pages/TradingJournal";
-import MarketCapList from "./pages/MarketCapList";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { ProtectedRoute } from "./features/auth";
 import { useAuth } from "./context/authContext";
+
+const Landing = lazy(() => import("./pages/Landing"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const Budgets = lazy(() => import("./pages/Budgets"));
+const Goals = lazy(() => import("./pages/Goals"));
+const Reports = lazy(() => import("./pages/Reports"));
+const StockDashboard = lazy(() => import("./pages/StockDashboard"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const Dividend = lazy(() => import("./pages/Dividend"));
+const QuickPortfolio = lazy(() => import("./pages/QuickPortfolio"));
+const TradingJournal = lazy(() => import("./pages/TradingJournal"));
+const MarketCapList = lazy(() => import("./pages/MarketCapList"));
 
 const root = document.getElementById('root');
 
@@ -49,8 +53,8 @@ const RootView: Component = () => {
   );
 };
 
-const withAuth = (Comp: Component<any>): Component<any> => {
-  return (props: any) => (
+const withAuth = (Comp: Component<RouteSectionProps>): Component<RouteSectionProps> => {
+  return (props) => (
     <ProtectedRoute>
       <Comp {...props} />
     </ProtectedRoute>

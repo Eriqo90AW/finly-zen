@@ -1,14 +1,13 @@
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
+export function debounce<Args extends unknown[]>(
+  func: (...args: Args) => unknown,
+  wait: number,
+): (...args: Args) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  return function(this: any, ...args: Parameters<T>) {
-    const context = this;
+  return function (this: unknown, ...args: Args) {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => {
-      func.apply(context, args);
+      func.apply(this, args);
     }, wait);
   };
 }

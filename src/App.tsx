@@ -1,17 +1,17 @@
-import { ParentProps, Show, onMount, createSignal, createEffect } from "solid-js";
+import { ParentProps, Show, Suspense, onMount, createSignal, createEffect } from "solid-js";
 import MainLayout from "./components/layout/MainLayout";
-import { state, setState, setupPersistence, loadSyncedBudgets, clearBudgetSync } from "./store";
+import { state, setupPersistence, loadSyncedBudgets, clearBudgetSync } from "./store";
 import { setupPortfolioPersistence, loadPortfolios } from "./store/portfolioStore";
 import { setupPriceAlertPersistence } from "./store/priceAlertStore";
 import { setupIntelligencePersistence } from "./store/intelligenceStore";
 import { fetchUsdRate } from "./data/portfolioData";
-import { resolveUserId } from "./lib/userContext";
+import { resolveUserId } from "./lib/userSession";
 import { setUsdRateOnce } from "./utils/format";
 import AddIcon from "@suid/icons-material/Add";
 import { useLocation } from "@solidjs/router";
 import { AuthProvider, useAuth } from "./context/authContext";
 import { getAccounts } from "./data/expenseData";
-import FirstTimeSetupModal from "./components/auth/FirstTimeSetupModal";
+import { FirstTimeSetupModal } from "./features/auth";
 
 import {
   openCreateTransaction,
@@ -88,18 +88,34 @@ const AppContent = (props: ParentProps) => {
     location.pathname.startsWith("/dividend") ||
     location.pathname.startsWith("/trading-journal");
 
+  const routeFallback = (fullScreen: boolean) => (
+    <div
+      class={
+        fullScreen
+          ? "min-h-dvh bg-page-bg flex items-center justify-center"
+          : "min-h-[60vh] bg-page-bg flex items-center justify-center"
+      }
+    >
+      <div class="w-8 h-8 border-2 border-forest/20 border-t-forest rounded-full animate-spin" />
+    </div>
+  );
+
   return (
     <div class="relative min-h-dvh bg-page-bg">
       <Show
         when={!isPublicPage()}
         fallback={
           <main class="min-h-dvh">
-            {props.children}
+            <Suspense fallback={routeFallback(true)}>
+              {props.children}
+            </Suspense>
           </main>
         }
       >
         <MainLayout>
-          {props.children}
+          <Suspense fallback={routeFallback(false)}>
+            {props.children}
+          </Suspense>
         </MainLayout>
 
         {/* First Time Onboarding Wizard */}

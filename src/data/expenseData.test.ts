@@ -3,7 +3,7 @@ import { addTransactions, getAccountsWithBalances, getTransactions } from "./exp
 import { supabase } from "../lib/supabase";
 import type { AddTransactionParams } from "../types";
 
-vi.mock("../lib/userContext", () => ({
+vi.mock("../lib/userSession", () => ({
   resolveUserId: vi.fn().mockResolvedValue("user-123"),
   getUserIdSync: vi.fn().mockReturnValue("user-123"),
 }));
@@ -15,6 +15,13 @@ vi.mock("../lib/supabase", () => {
     },
   };
 });
+
+type SupabaseFromReturn = ReturnType<typeof supabase.from>;
+const asFromResult = (mock: unknown): SupabaseFromReturn => mock as SupabaseFromReturn;
+
+interface InsertTransactionPayload {
+  name: string;
+}
 
 describe("addTransactions Batch Persistence", () => {
   beforeEach(() => {
@@ -30,10 +37,10 @@ describe("addTransactions Batch Persistence", () => {
     let activeWorkers = 0;
     let maxObservedConcurrency = 0;
 
-    vi.mocked(supabase.from).mockImplementation((table: string): any => {
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === "transactions") {
-        return {
-          insert: vi.fn().mockImplementation((payload: any) => {
+        return asFromResult({
+          insert: vi.fn().mockImplementation((payload: InsertTransactionPayload) => {
             activeWorkers++;
             maxObservedConcurrency = Math.max(maxObservedConcurrency, activeWorkers);
             return {
@@ -46,11 +53,11 @@ describe("addTransactions Batch Persistence", () => {
               }),
             };
           }),
-        };
+        });
       }
 
       if (table === "view_transactions_detailed") {
-        return {
+        return asFromResult({
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockImplementation((_col: string, val: string) => ({
               single: vi.fn().mockResolvedValue({
@@ -68,10 +75,10 @@ describe("addTransactions Batch Persistence", () => {
               }),
             })),
           }),
-        };
+        });
       }
 
-      return { select: vi.fn() };
+      return asFromResult({ select: vi.fn() });
     });
 
     const items: AddTransactionParams[] = Array.from({ length: 8 }, (_, i) => ({
@@ -105,10 +112,10 @@ describe("addTransactions Batch Persistence", () => {
   });
 
   it("settles failures without rolling back or aborting successful items", async () => {
-    vi.mocked(supabase.from).mockImplementation((table: string): any => {
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === "transactions") {
-        return {
-          insert: vi.fn().mockImplementation((payload: any) => {
+        return asFromResult({
+          insert: vi.fn().mockImplementation((payload: InsertTransactionPayload) => {
             if (payload.name === "Failing Item") {
               return {
                 select: vi.fn().mockReturnValue({
@@ -128,11 +135,11 @@ describe("addTransactions Batch Persistence", () => {
               }),
             };
           }),
-        };
+        });
       }
 
       if (table === "view_transactions_detailed") {
-        return {
+        return asFromResult({
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               single: vi.fn().mockImplementation(async () => ({
@@ -150,10 +157,10 @@ describe("addTransactions Batch Persistence", () => {
               })),
             }),
           }),
-        };
+        });
       }
 
-      return { select: vi.fn() };
+      return asFromResult({ select: vi.fn() });
     });
 
     const items: AddTransactionParams[] = [
@@ -174,9 +181,9 @@ describe("addTransactions Batch Persistence", () => {
 
 describe("getAccountsWithBalances", () => {
   it("calculates net ledger balances correctly from transactions", async () => {
-    vi.mocked(supabase.from).mockImplementation((table: string): any => {
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === "accounts") {
-        return {
+        return asFromResult({
           select: vi.fn().mockReturnValue({
             order: vi.fn().mockReturnValue({
               eq: vi.fn().mockResolvedValue({
@@ -189,48 +196,52 @@ describe("getAccountsWithBalances", () => {
               }),
             }),
           }),
-        };
+        });
       }
 
       if (table === "view_transactions_detailed") {
-        return {
+        return asFromResult({
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({ order: vi.fn().mockReturnValue({ range: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({
-                data: [
-                  {
-                    transaction_id: "tx-1",
-                    account_id: "acc-1",
-                    account_name: "Bank Jago",
-                    amount: 5000000,
-                    transaction_type: "income",
-                    created_at: new Date().toISOString(),
-                  },
-                  {
-                    transaction_id: "tx-2",
-                    account_id: "acc-1",
-                    account_name: "Bank Jago",
-                    amount: 1500000,
-                    transaction_type: "expense",
-                    created_at: new Date().toISOString(),
-                  },
-                  {
-                    transaction_id: "tx-3",
-                    account_id: "acc-2",
-                    account_name: "OVO Paylater",
-                    amount: 250000,
-                    transaction_type: "expense",
-                    created_at: new Date().toISOString(),
-                  },
-                ],
-                error: null,
+            order: vi.fn().mockReturnValue({
+              order: vi.fn().mockReturnValue({
+                range: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockResolvedValue({
+                    data: [
+                      {
+                        transaction_id: "tx-1",
+                        account_id: "acc-1",
+                        account_name: "Bank Jago",
+                        amount: 5000000,
+                        transaction_type: "income",
+                        created_at: new Date().toISOString(),
+                      },
+                      {
+                        transaction_id: "tx-2",
+                        account_id: "acc-1",
+                        account_name: "Bank Jago",
+                        amount: 1500000,
+                        transaction_type: "expense",
+                        created_at: new Date().toISOString(),
+                      },
+                      {
+                        transaction_id: "tx-3",
+                        account_id: "acc-2",
+                        account_name: "OVO Paylater",
+                        amount: 250000,
+                        transaction_type: "expense",
+                        created_at: new Date().toISOString(),
+                      },
+                    ],
+                    error: null,
+                  }),
+                }),
               }),
-            }) }) }),
+            }),
           }),
-        };
+        });
       }
 
-      return { select: vi.fn() };
+      return asFromResult({ select: vi.fn() });
     });
 
     const accounts = await getAccountsWithBalances("user-123");
@@ -251,23 +262,51 @@ describe("getAccountsWithBalances", () => {
   });
 });
 
-
+interface MockPageQuery {
+  order: () => MockPageQuery;
+  range: (start: number) => {
+    eq: () => Promise<{
+      data: Record<string, unknown>[] | null;
+      error: { message: string } | null;
+    }>;
+  };
+}
 
 describe("transaction pagination", () => {
   it("loads every page using stable ordering", async () => {
     const ranges: number[] = [];
     const order = vi.fn().mockReturnThis();
-    const range = vi.fn().mockImplementation((start: number) => { ranges.push(start); return { eq: vi.fn().mockResolvedValue({ data: start === 0 ? Array.from({length: 500}, (_, i) => ({ transaction_id: String(i) })) : [{ transaction_id: "last" }], error: null }) }; });
-    vi.mocked(supabase.from).mockReturnValue({ select: () => ({ order, range }) } as any);
+    const range = vi.fn().mockImplementation((start: number) => {
+      ranges.push(start);
+      return {
+        eq: vi.fn().mockResolvedValue({
+          data:
+            start === 0
+              ? Array.from({ length: 500 }, (_, i) => ({ transaction_id: String(i) }))
+              : [{ transaction_id: "last" }],
+          error: null,
+        }),
+      };
+    });
+    vi.mocked(supabase.from).mockReturnValue(asFromResult({ select: () => ({ order, range }) }));
     const result = await getTransactions();
     expect(result).toHaveLength(501);
     expect(ranges).toEqual([0, 500]);
     expect(order).toHaveBeenCalledWith("created_at", { ascending: false });
     expect(order).toHaveBeenCalledWith("transaction_id", { ascending: false });
   });
+
   it("rejects instead of returning partial history when a later page fails", async () => {
-    const query: any = { order: () => query, range: (start: number) => ({ eq: async () => start ? { data: null, error: { message: "network" } } : { data: Array.from({length: 500}, () => ({})), error: null } }) };
-    vi.mocked(supabase.from).mockReturnValue({ select: () => query } as any);
+    const query: MockPageQuery = {
+      order: () => query,
+      range: (start: number) => ({
+        eq: async () =>
+          start
+            ? { data: null, error: { message: "network" } }
+            : { data: Array.from({ length: 500 }, () => ({})), error: null },
+      }),
+    };
+    vi.mocked(supabase.from).mockReturnValue(asFromResult({ select: () => query }));
     await expect(getTransactions()).rejects.toThrow("network");
   });
 });

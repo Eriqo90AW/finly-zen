@@ -1,10 +1,11 @@
-import { createWorker, type Worker } from "tesseract.js";
+import type { Worker } from "tesseract.js";
 
 let workerPromise: Promise<Worker> | null = null;
 
 async function getWorker(): Promise<Worker> {
   if (!workerPromise) {
     workerPromise = (async () => {
+      const { createWorker } = await import("tesseract.js");
       const worker = await createWorker(["eng", "ind"], undefined, {
         logger: (m) => {
           if (import.meta.env.DEV && m.status === "recognizing text") {

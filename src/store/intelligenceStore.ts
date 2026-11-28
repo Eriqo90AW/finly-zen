@@ -1,105 +1,37 @@
-import { createStore, reconcile } from "solid-js/store";
+import { createStore, produce, reconcile } from "solid-js/store";
 import { createEffect, onMount } from "solid-js";
-import type { ChatMessage, PendingAction } from "../types/intelligence";
-
-const STORAGE_KEY = "finly_zen_hermes_chat_v2";
-const LEGACY_STORAGE_KEY = "finly_zen_intelligence_chat_v1";
-
-interface IntelligenceState {
-  activeProfile: string;
-  profileMessages: Record<string, ChatMessage[]>;
-  isStreaming: boolean;
-  pendingAction: PendingAction | null;
-  activeToolLabel: string | null;
-  error: string | null;
-}
-
-const DEFAULT_STATE: IntelligenceState = {
-  activeProfile: "finly",
-  profileMessages: {
-    finly: [],
-    market_quant: [],
-  },
-  isStreaming: false,
-  pendingAction: null,
-  activeToolLabel: null,
-  error: null,
-};
+import type { ChatMessage, PendingAction, TransactionDraft } from "../types/intelligence";
+import {
+  DEFAULT_INTELLIGENCE_STATE,
+  type IntelligenceState,
+  loadPersistedIntelligenceState,
+  savePersistedIntelligenceState,
+  computeUpdatedBatchDraft,
+  applySelectAllDrafts,
+  applyAccountToDrafts,
+  applyDateToDrafts,
+} from "./intelligencePersistence";
 
 export const [intelligenceState, setIntelligenceState] =
-  createStore<IntelligenceState>(DEFAULT_STATE);
+  createStore<IntelligenceState>(DEFAULT_INTELLIGENCE_STATE);
 
 export function setupIntelligencePersistence() {
   onMount(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as {
-          activeProfile?: string;
-          profileMessages?: Record<string, ChatMessage[]>;
-        };
-        if (parsed.profileMessages) {
-          const cleaned: Record<string, ChatMessage[]> = {};
-          for (const [k, msgs] of Object.entries(parsed.profileMessages)) {
-            cleaned[k] = Array.isArray(msgs)
-              ? msgs
-                  .filter((m) => m.role === "user" || m.role === "assistant")
-                  .map((m) => {
-                    const { tool_calls, isStreaming, isOcrProcessing, ...rest } = m;
-                    return rest as ChatMessage;
-                  })
-              : [];
-          }
-          setIntelligenceState(
-            reconcile({
-              ...DEFAULT_STATE,
-              activeProfile: parsed.activeProfile || "finly",
-              profileMessages: {
-                finly: cleaned.finly || [],
-                market_quant: cleaned.market_quant || [],
-                ...cleaned,
-              },
-            }),
-          );
-          return;
-        }
-      }
+    const hydrated = loadPersistedIntelligenceState();
+    if (!hydrated) return;
 
-      // Check legacy single-thread storage
-      const legacySaved = localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (legacySaved) {
-        const legacyParsed = JSON.parse(legacySaved) as { messages?: ChatMessage[] };
-        if (Array.isArray(legacyParsed.messages)) {
-          setIntelligenceState(
-            "profileMessages",
-            "finly",
-            legacyParsed.messages.filter((m) => m.role === "user" || m.role === "assistant"),
-          );
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load Hermes chat history", e);
+    if (hydrated.kind === "v2") {
+      setIntelligenceState(reconcile(hydrated.state));
+    } else if (hydrated.kind === "legacy") {
+      setIntelligenceState("profileMessages", "finly", hydrated.finlyMessages);
     }
   });
 
   createEffect(() => {
-    const sanitizeForPersistence = (m: ChatMessage): ChatMessage => {
-      const { tool_calls, isStreaming, isOcrProcessing, ...rest } = m;
-      return rest as ChatMessage;
-    };
-
-    const persistable = {
-      activeProfile: intelligenceState.activeProfile,
-      profileMessages: Object.fromEntries(
-        Object.entries(intelligenceState.profileMessages).map(([p, msgs]) => [
-          p,
-          msgs
-            .filter((m) => (m.role === "user" || m.role === "assistant") && Boolean(m.content?.trim() || m.imageBase64))
-            .map(sanitizeForPersistence),
-        ]),
-      ),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+    savePersistedIntelligenceState(
+      intelligenceState.activeProfile,
+      intelligenceState.profileMessages,
+    );
   });
 }
 
@@ -189,59 +121,20 @@ export function updateBatchDraft(
   const currentAction = intelligenceState.pendingAction;
   if (!currentAction || currentAction.kind !== "transaction-batch") return;
 
-  const targetIndex = currentAction.drafts.findIndex((d) => d.id === draftId);
-  if (targetIndex === -1) return;
+  const currentDraft = currentAction.drafts.find((d) => d.id === draftId);
+  if (!currentDraft || currentDraft.status === "saved") return;
 
-  const currentDraft = currentAction.drafts[targetIndex];
-  if (currentDraft.status === "saved") return; // Cannot edit already saved drafts
-
-  const updated: TransactionDraft = {
-    ...currentDraft,
-    ...patch,
-  };
-
-  // Re-sync accountName or categoryName if IDs changed
-  if (patch.accountId !== undefined && userAccounts) {
-    const acc = userAccounts.find((a) => a.id === patch.accountId);
-    updated.accountName = acc?.name || updated.accountName;
-  }
-  if (patch.categoryId !== undefined && userCategories) {
-    const cat = userCategories.find((c) => c.id === patch.categoryId);
-    updated.categoryName = cat?.name || updated.categoryName;
-  }
-
-  // Re-validate draft fields if not excluded
-  if (updated.status !== "excluded") {
-    const errors: Record<string, string> = {};
-    if (!updated.name || updated.name.trim().length < 1) {
-      errors.name = "Description is required";
-    }
-    if (!updated.amount || updated.amount <= 0 || !Number.isFinite(updated.amount)) {
-      errors.amount = "Valid positive amount is required";
-    }
-    if (!updated.accountId) {
-      errors.accountId = "Account must be selected";
-    }
-    if (!updated.categoryId) {
-      errors.categoryId = "Category must be selected";
-    }
-
-    const isValid = Object.keys(errors).length === 0;
-    updated.errors = isValid ? undefined : errors;
-    if (updated.status !== "saving") {
-      updated.status = isValid ? "ready" : "invalid";
-    }
-    // Auto-select if becoming valid and was previously invalid
-    if (isValid && currentDraft.status === "invalid" && !updated.selected) {
-      updated.selected = true;
-    }
-  }
+  const updated = computeUpdatedBatchDraft(currentDraft, patch, userAccounts, userCategories);
 
   setIntelligenceState(
     "pendingAction",
-    "drafts",
-    (d: TransactionDraft) => d.id === draftId,
-    updated,
+    produce((action) => {
+      if (!action || action.kind !== "transaction-batch") return;
+      const target = action.drafts.find((d) => d.id === draftId);
+      if (target) {
+        Object.assign(target, updated);
+      }
+    }),
   );
 }
 
@@ -254,10 +147,13 @@ export function toggleDraftSelection(draftId: string) {
 
   setIntelligenceState(
     "pendingAction",
-    "drafts",
-    (d: TransactionDraft) => d.id === draftId,
-    "selected",
-    (s: boolean) => !s,
+    produce((action) => {
+      if (!action || action.kind !== "transaction-batch") return;
+      const target = action.drafts.find((d) => d.id === draftId);
+      if (target && target.status !== "saved") {
+        target.selected = !target.selected;
+      }
+    }),
   );
 }
 
@@ -267,15 +163,12 @@ export function selectAllValidDrafts(select: boolean) {
 
   setIntelligenceState(
     "pendingAction",
-    "drafts",
-    (d: TransactionDraft) => d.status !== "saved" && d.status !== "excluded",
-    (prev: TransactionDraft) => ({
-      ...prev,
-      selected: select ? (prev.status === "ready" || prev.status === "failed") : false,
+    produce((action) => {
+      if (!action || action.kind !== "transaction-batch") return;
+      applySelectAllDrafts(action.drafts, select);
     }),
   );
 }
-
 
 export function toggleExcludeDraft(draftId: string) {
   const currentAction = intelligenceState.pendingAction;
@@ -285,31 +178,23 @@ export function toggleExcludeDraft(draftId: string) {
   if (!draft || draft.status === "saved") return;
 
   const isExcluded = draft.status === "excluded";
-  if (isExcluded) {
-    const hasErrors = draft.errors && Object.keys(draft.errors).length > 0;
-    const newStatus = hasErrors ? "invalid" : "ready";
-    setIntelligenceState(
-      "pendingAction",
-      "drafts",
-      (d: TransactionDraft) => d.id === draftId,
-      (prev: TransactionDraft) => ({
-        ...prev,
-        status: newStatus,
-        selected: !hasErrors,
-      }),
-    );
-  } else {
-    setIntelligenceState(
-      "pendingAction",
-      "drafts",
-      (d: TransactionDraft) => d.id === draftId,
-      (prev: TransactionDraft) => ({
-        ...prev,
-        status: "excluded",
-        selected: false,
-      }),
-    );
-  }
+  const hasErrors = Boolean(draft.errors && Object.keys(draft.errors).length > 0);
+
+  setIntelligenceState(
+    "pendingAction",
+    produce((action) => {
+      if (!action || action.kind !== "transaction-batch") return;
+      const target = action.drafts.find((d) => d.id === draftId);
+      if (!target || target.status === "saved") return;
+      if (isExcluded) {
+        target.status = hasErrors ? "invalid" : "ready";
+        target.selected = !hasErrors;
+      } else {
+        target.status = "excluded";
+        target.selected = false;
+      }
+    }),
+  );
 }
 
 export function applyAccountToSelectedDrafts(accountId: string, accountName: string) {
@@ -318,21 +203,10 @@ export function applyAccountToSelectedDrafts(accountId: string, accountName: str
 
   setIntelligenceState(
     "pendingAction",
-    "drafts",
-    (d: TransactionDraft) => d.selected && d.status !== "saved" && d.status !== "excluded",
-    (prev: TransactionDraft) => {
-      const updatedErrors = { ...(prev.errors || {}) };
-      delete updatedErrors.accountId;
-      const isValid = Object.keys(updatedErrors).length === 0;
-
-      return {
-        ...prev,
-        accountId,
-        accountName,
-        errors: isValid ? undefined : updatedErrors,
-        status: isValid ? "ready" : "invalid",
-      };
-    },
+    produce((action) => {
+      if (!action || action.kind !== "transaction-batch") return;
+      applyAccountToDrafts(action.drafts, accountId, accountName);
+    }),
   );
 }
 
@@ -342,10 +216,10 @@ export function applyDateToSelectedDrafts(date: string) {
 
   setIntelligenceState(
     "pendingAction",
-    "drafts",
-    (d: TransactionDraft) => d.selected && d.status !== "saved" && d.status !== "excluded",
-    "date",
-    date,
+    produce((action) => {
+      if (!action || action.kind !== "transaction-batch") return;
+      applyDateToDrafts(action.drafts, date);
+    }),
   );
 }
 
@@ -360,14 +234,15 @@ export function updateDraftStatus(
 
   setIntelligenceState(
     "pendingAction",
-    "drafts",
-    (d: TransactionDraft) => d.id === draftId,
-    (prev: TransactionDraft) => ({
-      ...prev,
-      status,
-      errorMessage: errorMessage || undefined,
-      savedTransactionId: savedTransactionId || prev.savedTransactionId,
-      selected: status === "saved" ? false : prev.selected,
+    produce((action) => {
+      if (!action || action.kind !== "transaction-batch") return;
+      const target = action.drafts.find((d) => d.id === draftId);
+      if (target) {
+        target.status = status;
+        target.errorMessage = errorMessage || undefined;
+        target.savedTransactionId = savedTransactionId || target.savedTransactionId;
+        target.selected = status === "saved" ? false : target.selected;
+      }
     }),
   );
 }
@@ -375,7 +250,6 @@ export function updateDraftStatus(
 export function createMessageId(): string {
   return crypto.randomUUID();
 }
-
 
 export function getApiMessages(profile?: string): ChatMessage[] {
   const targetProfile = profile || intelligenceState.activeProfile || "finly";

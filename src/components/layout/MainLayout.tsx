@@ -2,8 +2,8 @@ import { ParentProps, createEffect, createSignal, Show } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
-import InsightsSidebar from "../screen-dashboard/InsightsSidebar";
-import AddExpenseSlideOver from "../screen-dashboard/modules/AddExpenseSlideOver";
+import { InsightsSidebar } from "../../features/intelligence";
+import { AddExpenseSlideOver } from "../../features/transactions";
 import TransactionToastRegion from "../common/TransactionToastRegion";
 
 // Keep a map of pathnames to scroll positions

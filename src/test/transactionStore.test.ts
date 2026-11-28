@@ -16,7 +16,12 @@ import {
   resetTransactionStore,
   type TransactionDisplayMeta,
 } from "../store/transactionStore";
-import type { AddTransactionParams, UpdateTransactionParams, Transaction } from "../types";
+import type {
+  AddTransactionParams,
+  UpdateTransactionParams,
+  Transaction,
+  TransactionDetailModel,
+} from "../types";
 
 describe("Transaction Store", () => {
   beforeEach(() => {
@@ -57,11 +62,11 @@ describe("Transaction Store", () => {
   });
 
   it("handles optimistic add with deferred server resolution", async () => {
-    let resolveServerPromise!: (val: any) => void;
-    const serverPromise = new Promise((resolve) => {
+    let resolveServerPromise!: (val: TransactionDetailModel) => void;
+    const serverPromise = new Promise<TransactionDetailModel>((resolve) => {
       resolveServerPromise = resolve;
     });
-    vi.spyOn(expenseData, "addTransaction").mockReturnValueOnce(serverPromise as any);
+    vi.spyOn(expenseData, "addTransaction").mockReturnValueOnce(serverPromise);
 
     const payload: AddTransactionParams = {
       name: "Coffee Shop",
@@ -106,10 +111,10 @@ describe("Transaction Store", () => {
 
   it("handles optimistic add failure, rolls back, and provides a retry callback", async () => {
     let rejectServerPromise!: (err: Error) => void;
-    const serverPromise = new Promise((_, reject) => {
+    const serverPromise = new Promise<TransactionDetailModel>((_, reject) => {
       rejectServerPromise = reject;
     });
-    vi.spyOn(expenseData, "addTransaction").mockReturnValueOnce(serverPromise as any);
+    vi.spyOn(expenseData, "addTransaction").mockReturnValueOnce(serverPromise);
 
     const payload: AddTransactionParams = {
       name: "Failed Lunch",
@@ -147,7 +152,7 @@ describe("Transaction Store", () => {
       transaction_type: "expense",
       created_at: "2026-08-29T11:00:00.000Z",
       is_recurring: false,
-    } as any);
+    });
 
     await toasts[0].retry();
     expect(transactions()).toHaveLength(1);
@@ -171,11 +176,11 @@ describe("Transaction Store", () => {
     ]);
     await initializeTransactions();
 
-    let resolveUpdate!: (val: any) => void;
-    const updatePromise = new Promise((resolve) => {
+    let resolveUpdate!: (val: Transaction) => void;
+    const updatePromise = new Promise<Transaction>((resolve) => {
       resolveUpdate = resolve;
     });
-    vi.spyOn(expenseData, "updateTransaction").mockReturnValueOnce(updatePromise as any);
+    vi.spyOn(expenseData, "updateTransaction").mockReturnValueOnce(updatePromise);
 
     const updatePayload: UpdateTransactionParams = {
       id: "tx-existing",

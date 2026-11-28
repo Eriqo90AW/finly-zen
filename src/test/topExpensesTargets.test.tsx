@@ -7,7 +7,7 @@ vi.mock("../lib/supabase", () => ({
 }));
 
 import { render, screen } from "@solidjs/testing-library";
-import { TopExpensesAndTargetsCard } from "../components/screen-dashboard/TopExpensesCard";
+import { TopExpensesAndTargetsCard } from "../features/dashboard";
 import { resetAppState, setState } from "../store";
 import { formatRupiah } from "../utils/format";
 import type { Transaction } from "../types";

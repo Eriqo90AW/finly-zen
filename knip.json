@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "entry": ["src/components/common/SolidApexCharts.tsx"],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignoreDependencies": [
+    "tailwindcss",
+    "@emotion/css",
+    "@suid/material",
+    "solid-transition-group",
+    "@testing-library/user-event"
+  ]
+}

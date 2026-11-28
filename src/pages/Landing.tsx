@@ -1,6 +1,11 @@
 import { A } from "@solidjs/router";
-import { createSignal } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { useAuth } from "../context/authContext";
+import {
+  LANDING_NAV_LINKS,
+  LANDING_PHILOSOPHY_HIGHLIGHTS,
+  LANDING_PILLARS,
+} from "./landingContent";
 
 export const Landing = () => {
   const { isAuthenticated } = useAuth();
@@ -20,14 +25,35 @@ export const Landing = () => {
         </div>
 
         <nav class="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-earth">
-          <a href="#features" class="hover:text-forest transition-colors">Features</a>
-          <a href="#dividends" class="hover:text-forest transition-colors">IDX Dividends</a>
-          <a href="#journal" class="hover:text-forest transition-colors">Trading Journal</a>
-          <a href="#philosophy" class="hover:text-forest transition-colors">Philosophy</a>
+          <For each={LANDING_NAV_LINKS}>
+            {(item) => (
+              <a href={item.href} class="hover:text-forest transition-colors">
+                {item.label}
+              </a>
+            )}
+          </For>
         </nav>
 
         <div class="flex items-center gap-2 sm:gap-4">
-          {isAuthenticated() ? (
+          <Show
+            when={isAuthenticated()}
+            fallback={
+              <>
+                <A
+                  href="/login"
+                  class="text-xs font-bold text-forest hover:text-forest/80 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl hover:bg-sage/40 transition-colors"
+                >
+                  Sign In
+                </A>
+                <A
+                  href="/register"
+                  class="bg-forest hover:bg-forest/90 text-white text-xs font-bold uppercase tracking-wider px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"
+                >
+                  Get Started
+                </A>
+              </>
+            }
+          >
             <A
               href="/dashboard"
               class="flex items-center gap-1.5 sm:gap-2 bg-forest hover:bg-forest/90 text-white text-xs font-bold uppercase tracking-wider px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-md transition-all active:scale-95"
@@ -35,22 +61,7 @@ export const Landing = () => {
               <span>Go to App</span>
               <span class="material-icons text-sm sm:text-base">arrow_forward</span>
             </A>
-          ) : (
-            <>
-              <A
-                href="/login"
-                class="text-xs font-bold text-forest hover:text-forest/80 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl hover:bg-sage/40 transition-colors"
-              >
-                Sign In
-              </A>
-              <A
-                href="/register"
-                class="bg-forest hover:bg-forest/90 text-white text-xs font-bold uppercase tracking-wider px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"
-              >
-                Get Started
-              </A>
-            </>
-          )}
+          </Show>
         </div>
       </header>
 
@@ -87,7 +98,6 @@ export const Landing = () => {
 
         {/* Hero Preview Card */}
         <div class="w-full max-w-5xl rounded-3xl bg-white border border-forest/10 p-6 sm:p-8 shadow-2xl relative overflow-hidden text-left">
-          {/* Mock Top bar */}
           <div class="flex flex-wrap items-center justify-between gap-4 border-b border-forest/10 pb-5">
             <div class="flex items-center gap-3">
               <div class="w-3 h-3 rounded-full bg-terracotta/60" />
@@ -121,9 +131,7 @@ export const Landing = () => {
             </div>
           </div>
 
-          {/* Mock Hero Content Grid */}
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-            {/* Metric 1 */}
             <div class="p-5 rounded-2xl bg-sage/20 border border-forest/5 flex flex-col justify-between">
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-widest text-earth/80">
@@ -139,7 +147,6 @@ export const Landing = () => {
               </div>
             </div>
 
-            {/* Metric 2 */}
             <div class="p-5 rounded-2xl bg-sage/20 border border-forest/5 flex flex-col justify-between">
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-widest text-earth/80">
@@ -155,7 +162,6 @@ export const Landing = () => {
               </div>
             </div>
 
-            {/* Metric 3 */}
             <div class="p-5 rounded-2xl bg-sage/20 border border-forest/5 flex flex-col justify-between">
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-widest text-earth/80">
@@ -185,62 +191,30 @@ export const Landing = () => {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Pillar 1 */}
-          <div class="bg-white rounded-3xl p-8 border border-forest/10 shadow-lg flex flex-col justify-between hover:shadow-xl transition-shadow">
-            <div>
-              <div class="w-12 h-12 rounded-2xl bg-sage flex items-center justify-center text-forest mb-6">
-                <span class="material-icons text-2xl">account_balance_wallet</span>
+          <For each={LANDING_PILLARS}>
+            {(pillar) => (
+              <div
+                id={pillar.id}
+                class="bg-white rounded-3xl p-8 border border-forest/10 shadow-lg flex flex-col justify-between hover:shadow-xl transition-shadow"
+              >
+                <div>
+                  <div class="w-12 h-12 rounded-2xl bg-sage flex items-center justify-center text-forest mb-6">
+                    <span class="material-icons text-2xl">{pillar.icon}</span>
+                  </div>
+                  <h3 class="text-2xl font-cormorant font-bold text-forest mb-3">
+                    {pillar.title}
+                  </h3>
+                  <p class="text-sm text-earth leading-relaxed font-outfit">
+                    {pillar.description}
+                  </p>
+                </div>
+                <div class="mt-8 pt-6 border-t border-forest/10 flex items-center gap-2 text-xs font-bold text-forest">
+                  <span class="material-icons text-sm">check</span>
+                  <span>{pillar.highlight}</span>
+                </div>
               </div>
-              <h3 class="text-2xl font-cormorant font-bold text-forest mb-3">
-                Cash Flow & Expense Tracking
-              </h3>
-              <p class="text-sm text-earth leading-relaxed font-outfit">
-                Categorize daily expenses, track budgets with pacing forecasts, and manage seamless inter-account transfers between bank and cash accounts.
-              </p>
-            </div>
-            <div class="mt-8 pt-6 border-t border-forest/10 flex items-center gap-2 text-xs font-bold text-forest">
-              <span class="material-icons text-sm">check</span>
-              <span>Visual monthly budget pacing</span>
-            </div>
-          </div>
-
-          {/* Pillar 2 */}
-          <div id="dividends" class="bg-white rounded-3xl p-8 border border-forest/10 shadow-lg flex flex-col justify-between hover:shadow-xl transition-shadow">
-            <div>
-              <div class="w-12 h-12 rounded-2xl bg-sage flex items-center justify-center text-forest mb-6">
-                <span class="material-icons text-2xl">calendar_month</span>
-              </div>
-              <h3 class="text-2xl font-cormorant font-bold text-forest mb-3">
-                IDX Dividend Intelligence
-              </h3>
-              <p class="text-sm text-earth leading-relaxed font-outfit">
-                Stay ahead of Indonesian Stock Exchange corporate actions. Interactive dividend calendar, yield forecasts, and automatic payout tracking.
-              </p>
-            </div>
-            <div class="mt-8 pt-6 border-t border-forest/10 flex items-center gap-2 text-xs font-bold text-forest">
-              <span class="material-icons text-sm">check</span>
-              <span>Authentic 2025-2026 IDX data</span>
-            </div>
-          </div>
-
-          {/* Pillar 3 */}
-          <div id="journal" class="bg-white rounded-3xl p-8 border border-forest/10 shadow-lg flex flex-col justify-between hover:shadow-xl transition-shadow">
-            <div>
-              <div class="w-12 h-12 rounded-2xl bg-sage flex items-center justify-center text-forest mb-6">
-                <span class="material-icons text-2xl">insights</span>
-              </div>
-              <h3 class="text-2xl font-cormorant font-bold text-forest mb-3">
-                Portfolios & Trading Journal
-              </h3>
-              <p class="text-sm text-earth leading-relaxed font-outfit">
-                Log day trades with planned R:R, bandarmology notes, psychology checklists, and track multi-asset portfolios in both IDR and USD.
-              </p>
-            </div>
-            <div class="mt-8 pt-6 border-t border-forest/10 flex items-center gap-2 text-xs font-bold text-forest">
-              <span class="material-icons text-sm">check</span>
-              <span>Disciplined win-rate analytics</span>
-            </div>
-          </div>
+            )}
+          </For>
         </div>
       </section>
 
@@ -261,22 +235,14 @@ export const Landing = () => {
           </p>
 
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 w-full pt-6 border-t border-forest/10">
-            <div>
-              <div class="text-2xl font-cormorant font-bold text-forest">Light Mode</div>
-              <div class="text-xs text-earth mt-1">Calm & clear</div>
-            </div>
-            <div>
-              <div class="text-2xl font-cormorant font-bold text-forest">IDR & USD</div>
-              <div class="text-xs text-earth mt-1">Dual currencies</div>
-            </div>
-            <div>
-              <div class="text-2xl font-cormorant font-bold text-forest">100% Private</div>
-              <div class="text-xs text-earth mt-1">Supabase security</div>
-            </div>
-            <div>
-              <div class="text-2xl font-cormorant font-bold text-forest">Zero Ads</div>
-              <div class="text-xs text-earth mt-1">Focused experience</div>
-            </div>
+            <For each={LANDING_PHILOSOPHY_HIGHLIGHTS}>
+              {(item) => (
+                <div>
+                  <div class="text-2xl font-cormorant font-bold text-forest">{item.title}</div>
+                  <div class="text-xs text-earth mt-1">{item.subtitle}</div>
+                </div>
+              )}
+            </For>
           </div>
         </div>
       </section>
