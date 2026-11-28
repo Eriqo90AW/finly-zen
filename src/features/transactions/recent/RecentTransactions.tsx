@@ -1,4 +1,4 @@
-import { Show, createSignal, createMemo, onCleanup } from "solid-js";
+import { Show, createSignal, createMemo } from "solid-js";
 import type {
   RecentTransactionsProps,
   SortKey,
@@ -23,11 +23,9 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
   );
   const [typeFilter, setTypeFilter] =
     createSignal<TransactionTypeFilter>("all");
-  const [filtersOpen, setFiltersOpen] = createSignal(false);
   const [showOnlyRecurring, setShowOnlyRecurring] = createSignal(false);
   const [sortKey, setSortKey] = createSignal<SortKey>("date");
   const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc");
-  const [accountDropdownOpen, setAccountDropdownOpen] = createSignal(false);
   const [transactionToDelete, setTransactionToDelete] =
     createSignal<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = createSignal(false);
@@ -62,32 +60,6 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
       setIsDeleting(false);
     }
   };
-
-  const handleClickOutside = (e: MouseEvent) => {
-    const path = e.composedPath ? e.composedPath() : [];
-    const isInsideAccount = path.some(
-      (el) =>
-        el instanceof HTMLElement &&
-        el.classList.contains("account-dropdown-container"),
-    );
-    const isInsideFilter = path.some(
-      (el) =>
-        el instanceof HTMLElement &&
-        el.classList.contains("filter-dropdown-container"),
-    );
-
-    if (!isInsideAccount) {
-      setAccountDropdownOpen(false);
-    }
-    if (!isInsideFilter) {
-      setFiltersOpen(false);
-    }
-  };
-
-  if (typeof window !== "undefined") {
-    window.addEventListener("click", handleClickOutside);
-    onCleanup(() => window.removeEventListener("click", handleClickOutside));
-  }
 
   const availableAccounts = createMemo(() =>
     extractAvailableAccounts(props.allTransactions || props.transactions),
@@ -137,13 +109,8 @@ export const RecentTransactions = (props: RecentTransactionsProps) => {
         showOnlyRecurring={showOnlyRecurring()}
         onToggleRecurring={() => setShowOnlyRecurring((v) => !v)}
         availableAccounts={availableAccounts()}
-        accountDropdownOpen={accountDropdownOpen()}
-        onToggleAccountDropdown={() => setAccountDropdownOpen((v) => !v)}
-        onCloseAccountDropdown={() => setAccountDropdownOpen(false)}
         uniqueCategories={uniqueCategories()}
         selectedCategories={selectedCategories()}
-        filtersOpen={filtersOpen()}
-        onToggleFiltersOpen={() => setFiltersOpen((v) => !v)}
         onToggleCategory={toggleCategory}
         onClearCategories={() => setSelectedCategories(new Set<string>())}
       />

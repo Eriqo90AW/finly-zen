@@ -42,14 +42,20 @@
   },
   "dependencies": {
     "@emotion/css": "^11.13.5",
+    "@kobalte/core": "^0.13.14",
     "@solidjs/router": "^0.16.1",
     "@suid/icons-material": "^0.9.0",
     "@suid/material": "^0.19.0",
     "@supabase/supabase-js": "^2.105.3",
     "apexcharts": "^5.10.6",
+    "chart.js": "^4.6.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-solid": "^1.82.0",
     "solid-apexcharts": "^0.6.0",
     "solid-js": "^1.9.9",
     "solid-transition-group": "^0.3.0",
+    "tailwind-merge": "^3.7.1",
     "tesseract.js": "^7.0.0",
     "zod": "^4.6.7"
   }

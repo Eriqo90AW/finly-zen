@@ -1,15 +1,12 @@
 import { A, useLocation } from "@solidjs/router";
 import { Show } from "solid-js";
 import DashboardIcon from "@suid/icons-material/DashboardOutlined";
-import ReceiptIcon from "@suid/icons-material/ReceiptLongOutlined";
 import AccountBalanceWalletIcon from "@suid/icons-material/AccountBalanceWalletOutlined";
 import FlagIcon from "@suid/icons-material/FlagOutlined";
 import AssessmentIcon from "@suid/icons-material/AssessmentOutlined";
 import ShowChartIcon from "@suid/icons-material/ShowChartOutlined";
 import PieChartIcon from "@suid/icons-material/PieChartOutlined";
-import PaymentsIcon from "@suid/icons-material/PaymentsOutlined";
 import TableChartIcon from "@suid/icons-material/TableChartOutlined";
-import CalendarMonthIcon from "@suid/icons-material/CalendarMonthOutlined";
 import FormatListNumberedIcon from "@suid/icons-material/FormatListNumberedOutlined";
 import CloseIcon from "@suid/icons-material/Close";
 
@@ -51,10 +48,6 @@ const Sidebar = (props: SidebarProps) => {
           <DashboardIcon />
           <span class="font-outfit">Dashboard</span>
         </A>
-        <A href="/transactions" class={`nav-link ${isActive("/transactions") ? "active" : ""}`}>
-          <ReceiptIcon />
-          <span class="font-outfit">Transactions</span>
-        </A>
         <A href="/budgets" class={`nav-link ${isActive("/budgets") ? "active" : ""}`}>
           <AccountBalanceWalletIcon />
           <span class="font-outfit">Budgets</span>
@@ -84,14 +77,6 @@ const Sidebar = (props: SidebarProps) => {
         <A href="/portfolio" class={`nav-link ${isActive("/portfolio") || location.pathname.startsWith("/portfolio") ? "active" : ""}`}>
           <PieChartIcon />
           <span class="font-outfit">Portfolio</span>
-        </A>
-        <A href="/dividend" class={`nav-link ${isActive("/dividend") || location.pathname.startsWith("/dividend") ? "active" : ""}`}>
-          <PaymentsIcon />
-          <span class="font-outfit">Dividends</span>
-        </A>
-        <A href="/trading-journal" class={`nav-link ${isActive("/trading-journal") ? "active" : ""}`}>
-          <CalendarMonthIcon />
-          <span class="font-outfit">Trading Journal</span>
         </A>
       </nav>
     </aside>

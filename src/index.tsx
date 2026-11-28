@@ -16,15 +16,12 @@ const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Transactions = lazy(() => import("./pages/Transactions"));
 const Budgets = lazy(() => import("./pages/Budgets"));
 const Goals = lazy(() => import("./pages/Goals"));
 const Reports = lazy(() => import("./pages/Reports"));
 const StockDashboard = lazy(() => import("./pages/StockDashboard"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
-const Dividend = lazy(() => import("./pages/Dividend"));
 const QuickPortfolio = lazy(() => import("./pages/QuickPortfolio"));
-const TradingJournal = lazy(() => import("./pages/TradingJournal"));
 const MarketCapList = lazy(() => import("./pages/MarketCapList"));
 
 const root = document.getElementById('root');
@@ -68,7 +65,6 @@ render(
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/dashboard" component={withAuth(Dashboard)} />
-      <Route path="/transactions" component={withAuth(Transactions)} />
       <Route path="/budgets" component={withAuth(Budgets)} />
       <Route path="/goals" component={withAuth(Goals)} />
       <Route path="/reports" component={withAuth(Reports)} />
@@ -78,8 +74,6 @@ render(
       <Route path="/portfolio/:id" component={withAuth(Portfolio)} />
       <Route path="/portfolio/:id/trades" component={withAuth(Portfolio)} />
       <Route path="/quick-portfolio" component={withAuth(QuickPortfolio)} />
-      <Route path="/dividend" component={withAuth(Dividend)} />
-      <Route path="/trading-journal" component={withAuth(TradingJournal)} />
     </Router>
   ),
   root!

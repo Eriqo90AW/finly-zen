@@ -1,12 +1,73 @@
 import ChevronLeftIcon from "@suid/icons-material/ChevronLeft";
 import ChevronRightIcon from "@suid/icons-material/ChevronRight";
-import type { Accessor } from "solid-js";
+import { CalendarRange } from "lucide-solid";
+import { type Accessor, createMemo } from "solid-js";
 import { nextMonth, prevMonth, setState, state } from "../../store";
 import type { DatePeriod } from "../../types";
+import { getDateRange } from "../../utils/date";
+import { type SelectOption, SimpleSelect } from "../ui";
 
 interface TopBarDateControlsProps {
   formattedDate: Accessor<string>;
 }
+
+const DATE_PERIODS: Array<{ value: DatePeriod; label: string }> = [
+  { value: "1-30", label: "1 - 30" },
+  { value: "21-20", label: "21 - 20" },
+  { value: "25-25", label: "25 - 25" },
+];
+
+const formatShortDate = (date: Date): string =>
+  date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+const usePeriodOptions = () =>
+  createMemo<SelectOption[]>(() =>
+    DATE_PERIODS.map((period) => {
+      const { start, end } = getDateRange(state.ui.currentMonth, period.value);
+      return {
+        value: period.value,
+        label: period.label,
+        subtitle: `${formatShortDate(start)} – ${formatShortDate(end)}`,
+      };
+    }),
+  );
+
+interface PeriodSelectProps {
+  compact?: boolean;
+}
+
+const PeriodSelect = (props: PeriodSelectProps) => {
+  const options = usePeriodOptions();
+
+  return (
+    <SimpleSelect
+      options={options()}
+      value={state.ui.datePeriod}
+      onChange={(value) => setState("ui", "datePeriod", value as DatePeriod)}
+      ariaLabel="Select date period"
+      sameWidth={false}
+      placement={props.compact ? "bottom-end" : "bottom-start"}
+      contentClass="w-48"
+      triggerClass={
+        props.compact
+          ? "w-auto h-7 rounded-lg bg-sage/35 border-forest/10 px-2 py-0 gap-1.5 text-[11px] font-bold text-forest hover:bg-sage/50"
+          : "w-auto h-9 rounded-xl bg-sage/25 border-forest/10 px-3 py-0 gap-2 text-xs font-bold text-forest hover:bg-sage/40"
+      }
+      renderTriggerValue={(opt) => (
+        <span class="flex items-center gap-1.5 whitespace-nowrap">
+          <CalendarRange
+            class={
+              props.compact
+                ? "h-3.5 w-3.5 shrink-0 text-white [&_rect]:fill-forest [&_rect]:stroke-forest [&_path:nth-of-type(1)]:stroke-forest [&_path:nth-of-type(3)]:stroke-forest"
+                : "h-4 w-4 shrink-0 text-white [&_rect]:fill-forest [&_rect]:stroke-forest [&_path:nth-of-type(1)]:stroke-forest [&_path:nth-of-type(3)]:stroke-forest"
+            }
+          />
+          <span class="tabular-nums">{opt.label}</span>
+        </span>
+      )}
+    />
+  );
+};
 
 export const TopBarDateControlsDesktop = (props: TopBarDateControlsProps) => {
   return (
@@ -33,20 +94,7 @@ export const TopBarDateControlsDesktop = (props: TopBarDateControlsProps) => {
       </div>
 
       {/* Date Period Selector */}
-      <div class="relative group">
-        <select
-          value={state.ui.datePeriod}
-          onInput={(e) => setState("ui", "datePeriod", e.currentTarget.value as DatePeriod)}
-          class="appearance-none bg-sage/20 border border-forest/10 rounded-xl px-4 py-2 pr-10 font-outfit text-xs font-bold text-forest focus:outline-none focus:ring-2 focus:ring-forest/20 transition-all cursor-pointer hover:bg-sage/30"
-        >
-          <option value="1-30">1 - 30</option>
-          <option value="21-20">21 - 20</option>
-          <option value="25-25">25 - 25</option>
-        </select>
-        <span class="material-icons absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 pointer-events-none text-lg">
-          expand_more
-        </span>
-      </div>
+      <PeriodSelect />
     </>
   );
 };
@@ -74,15 +122,7 @@ export const TopBarDateControlsMobile = (props: TopBarDateControlsProps) => {
         </button>
       </div>
 
-      <select
-        value={state.ui.datePeriod}
-        onInput={(e) => setState("ui", "datePeriod", e.currentTarget.value as DatePeriod)}
-        class="bg-sage/30 border border-forest/10 rounded-lg px-2.5 py-1 text-[10px] font-bold text-forest"
-      >
-        <option value="1-30">1 - 30</option>
-        <option value="21-20">21 - 20</option>
-        <option value="25-25">25 - 25</option>
-      </select>
+      <PeriodSelect compact />
     </div>
   );
 };

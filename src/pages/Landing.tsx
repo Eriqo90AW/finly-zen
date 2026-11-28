@@ -69,7 +69,7 @@ export const Landing = () => {
       <section class="relative px-6 lg:px-16 pt-16 pb-24 max-w-7xl mx-auto flex flex-col items-center text-center">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sage border border-forest/10 text-forest text-[11px] font-bold uppercase tracking-widest mb-8 animate-fade-in">
           <span class="w-2 h-2 rounded-full bg-spring animate-pulse" />
-          Personal Wealth & IDX Equity Intelligence
+          Personal Wealth & Equity Portfolio Clarity
         </div>
 
         <h1 class="text-4xl sm:text-6xl lg:text-7xl font-cormorant font-bold text-forest max-w-4xl tracking-tight leading-[1.08] mb-6">
@@ -77,7 +77,7 @@ export const Landing = () => {
         </h1>
 
         <p class="text-base sm:text-lg text-earth/90 max-w-2xl font-outfit font-normal leading-relaxed mb-10">
-          Unify everyday expense tracking with deep Indonesian Stock Exchange (IDX) dividends, portfolio valuations, and day trading journals in an ultra-clean, light-mode desktop experience.
+          Unify everyday expense tracking, structured budgets, savings goals, financial reports, and multi-asset portfolio valuations in an ultra-clean, light-mode desktop experience.
         </p>
 
         <div class="flex flex-col sm:flex-row items-center gap-4 mb-16">
@@ -150,15 +150,15 @@ export const Landing = () => {
             <div class="p-5 rounded-2xl bg-sage/20 border border-forest/5 flex flex-col justify-between">
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-widest text-earth/80">
-                  Upcoming IDX Dividends
+                  Savings Garden Progress
                 </span>
                 <div class="text-3xl font-cormorant font-bold text-forest mt-1">
-                  {currencyPreview() === "IDR" ? "Rp 12.450.000" : "$763.80"}
+                  {currencyPreview() === "IDR" ? "Rp 64.200.000" : "$3,938.65"}
                 </div>
               </div>
               <div class="flex items-center gap-2 mt-4 text-xs font-semibold text-earth">
-                <span class="bg-forest text-white text-[9px] px-1.5 py-0.5 rounded font-bold">BBCA</span>
-                <span>Cum-date in 4 days</span>
+                <span class="bg-forest text-white text-[9px] px-1.5 py-0.5 rounded font-bold">78%</span>
+                <span>Emergency Fund target</span>
               </div>
             </div>
 

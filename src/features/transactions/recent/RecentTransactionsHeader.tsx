@@ -12,13 +12,8 @@ interface RecentTransactionsHeaderProps {
   showOnlyRecurring: boolean;
   onToggleRecurring: () => void;
   availableAccounts: AccountOption[];
-  accountDropdownOpen: boolean;
-  onToggleAccountDropdown: () => void;
-  onCloseAccountDropdown: () => void;
   uniqueCategories: CategoryOption[];
   selectedCategories: Set<string>;
-  filtersOpen: boolean;
-  onToggleFiltersOpen: () => void;
   onToggleCategory: (category: string) => void;
   onClearCategories: () => void;
 }
@@ -135,18 +130,11 @@ export const RecentTransactionsHeader = (
           </div>
         </button>
 
-        <AccountFilterDropdown
-          accounts={props.availableAccounts}
-          isOpen={props.accountDropdownOpen}
-          onToggle={props.onToggleAccountDropdown}
-          onClose={props.onCloseAccountDropdown}
-        />
+        <AccountFilterDropdown accounts={props.availableAccounts} />
 
         <CategoryFilterDropdown
           categories={props.uniqueCategories}
           selectedCategories={props.selectedCategories}
-          isOpen={props.filtersOpen}
-          onToggleOpen={props.onToggleFiltersOpen}
           onToggleCategory={props.onToggleCategory}
           onClear={props.onClearCategories}
         />

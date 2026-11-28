@@ -18,34 +18,34 @@ export interface LandingPhilosophyHighlight {
 
 export const LANDING_NAV_LINKS: LandingNavLink[] = [
   { href: "#features", label: "Features" },
-  { href: "#dividends", label: "IDX Dividends" },
-  { href: "#journal", label: "Trading Journal" },
+  { href: "#reports", label: "Reports" },
+  { href: "#portfolios", label: "Portfolios" },
   { href: "#philosophy", label: "Philosophy" },
 ];
 
 export const LANDING_PILLARS: LandingPillar[] = [
   {
     icon: "account_balance_wallet",
-    title: "Cash Flow & Expense Tracking",
+    title: "Budgets & Money Framework",
     description:
-      "Categorize daily expenses, track budgets with pacing forecasts, and manage seamless inter-account transfers between bank and cash accounts.",
+      "Categorize daily expenses, allocate monthly buckets, track emergency targets, and manage seamless inter-account transfers across bank and cash accounts.",
     highlight: "Visual monthly budget pacing",
   },
   {
-    id: "dividends",
-    icon: "calendar_month",
-    title: "IDX Dividend Intelligence",
+    id: "reports",
+    icon: "assessment",
+    title: "Reports & Savings Goals",
     description:
-      "Stay ahead of Indonesian Stock Exchange corporate actions. Interactive dividend calendar, yield forecasts, and automatic payout tracking.",
-    highlight: "Authentic 2025-2026 IDX data",
+      "Review real cashflow trends, month-over-month category comparisons, and account flows while nurturing savings goals with period-accurate balances.",
+    highlight: "Live financial analytics",
   },
   {
-    id: "journal",
+    id: "portfolios",
     icon: "insights",
-    title: "Portfolios & Trading Journal",
+    title: "Markets & Multi-Asset Portfolios",
     description:
-      "Log day trades with planned R:R, bandarmology notes, psychology checklists, and track multi-asset portfolios in both IDR and USD.",
-    highlight: "Disciplined win-rate analytics",
+      "Analyze stock fundamentals, market cap rankings, and track multi-asset investment portfolios in both IDR and USD with real-time P&L.",
+    highlight: "Dual-currency portfolio tracking",
   },
 ];
 

@@ -24,7 +24,7 @@ export const HeroAccountSlide = (props: HeroAccountSlideProps) => {
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
         <div class="min-w-0">
           <p class="text-[9px] sm:text-[10px] font-bold text-earth uppercase tracking-widest truncate">
-            {props.showAllTime ? "All Time Income" : "Monthly Income"}
+            {props.showAllTime ? "All Time Income" : "Period Income"}
           </p>
           <p class="text-sm sm:text-lg xl:text-xl font-outfit font-semibold text-forest truncate mt-0.5">
             {formatRupiah(props.stats.income)}
@@ -32,7 +32,7 @@ export const HeroAccountSlide = (props: HeroAccountSlideProps) => {
         </div>
         <div class="min-w-0">
           <p class="text-[9px] sm:text-[10px] font-bold text-earth uppercase tracking-widest truncate">
-            {props.showAllTime ? "All Time Expenses" : "Monthly Expenses"}
+            {props.showAllTime ? "All Time Expenses" : "Period Expenses"}
           </p>
           <p class="text-sm sm:text-lg xl:text-xl font-outfit font-semibold text-forest truncate mt-0.5">
             {formatRupiah(props.stats.expenses)}

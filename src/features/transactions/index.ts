@@ -1,4 +1,3 @@
-export { TransactionsPage } from "./TransactionsPage";
 export {
   TransactionDrawer,
   TransactionDrawer as AddExpenseSlideOver,

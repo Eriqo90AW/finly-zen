@@ -3,16 +3,10 @@ import { Show, createSignal, onCleanup, onMount } from "solid-js";
 import { setState, state } from "../../store";
 import { portfolioState } from "../../store/portfolioStore";
 import { currentStockData } from "../../store/stockContext";
-import type { IDXMarketStatus, MarketStatus } from "../../types";
-import { getIDXMarketStatus, getMarketStatus } from "../../utils/marketTime";
+import type { MarketStatus } from "../../types";
+import { getMarketStatus } from "../../utils/marketTime";
 import SearchBar from "./SearchBar";
 import { TopBarDateControlsDesktop, TopBarDateControlsMobile } from "./TopBarDateControls";
-import {
-  TopBarDividendHeaderDesktop,
-  TopBarDividendHeaderMobile,
-  TopBarJournalHeaderDesktop,
-  TopBarJournalHeaderMobile,
-} from "./TopBarMarketNavControls";
 import {
   TopBarPortfolioControlsDesktop,
   TopBarPortfolioControlsMobile,
@@ -52,18 +46,14 @@ const TopBar = (props: TopBarProps) => {
   const isStockPage = () => location.pathname.startsWith("/stock");
   const isPortfolioPage = () =>
     location.pathname.startsWith("/portfolio") || location.pathname === "/quick-portfolio";
-  const isDividendPage = () => location.pathname.startsWith("/dividend");
-  const isJournalPage = () => location.pathname.startsWith("/trading-journal");
 
   const [marketStatus, setMarketStatus] = createSignal<MarketStatus>(getMarketStatus());
-  const [idxMarketStatus, setIdxMarketStatus] = createSignal<IDXMarketStatus>(getIDXMarketStatus());
   const [wibTime, setWibTime] = createSignal(getWibDateTime());
 
   let timer: ReturnType<typeof setInterval> | undefined;
   onMount(() => {
     timer = setInterval(() => {
       setMarketStatus(getMarketStatus());
-      setIdxMarketStatus(getIDXMarketStatus());
       setWibTime(getWibDateTime());
     }, 1000);
   });
@@ -87,7 +77,6 @@ const TopBar = (props: TopBarProps) => {
   const getMobileTitle = () => {
     const p = location.pathname;
     if (p === "/") return "Dashboard";
-    if (p === "/transactions") return "Transactions";
     if (p === "/budgets") return "Budgets";
     if (p === "/goals") return "Goals";
     if (p === "/reports") return "Reports";
@@ -95,8 +84,6 @@ const TopBar = (props: TopBarProps) => {
     if (p === "/markets/list") return "Market Cap List";
     if (p === "/quick-portfolio") return "Quick Portfolio";
     if (p.startsWith("/portfolio")) return activePortfolioName();
-    if (p.startsWith("/dividend")) return "IDX Dividends";
-    if (p.startsWith("/trading-journal")) return "Trading Journal";
     return "Finly Zen";
   };
 
@@ -126,25 +113,8 @@ const TopBar = (props: TopBarProps) => {
           {/* Desktop Left Section */}
           <div class="hidden lg:flex items-center gap-6">
             <Show
-              when={!isStockPage() && !isDividendPage() && !isJournalPage()}
-              fallback={
-                <Show
-                  when={isDividendPage()}
-                  fallback={
-                    <Show
-                      when={isJournalPage()}
-                      fallback={<TopBarStockHeaderDesktop marketStatus={marketStatus} />}
-                    >
-                      <TopBarJournalHeaderDesktop wibTime={wibTime} marketStatus={marketStatus} />
-                    </Show>
-                  }
-                >
-                  <TopBarDividendHeaderDesktop
-                    wibTime={wibTime}
-                    idxMarketStatus={idxMarketStatus}
-                  />
-                </Show>
-              }
+              when={!isStockPage()}
+              fallback={<TopBarStockHeaderDesktop marketStatus={marketStatus} />}
             >
               <Show
                 when={isPortfolioPage()}
@@ -163,7 +133,7 @@ const TopBar = (props: TopBarProps) => {
         {/* Right Section: SearchBar (desktop) + Insights Toggle + User Profile */}
         <div class="flex items-center gap-2 sm:gap-4 lg:gap-6">
           <div class="hidden lg:block">
-            <Show when={!isPortfolioPage() && !isDividendPage() && !isJournalPage()}>
+            <Show when={!isPortfolioPage()}>
               <SearchBar />
             </Show>
           </div>
@@ -189,22 +159,8 @@ const TopBar = (props: TopBarProps) => {
       {/* Row 2 (Mobile only): Horizontally Scrollable Contextual Controls Strip */}
       <div class="lg:hidden px-3 pb-2 pt-0 overflow-x-auto custom-scrollbar-thin flex items-center gap-2 border-t border-forest/5">
         <Show
-          when={!isStockPage() && !isDividendPage() && !isJournalPage()}
-          fallback={
-            <Show
-              when={isDividendPage()}
-              fallback={
-                <Show
-                  when={isJournalPage()}
-                  fallback={<TopBarStockHeaderMobile marketStatus={marketStatus} />}
-                >
-                  <TopBarJournalHeaderMobile wibTime={wibTime} />
-                </Show>
-              }
-            >
-              <TopBarDividendHeaderMobile wibTime={wibTime} idxMarketStatus={idxMarketStatus} />
-            </Show>
-          }
+          when={!isStockPage()}
+          fallback={<TopBarStockHeaderMobile marketStatus={marketStatus} />}
         >
           <Show
             when={isPortfolioPage()}

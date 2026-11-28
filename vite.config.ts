@@ -86,6 +86,8 @@ export default defineConfig(({ command, mode }) => {
             if (lastNodeModules === -1) return;
             const pkgPath = normalized.slice(lastNodeModules + "/node_modules/".length);
             if (pkgPath.startsWith("apexcharts/")) return "vendor-apexcharts";
+            if (pkgPath.startsWith("chart.js/")) return "vendor-chartjs";
+            if (pkgPath.startsWith("@kobalte/")) return "vendor-kobalte";
             if (pkgPath.startsWith("@suid/") || pkgPath.startsWith("@emotion/")) {
               return "vendor-suid";
             }

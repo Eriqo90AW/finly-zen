@@ -33,23 +33,6 @@ export function getPageInfo(pathname: string): PageInfo {
     };
   }
 
-  if (normalized.startsWith("/transactions")) {
-    return {
-      path: "/transactions",
-      name: "Transactions",
-      category: "Expense",
-      assistantName: "Finly",
-      assistantRole: "Expense AI",
-      model: expenseModel,
-      focus: "Transaction records and history across bank accounts and wallets. Can filter, search, and add expenses/income/transfers.",
-      suggestedQuestions: [
-        "What are my largest expenses this month?",
-        "Show transactions from the last 7 days",
-        "Add Rp 50,000 coffee expense to BCA",
-      ],
-    };
-  }
-
   if (normalized.startsWith("/budgets")) {
     return {
       path: "/budgets",
@@ -135,23 +118,6 @@ export function getPageInfo(pathname: string): PageInfo {
     };
   }
 
-  if (normalized.startsWith("/dividend")) {
-    return {
-      path: "/dividend",
-      name: "Dividend Tracker",
-      category: "Investing",
-      assistantName: "Market Quant",
-      assistantRole: "Investing AI",
-      model: marketModel,
-      focus: "Dividend payout calendar, ex-dates, yield estimates, and annual dividend cashflow.",
-      suggestedQuestions: [
-        "What is my expected annual dividend payout?",
-        "Which of my holdings have upcoming dividend dates?",
-        "Which asset in my portfolio yields the highest dividend?",
-      ],
-    };
-  }
-
   if (normalized.startsWith("/stock")) {
     const segments = pathname.split("/").filter(Boolean);
     const ticker = segments[1] ? segments[1].toUpperCase() : "Stock";
@@ -184,23 +150,6 @@ export function getPageInfo(pathname: string): PageInfo {
         "Which stocks are top market cap leaders?",
         "Are any of the top market cap stocks in my portfolio?",
         "Compare market caps across banking and tech sectors",
-      ],
-    };
-  }
-
-  if (normalized.startsWith("/trading-journal")) {
-    return {
-      path: "/trading-journal",
-      name: "Trading Journal",
-      category: "Investing",
-      assistantName: "Market Quant",
-      assistantRole: "Trading AI",
-      model: marketModel,
-      focus: "Trading log, trade execution records, entry/exit prices, win rates, and trading psychology notes.",
-      suggestedQuestions: [
-        "Review my recent trades in the journal",
-        "What is my win rate and risk/reward ratio?",
-        "What are the main trading mistakes or notes recorded?",
       ],
     };
   }

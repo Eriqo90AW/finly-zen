@@ -84,9 +84,7 @@ const AppContent = (props: ParentProps) => {
     location.pathname.startsWith("/stock") ||
     location.pathname.startsWith("/markets") ||
     location.pathname.startsWith("/portfolio") ||
-    location.pathname.startsWith("/quick-portfolio") ||
-    location.pathname.startsWith("/dividend") ||
-    location.pathname.startsWith("/trading-journal");
+    location.pathname.startsWith("/quick-portfolio");
 
   const routeFallback = (fullScreen: boolean) => (
     <div

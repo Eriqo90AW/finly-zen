@@ -1,82 +1,76 @@
 import { For, Show } from "solid-js";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "../../../components/ui";
 import { formatIconName } from "../../../utils/format";
 import type { CategoryOption } from "./recentTransactionsHelpers";
 
 interface CategoryFilterDropdownProps {
   categories: CategoryOption[];
   selectedCategories: Set<string>;
-  isOpen: boolean;
-  onToggleOpen: () => void;
   onToggleCategory: (category: string) => void;
   onClear: () => void;
 }
 
 export const CategoryFilterDropdown = (props: CategoryFilterDropdownProps) => {
   return (
-    <div class="relative filter-dropdown-container shrink-0">
-      <button
-        type="button"
-        class="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-md border transition-all duration-200 cursor-pointer select-none group/filter hover:shadow-sm shrink-0"
-        style={{
-          ...(props.selectedCategories.size > 0
-            ? {
-                "background-color": "rgba(82, 194, 120, 0.15)",
-                "border-color": "rgba(82, 194, 120, 0.35)",
-              }
-            : {
-                "background-color": "rgba(44, 74, 56, 0.05)",
-                "border-color": "rgba(44, 74, 56, 0.1)",
-              }),
-        }}
-        onClick={props.onToggleOpen}
-        aria-expanded={props.isOpen}
-      >
-        <span
-          class="material-icons !text-[13px] shrink-0"
+    <div class="relative shrink-0">
+      <DropdownMenu placement="bottom-end">
+        <DropdownMenuTrigger
+          aria-label="Filter transactions by category"
+          class="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-md border transition-all duration-200 cursor-pointer select-none group/filter hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/25 shrink-0"
           style={{
-            color:
-              props.selectedCategories.size > 0
-                ? "var(--color-forest)"
-                : "var(--color-mid-green)",
+            ...(props.selectedCategories.size > 0
+              ? {
+                  "background-color": "rgba(82, 194, 120, 0.15)",
+                  "border-color": "rgba(82, 194, 120, 0.35)",
+                }
+              : {
+                  "background-color": "rgba(44, 74, 56, 0.05)",
+                  "border-color": "rgba(44, 74, 56, 0.1)",
+                }),
           }}
         >
-          filter_list
-        </span>
-        <span
-          class="text-[10px] font-bold uppercase tracking-wider sm:tracking-widest"
-          classList={{
-            "text-forest font-black": props.selectedCategories.size > 0,
-            "text-forest/70": props.selectedCategories.size === 0,
-          }}
-        >
-          Filters
-        </span>
-        <Show when={props.selectedCategories.size > 0}>
           <span
-            class="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-[8px] sm:text-[9px] font-bold shrink-0"
+            class="material-icons !text-[13px] shrink-0"
             style={{
-              "background-color": "var(--color-forest)",
-              color: "#ffffff",
+              color:
+                props.selectedCategories.size > 0
+                  ? "var(--color-forest)"
+                  : "var(--color-mid-green)",
             }}
           >
-            {props.selectedCategories.size}
+            filter_list
           </span>
-        </Show>
-        <span
-          class="material-icons !text-[14px] shrink-0 transition-transform duration-200 text-forest"
-          classList={{
-            "rotate-180": props.isOpen,
-          }}
-        >
-          expand_more
-        </span>
-      </button>
+          <span
+            class="text-[10px] font-bold uppercase tracking-wider sm:tracking-widest"
+            classList={{
+              "text-forest font-black": props.selectedCategories.size > 0,
+              "text-forest/70": props.selectedCategories.size === 0,
+            }}
+          >
+            Filters
+          </span>
+          <Show when={props.selectedCategories.size > 0}>
+            <span
+              class="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-[8px] sm:text-[9px] font-bold shrink-0"
+              style={{
+                "background-color": "var(--color-forest)",
+                color: "#ffffff",
+              }}
+            >
+              {props.selectedCategories.size}
+            </span>
+          </Show>
+          <span class="material-icons !text-[14px] shrink-0 transition-transform duration-200 text-forest group-data-[expanded]:rotate-180">
+            expand_more
+          </span>
+        </DropdownMenuTrigger>
 
-      <Show when={props.isOpen}>
-        <div
-          class="absolute right-0 mt-1.5 w-56 sm:w-60 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-forest/10 p-2 z-40 flex flex-col gap-1 animate-slide-down"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <DropdownMenuContent class="w-56 sm:w-60 max-w-[calc(100vw-2rem)] p-2 flex flex-col gap-1">
           <div class="flex items-center justify-between px-2 py-1 border-b border-forest/10 mb-0.5">
             <span class="text-[10px] font-bold uppercase tracking-widest text-forest">
               Categories ({props.categories.length})
@@ -90,10 +84,7 @@ export const CategoryFilterDropdown = (props: CategoryFilterDropdownProps) => {
               <button
                 type="button"
                 class="text-[10px] font-bold text-earth/60 hover:text-red-500 transition-colors cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  props.onClear();
-                }}
+                onClick={props.onClear}
               >
                 Clear
               </button>
@@ -105,16 +96,16 @@ export const CategoryFilterDropdown = (props: CategoryFilterDropdownProps) => {
               {(cat) => {
                 const isSelected = () => props.selectedCategories.has(cat.name);
                 return (
-                  <button
-                    type="button"
-                    class="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer text-left group"
+                  <DropdownMenuCheckboxItem
+                    checked={isSelected()}
+                    onChange={() => props.onToggleCategory(cat.name)}
+                    closeOnSelect={false}
+                    class="px-2.5 py-1.5 text-[11px] font-semibold text-left group/item"
                     classList={{
-                      "bg-forest/10 text-forest font-bold": isSelected(),
-                      "text-forest/80 hover:bg-forest/5": !isSelected(),
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      props.onToggleCategory(cat.name);
+                      "bg-forest/10 text-forest font-bold data-[highlighted]:bg-forest/15":
+                        isSelected(),
+                      "text-forest/80 hover:bg-forest/5 data-[highlighted]:bg-forest/5":
+                        !isSelected(),
                     }}
                   >
                     <div class="flex items-center gap-2 min-w-0 pointer-events-none">
@@ -122,7 +113,7 @@ export const CategoryFilterDropdown = (props: CategoryFilterDropdownProps) => {
                         class="w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors shrink-0"
                         classList={{
                           "bg-forest border-forest text-white": isSelected(),
-                          "border-forest/30 bg-white group-hover:border-forest/60":
+                          "border-forest/30 bg-white group-hover/item:border-forest/60":
                             !isSelected(),
                         }}
                       >
@@ -161,13 +152,13 @@ export const CategoryFilterDropdown = (props: CategoryFilterDropdownProps) => {
                         <span class="truncate">{cat.name}</span>
                       </div>
                     </div>
-                  </button>
+                  </DropdownMenuCheckboxItem>
                 );
               }}
             </For>
           </div>
-        </div>
-      </Show>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };

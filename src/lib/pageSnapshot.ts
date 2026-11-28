@@ -48,25 +48,7 @@ export async function fetchPageSnapshot(
       };
     }
 
-    // 2. Transactions Screen
-    if (path.startsWith("/transactions")) {
-      const txs = await getTransactions();
-      const recent = txs.slice(0, 30).map((t) => ({
-        id: t.id,
-        name: t.name,
-        amount: t.amount,
-        type: t.type,
-        category: t.category,
-        account: t.accountName,
-        date: t.date,
-      }));
-      return {
-        recent_transactions_count: recent.length,
-        recent_transactions: recent,
-      };
-    }
-
-    // 3. Budgets Screen
+    // 2. Budgets Screen
     if (path.startsWith("/budgets")) {
       const txs = await getTransactions();
       const now = new Date();
@@ -110,28 +92,40 @@ export async function fetchPageSnapshot(
       };
     }
 
-    // 5. Dividend Screen
-    if (path.startsWith("/dividend")) {
-      if (portfolioState.portfolios.length === 0) {
-        await loadPortfolios();
-      }
-      const p =
-        portfolioState.portfolios.find((item) => item.id === activePortfolioId) ||
-        portfolioState.portfolios[0];
+    // 4. Reports Screen
+    if (path.startsWith("/reports")) {
+      const txs = await getTransactions();
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const currentMonthTxs = txs.filter((t) => t.date >= monthStart);
+      const income = currentMonthTxs
+        .filter((t) => t.type === "income")
+        .reduce((sum, t) => sum + t.amount, 0);
+      const expenses = currentMonthTxs
+        .filter((t) => t.type === "expense")
+        .reduce((sum, t) => sum + t.amount, 0);
 
-      if (!p) return null;
+      const categoryTotals: Record<string, number> = {};
+      for (const t of currentMonthTxs) {
+        if (t.type !== "expense") continue;
+        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+      }
+
+      const topCategories = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([category, spent]) => ({ category, spent }));
+
       return {
-        portfolio_name: p.name,
-        assets: p.assets.map((a) => ({
-          ticker: a.ticker,
-          name: a.name,
-          shares: a.totalShares,
-          current_value_idr: a.currentValue,
-        })),
+        month: now.toLocaleString("default", { month: "long", year: "numeric" }),
+        income,
+        expenses,
+        net_savings: income - expenses,
+        top_categories: topCategories,
       };
     }
 
-    // 6. Stock Detail Screen
+    // 5. Stock Detail Screen
     if (path.startsWith("/stock")) {
       const segments = path.split("/").filter(Boolean);
       const ticker = segments[1] ? segments[1].toUpperCase() : null;

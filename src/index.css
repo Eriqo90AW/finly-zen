@@ -35,6 +35,15 @@
   --color-fin-blue: #6366f1;
   --color-fin-purple: #a78bfa;
   --color-fin-amber: #f59e0b;
+
+  /* Shadcn-compatible chart & surface tokens */
+  --color-chart-1: #1a4d2e;
+  --color-chart-2: #52c278;
+  --color-chart-3: #d47b5a;
+  --color-chart-4: #c29b38;
+  --color-chart-5: #2c5364;
+  --color-chart-6: #7d4354;
+  --color-surface-muted: #f4f8f5;
 }
 
 @layer base {
